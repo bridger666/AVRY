@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aivory - AI Readiness Diagnostic</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand" onclick="showSection('homepage')">
+                <img src="aivory_logo.png" alt="Aivory">
+            </div>
+            <div class="nav-links">
+                <a href="#" onclick="showSection('homepage')">Home</a>
+                <a href="#" onclick="showSection('diagnostic')">Diagnostic</a>
+                <a href="#" onclick="showSection('contact')">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Section 1: Homepage -->
+    <section id="homepage" class="section active">
+        <div class="hero">
+            <h1 class="hero-title">Design your AI system. Then deploy it.</h1>
+            <p class="hero-subtitle">Make AI make sense.</p>
+            <div class="hero-cta-group">
+                <button class="cta-button primary" onclick="showSection('diagnostic')">Run AI Readiness Diagnostic</button>
+                <button class="cta-button secondary" onclick="scrollToPricing()">Explore Pricing</button>
+            </div>
+        </div>
+
+        <!-- One-Time Assessments Section -->
+        <div class="pricing-section" id="pricing-section">
+            <h2 class="section-title">AI Readiness Assessments</h2>
+            <p class="section-subtitle">One-time diagnostic services to understand your AI readiness.</p>
+            
+            <div class="pricing-cards">
+                <div class="pricing-card">
+                    <h3>AI Snapshot</h3>
+                    <div class="price-tag">$49</div>
+                    <p class="card-subtitle">Quick AI readiness assessment with structured scoring and automation opportunity signals.</p>
+                    <ul class="feature-list">
+                        <li>AI readiness score</li>
+                        <li>Category positioning</li>
+                        <li>Top 3 automation opportunities</li>
+                        <li>Shareable readiness badge</li>
+                    </ul>
+                    <button class="pricing-button" onclick="showSection('contact')">Run Snapshot</button>
+                </div>
+
+                <div class="pricing-card">
+                    <h3>Deep Diagnostic</h3>
+                    <div class="price-tag">$149</div>
+                    <p class="card-subtitle">Comprehensive workflow diagnosis and AI system blueprint recommendation.</p>
+                    <ul class="feature-list">
+                        <li>Full readiness analysis</li>
+                        <li>Workflow inefficiency mapping</li>
+                        <li>Automation ROI estimation</li>
+                        <li>AI system blueprint draft</li>
+                        <li>Implementation priority roadmap</li>
+                    </ul>
+                    <button class="pricing-button" onclick="showSection('contact')">Run Deep Diagnostic</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Operating Partner Section -->
+        <div class="pricing-section subscription-section">
+            <h2 class="section-title">AI Operating Partner</h2>
+            <p class="section-subtitle">Design your AI system. Then deploy it. Make AI make sense.</p>
+            
+            <div class="pricing-cards">
+                <div class="pricing-card">
+                    <h3>Foundation</h3>
+                    <p class="tier-tagline">AI Operating Partner — Activate</p>
+                    <div class="price-tag">$200<span class="period">/month</span></div>
+                    <p class="card-subtitle">For teams starting automation.</p>
+                    
+                    <div class="limits-display">
+                        <div class="limit-item">
+                            <span class="limit-label">Workflows:</span>
+                            <span class="limit-value">Up to 3</span>
+                        </div>
+                        <div class="limit-item">
+                            <span class="limit-label">Executions:</span>
+                            <span class="limit-value">3,000/month</span>
+                        </div>
+                    </div>
+                    
+                    <ul class="feature-list">
+                        <li>AI Blueprint → Auto-converted into workflows</li>
+                        <li>Up to 3 active workflows</li>
+                        <li>Up to 3,000 executions per month</li>
+                        <li>Automation Builder access</li>
+                        <li>Monitoring dashboard</li>
+                        <li>Automated monthly AI health scan</li>
+                        <li>Performance alerts</li>
+                        <li>Standard integrations</li>
+                    </ul>
+                    <button class="pricing-button" onclick="selectPlan('foundation')">Start Foundation</button>
+                </div>
+
+                <div class="pricing-card featured-card">
+                    <div class="popular-badge">MOST POPULAR</div>
+                    <h3>Acceleration</h3>
+                    <p class="tier-tagline">AI Operating Partner — Scale</p>
+                    <div class="price-tag">$500<span class="period">/month</span></div>
+                    <p class="card-subtitle">For scaling AI across operations.</p>
+                    
+                    <div class="limits-display">
+                        <div class="limit-item">
+                            <span class="limit-label">Workflows:</span>
+                            <span class="limit-value">Up to 10</span>
+                        </div>
+                        <div class="limit-item">
+                            <span class="limit-label">Executions:</span>
+                            <span class="limit-value">15,000/month</span>
+                        </div>
+                    </div>
+                    
+                    <ul class="feature-list">
+                        <li>Up to 10 active workflows</li>
+                        <li>Up to 15,000 executions per month</li>
+                        <li>Agent orchestration</li>
+                        <li>Cross-tool integrations</li>
+                        <li>Workflow impact analytics</li>
+                        <li>Quarterly AI re-diagnostic</li>
+                        <li>Optimization suggestions (AI-generated)</li>
+                    </ul>
+                    <button class="pricing-button primary" onclick="selectPlan('acceleration')">Upgrade to Acceleration</button>
+                </div>
+
+                <div class="pricing-card">
+                    <h3>Intelligence</h3>
+                    <p class="tier-tagline">AI Operating Partner — Operate</p>
+                    <div class="price-tag">$1,000<span class="period">/month</span></div>
+                    <p class="card-subtitle">For org-wide AI deployment.</p>
+                    
+                    <div class="limits-display">
+                        <div class="limit-item">
+                            <span class="limit-label">Workflows:</span>
+                            <span class="limit-value">Unlimited</span>
+                        </div>
+                        <div class="limit-item">
+                            <span class="limit-label">Executions:</span>
+                            <span class="limit-value">Unlimited</span>
+                        </div>
+                    </div>
+                    
+                    <ul class="feature-list">
+                        <li>Unlimited workflows</li>
+                        <li>Unlimited executions</li>
+                        <li>Custom AI agents</li>
+                        <li>Org-level AI performance dashboard</li>
+                        <li>Continuous optimization loop</li>
+                        <li>AI system architecture review</li>
+                        <li>Priority support</li>
+                    </ul>
+                    <button class="pricing-button" onclick="selectPlan('intelligence')">Contact Sales</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Build Automation Now Section -->
+        <div class="action-cards-section">
+            <h2 class="section-title">Build Automation Now</h2>
+            <div class="action-cards">
+                <div class="action-card">
+                    <h3>Run AI Readiness Diagnostic</h3>
+                    <p>12-question assessment to evaluate your AI readiness in under 3 minutes.</p>
+                    <button class="card-button" onclick="showSection('diagnostic')">Start Diagnostic</button>
+                </div>
+                
+                <div class="action-card">
+                    <h3>Design Your AI System</h3>
+                    <p>Strategic architecture planning using diagnostic signals.</p>
+                    <button class="card-button" onclick="showSection('design')">Design My AI System</button>
+                </div>
+                
+                <div class="action-card">
+                    <h3>Contact Our Team</h3>
+                    <p>Let's discuss how Aivory can help transform your organization.</p>
+                    <button class="card-button" onclick="showSection('contact')">Contact Us</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 2: Diagnostic Flow -->
+    <section id="diagnostic" class="section">
+        <div class="container">
+            <div id="diagnostic-questions" class="diagnostic-container">
+                <h2>AI Readiness Diagnostic</h2>
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <p class="progress-text">Question <span id="current-question">1</span> of 12</p>
+                
+                <div id="question-container"></div>
+                
+                <div class="navigation-buttons">
+                    <button id="prev-button" class="nav-button" onclick="previousQuestion()" disabled>Previous</button>
+                    <button id="next-button" class="nav-button" onclick="nextQuestion()" disabled>Next</button>
+                    <button id="submit-button" class="nav-button primary" onclick="submitDiagnostic()" style="display:none;">Submit Diagnostic</button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="diagnostic-loading" class="loading-container" style="display:none;">
+                <div class="spinner"></div>
+                <h2>AI is analyzing how your organization works</h2>
+                <p>Identifying bottlenecks, readiness level, and improvement signals</p>
+            </div>
+
+            <!-- Results -->
+            <div id="diagnostic-results" class="results-container" style="display:none;">
+                <div class="score-section">
+                    <h2>AI Readiness Score</h2>
+                    <div class="score-display">
+                        <span id="score-number" class="score-number">--</span>
+                        <span id="score-category" class="score-category">--</span>
+                    </div>
+                    <p id="category-explanation" class="category-explanation"></p>
+                </div>
+
+                <div class="section-box">
+                    <h3>Key Insights</h3>
+                    <ul id="insights-list" class="insights-list"></ul>
+                </div>
+
+                <div class="section-box">
+                    <h3>Recommendation</h3>
+                    <p id="recommendation-text" class="recommendation-text"></p>
+                </div>
+
+                <div class="section-box">
+                    <h3>Your AI Readiness Badge</h3>
+                    <div id="badge-container" class="badge-container"></div>
+                    <button class="secondary-button" onclick="downloadBadge()">Download Badge</button>
+                    <p class="hint-text">Share your readiness score with your team</p>
+                </div>
+
+                <!-- Dynamic Upgrade Recommendation -->
+                <div id="upgrade-recommendation" class="section-box upgrade-box">
+                    <h3>Recommended Next Step</h3>
+                    <div id="recommendation-content"></div>
+                </div>
+
+                <!-- Tiered Offerings -->
+                <div class="offerings-section">
+                    <h2>Take the Next Step</h2>
+                    <div class="tier-cards">
+                        <div class="tier-card">
+                            <h4>Quick AI Snapshot</h4>
+                            <div class="price">$49</div>
+                            <p>High-level AI readiness diagnosis. Includes score, category, and recommendations.</p>
+                            <button class="tier-button" onclick="showSection('contact')">Get Snapshot</button>
+                        </div>
+
+                        <div class="tier-card featured">
+                            <div class="featured-badge">Most Popular</div>
+                            <h4>Operational Diagnostic</h4>
+                            <div class="price">$150</div>
+                            <p>Deeper workflow, data, and automation gap analysis with structured report.</p>
+                            <button class="tier-button" onclick="showSection('contact')">Get Diagnostic</button>
+                        </div>
+
+                        <div class="tier-card">
+                            <h4>Deep AI Transformation</h4>
+                            <div class="price">Custom</div>
+                            <p>End-to-end diagnostic, roadmap, and implementation guidance.</p>
+                            <button class="tier-button" onclick="showSection('contact')">Contact Us</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cta-section">
+                    <button class="cta-button primary" onclick="showSection('homepage')">Start New Diagnostic</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 3: Build Automation -->
+    <section id="automation" class="section">
+        <div class="container content-section">
+            <h1>Turn Diagnostic Insights into Real Automation</h1>
+            <p class="lead">You already know your gaps. Now turn diagnosis into real automation.</p>
+            
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h3>🔄 Workflow Automation</h3>
+                    <p>Automate repetitive processes and free up your team for strategic work.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>🤖 AI Agents</h3>
+                    <p>Deploy intelligent agents that handle complex tasks autonomously.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>🔗 ERP Integration</h3>
+                    <p>Connect your systems and create seamless data flows.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>📊 Decision Support</h3>
+                    <p>Get AI-powered insights for faster, better decision-making.</p>
+                </div>
+            </div>
+
+            <div class="cta-section">
+                <button class="cta-button primary" onclick="showSection('contact')">Build Automation with Aivory Team</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 4: Design AI System -->
+    <section id="design" class="section">
+        <div class="container content-section">
+            <h1>Design Your AI System Architecture</h1>
+            <p class="lead">Design your future AI system architecture with experts.</p>
+            
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h3>🎯 Strategic Planning</h3>
+                    <p>Use diagnostic signals to inform your AI strategy and roadmap.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>🏗️ Architecture Design</h3>
+                    <p>Build scalable, maintainable AI systems from the ground up.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>📈 Roadmap Development</h3>
+                    <p>Create a phased implementation plan aligned with business goals.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>🔍 Technology Selection</h3>
+                    <p>Choose the right tools and platforms for your specific needs.</p>
+                </div>
+            </div>
+
+            <div class="cta-section">
+                <button class="cta-button primary" onclick="showSection('contact')">Design My AI System</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 5: Contact Form -->
+    <section id="contact" class="section">
+        <div class="container">
+            <div class="contact-container">
+                <h1>Contact Our Team for Full Consultation</h1>
+                <p class="lead">Let's discuss how Aivory can help transform your organization.</p>
+                
+                <form id="contact-form" class="contact-form">
+                    <div class="form-group">
+                        <label for="contact-name">Name *</label>
+                        <input type="text" id="contact-name" name="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contact-company">Company *</label>
+                        <input type="text" id="contact-company" name="company" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contact-email">Email *</label>
+                        <input type="email" id="contact-email" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contact-message">What do you want to build? *</label>
+                        <textarea id="contact-message" name="message" rows="5" required></textarea>
+                    </div>
+
+                    <button type="submit" class="cta-button primary">Send Message</button>
+                </form>
+
+                <div id="contact-success" class="success-message" style="display:none;">
+                    <h3>✓ Thank you for your interest!</h3>
+                    <p>We'll be in touch soon to discuss your needs.</p>
+                    <button class="secondary-button" onclick="showSection('homepage')">Return to Homepage</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upgrade Modal -->
+    <div id="upgrade-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeUpgradeModal()">&times;</span>
+            <h2 id="modal-title">Upgrade Required</h2>
+            <p id="modal-message"></p>
+            <div class="modal-actions">
+                <button class="cta-button primary" onclick="showUpgradePlans()">View Plans</button>
+                <button class="secondary-button" onclick="closeUpgradeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-left">
+                <div class="footer-tagline">
+                    <div class="tagline-line">More Clarity</div>
+                    <div class="tagline-line">More Intelligence</div>
+                </div>
+                <div class="footer-copyright">
+                    © 2025 Aivory . All rights reserved.
+                </div>
+            </div>
+            <div class="footer-right">
+                <img src="Aivory_footer_logo.png" alt="Aivory" class="footer-logo">
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
