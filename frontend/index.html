@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aivory - AI Readiness Diagnostic</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="design-system.css">
+    <link rel="stylesheet" href="styles.css?v=7">
+    <script src="hero-animation.js" defer></script>
 </head>
 <body>
     <!-- Navigation -->
@@ -15,54 +17,430 @@
             </div>
             <div class="nav-links">
                 <a href="#" onclick="showSection('homepage')">Home</a>
-                <a href="#" onclick="showSection('diagnostic')">Diagnostic</a>
+                <a href="#" onclick="startFreeDiagnostic()">Diagnostic</a>
                 <a href="#" onclick="showSection('contact')">Contact</a>
+                <button class="cta-button primary" onclick="showLoginModal()" style="margin-left: 1rem;">Dashboard</button>
             </div>
         </div>
     </nav>
 
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal" style="display: none;">
+        <div class="modal-content login-modal-card">
+            <span class="modal-close" onclick="closeLoginModal()">&times;</span>
+            <h2 class="login-modal-title">Access Dashboard</h2>
+            
+            <div id="loginForm">
+                <div class="form-group login-form-group">
+                    <label for="username" class="login-label">Username</label>
+                    <input type="text" id="username" class="login-input" placeholder="Enter username" style="background: rgba(255, 255, 255, 0.08) !important; border: 1.5px solid rgba(255, 255, 255, 0.2) !important; border-radius: 9999px !important; padding: 1rem 1.5rem !important;">
+                </div>
+                <div class="form-group login-form-group">
+                    <label for="password" class="login-label">Password</label>
+                    <input type="password" id="password" class="login-input" placeholder="Enter password" style="background: rgba(255, 255, 255, 0.08) !important; border: 1.5px solid rgba(255, 255, 255, 0.2) !important; border-radius: 9999px !important; padding: 1rem 1.5rem !important;">
+                </div>
+                <div id="loginError" class="login-error"></div>
+                <button class="cta-button primary login-button" onclick="handleLogin()">Sign In</button>
+                
+                <div style="display: flex; align-items: center; margin: 1.5rem 0; gap: 1rem;">
+                    <div style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.2);"></div>
+                    <span style="color: rgba(255, 255, 255, 0.6); font-size: 0.875rem; font-family: 'Inter Tight', sans-serif; font-weight: 300;">or</span>
+                    <div style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.2);"></div>
+                </div>
+                
+                <button class="secondary-button login-button-secondary" onclick="handleGoogleSignIn()" style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 1rem;">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+                        <path d="M9.003 18c2.43 0 4.467-.806 5.956-2.18L12.05 13.56c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z" fill="#34A853"/>
+                        <path d="M3.964 10.712c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.96H.957C.347 6.175 0 7.55 0 9.002c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                        <path d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z" fill="#EA4335"/>
+                    </svg>
+                    Sign in with Google
+                </button>
+                
+                <button class="secondary-button login-button-secondary" onclick="showRegisterMessage()">Register</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Section 1: Homepage -->
     <section id="homepage" class="section active">
         <div class="hero">
-            <h1 class="hero-title">Design your AI system. Then deploy it.</h1>
-            <p class="hero-subtitle">Make AI make sense.</p>
+                                    <!-- Animated SVG Background -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="575" viewBox="0 0 1200 575">
+  <defs>
+    <clipPath id="clip-Artboard_1">
+      <rect width="1200" height="575"/>
+    </clipPath>
+  </defs>
+  <g id="Artboard_1" data-name="Artboard 1" clip-path="url(#clip-Artboard_1)">
+    <rect width="1200" height="575" fill="rgba(255,255,255,0)"/>
+    <g class="aivory-plus aivory-plus-3" id="Group_3" data-name="Group 3" opacity="0.75">
+      <rect id="Rectangle_7" data-name="Rectangle 7" width="3.247" height="9.778" rx="1.624" transform="translate(935.441 306.468)" fill="#07d197"/>
+      <rect id="Rectangle_8" data-name="Rectangle 8" width="3.247" height="9.804" rx="1.624" transform="translate(935.441 322.747)" fill="#07d197"/>
+      <rect id="Rectangle_9" data-name="Rectangle 9" width="10.15" height="3.273" rx="1.624" transform="translate(923.952 317.86)" fill="#07d197"/>
+      <rect id="Rectangle_10" data-name="Rectangle 10" width="10.15" height="3.273" rx="1.624" transform="translate(940.058 317.86)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-4" id="Group_4" data-name="Group 4" opacity="0.75">
+      <rect id="Rectangle_11" data-name="Rectangle 11" width="3.247" height="9.778" rx="1.624" transform="translate(1023.441 306.468)" fill="#07d197"/>
+      <rect id="Rectangle_12" data-name="Rectangle 12" width="3.247" height="9.804" rx="1.624" transform="translate(1023.441 322.747)" fill="#07d197"/>
+      <rect id="Rectangle_13" data-name="Rectangle 13" width="10.15" height="3.273" rx="1.624" transform="translate(1011.952 317.86)" fill="#07d197"/>
+      <rect id="Rectangle_14" data-name="Rectangle 14" width="10.15" height="3.273" rx="1.624" transform="translate(1028.058 317.86)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-5" id="Group_5" data-name="Group 5" opacity="0.75">
+      <rect id="Rectangle_15" data-name="Rectangle 15" width="3.247" height="9.778" rx="1.624" transform="translate(846.648 306.468)" fill="#07d197"/>
+      <rect id="Rectangle_16" data-name="Rectangle 16" width="3.247" height="9.804" rx="1.624" transform="translate(846.648 322.747)" fill="#07d197"/>
+      <rect id="Rectangle_17" data-name="Rectangle 17" width="10.15" height="3.273" rx="1.624" transform="translate(835.159 317.86)" fill="#07d197"/>
+      <rect id="Rectangle_18" data-name="Rectangle 18" width="10.15" height="3.273" rx="1.624" transform="translate(851.265 317.86)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-6" id="Group_6" data-name="Group 6" opacity="0.43">
+      <rect id="Rectangle_19" data-name="Rectangle 19" width="3.247" height="9.778" rx="1.624" transform="translate(978.733 351.191)" fill="#07d197"/>
+      <rect id="Rectangle_20" data-name="Rectangle 20" width="3.247" height="9.804" rx="1.624" transform="translate(978.733 367.47)" fill="#07d197"/>
+      <rect id="Rectangle_21" data-name="Rectangle 21" width="10.15" height="3.273" rx="1.624" transform="translate(967.245 362.583)" fill="#07d197"/>
+      <rect id="Rectangle_22" data-name="Rectangle 22" width="10.15" height="3.273" rx="1.624" transform="translate(983.35 362.583)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-7" id="Group_7" data-name="Group 7" opacity="0.64">
+      <rect id="Rectangle_23" data-name="Rectangle 23" width="3.247" height="9.778" rx="1.624" transform="translate(892.203 351.205)" fill="#07d197"/>
+      <rect id="Rectangle_24" data-name="Rectangle 24" width="3.247" height="9.804" rx="1.624" transform="translate(892.203 367.483)" fill="#07d197"/>
+      <rect id="Rectangle_25" data-name="Rectangle 25" width="10.15" height="3.273" rx="1.624" transform="translate(880.714 362.596)" fill="#07d197"/>
+      <rect id="Rectangle_26" data-name="Rectangle 26" width="10.15" height="3.273" rx="1.624" transform="translate(896.82 362.596)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-8" id="Group_8" data-name="Group 8" opacity="0.64">
+      <rect id="Rectangle_27" data-name="Rectangle 27" width="3.247" height="9.778" rx="1.624" transform="translate(1069.203 351.205)" fill="#07d197"/>
+      <rect id="Rectangle_28" data-name="Rectangle 28" width="3.247" height="9.804" rx="1.624" transform="translate(1069.203 367.483)" fill="#07d197"/>
+      <rect id="Rectangle_29" data-name="Rectangle 29" width="10.15" height="3.273" rx="1.624" transform="translate(1057.714 362.596)" fill="#07d197"/>
+      <rect id="Rectangle_30" data-name="Rectangle 30" width="10.15" height="3.273" rx="1.624" transform="translate(1073.82 362.596)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-9" id="Group_9" data-name="Group 9" opacity="0.75">
+      <rect id="Rectangle_31" data-name="Rectangle 31" width="3.247" height="9.778" rx="1.624" transform="translate(757.292 306.468)" fill="#07d197"/>
+      <rect id="Rectangle_32" data-name="Rectangle 32" width="3.247" height="9.804" rx="1.624" transform="translate(757.292 322.747)" fill="#07d197"/>
+      <rect id="Rectangle_33" data-name="Rectangle 33" width="10.15" height="3.273" rx="1.624" transform="translate(745.803 317.86)" fill="#07d197"/>
+      <rect id="Rectangle_34" data-name="Rectangle 34" width="10.15" height="3.273" rx="1.624" transform="translate(761.909 317.86)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-10" id="Group_10" data-name="Group 10" opacity="0.38">
+      <rect id="Rectangle_35" data-name="Rectangle 35" width="3.247" height="9.778" rx="1.624" transform="translate(977.648 62.05)" fill="#07d197"/>
+      <rect id="Rectangle_36" data-name="Rectangle 36" width="3.247" height="9.804" rx="1.624" transform="translate(977.648 78.329)" fill="#07d197"/>
+      <rect id="Rectangle_37" data-name="Rectangle 37" width="10.15" height="3.273" rx="1.624" transform="translate(966.159 73.442)" fill="#07d197"/>
+      <rect id="Rectangle_38" data-name="Rectangle 38" width="10.15" height="3.273" rx="1.624" transform="translate(982.265 73.442)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-11" id="Group_11" data-name="Group 11" opacity="0.5">
+      <rect id="Rectangle_39" data-name="Rectangle 39" width="3.247" height="9.778" rx="1.624" transform="translate(1068.648 62.05)" fill="#07d197"/>
+      <rect id="Rectangle_40" data-name="Rectangle 40" width="3.247" height="9.804" rx="1.624" transform="translate(1068.648 78.329)" fill="#07d197"/>
+      <rect id="Rectangle_41" data-name="Rectangle 41" width="10.15" height="3.273" rx="1.624" transform="translate(1057.159 73.442)" fill="#07d197"/>
+      <rect id="Rectangle_42" data-name="Rectangle 42" width="10.15" height="3.273" rx="1.624" transform="translate(1073.265 73.442)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-12" id="Group_12" data-name="Group 12" opacity="0.75">
+      <rect id="Rectangle_43" data-name="Rectangle 43" width="3.247" height="9.778" rx="1.624" transform="translate(888.292 62.05)" fill="#07d197"/>
+      <rect id="Rectangle_44" data-name="Rectangle 44" width="3.247" height="9.804" rx="1.624" transform="translate(888.292 78.329)" fill="#07d197"/>
+      <rect id="Rectangle_45" data-name="Rectangle 45" width="10.15" height="3.273" rx="1.624" transform="translate(876.803 73.442)" fill="#07d197"/>
+      <rect id="Rectangle_46" data-name="Rectangle 46" width="10.15" height="3.273" rx="1.624" transform="translate(892.909 73.442)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-13" id="Group_13" data-name="Group 13" opacity="0.31">
+      <rect id="Rectangle_47" data-name="Rectangle 47" width="3.247" height="9.778" rx="1.624" transform="translate(668.499 306.468)" fill="#07d197"/>
+      <rect id="Rectangle_48" data-name="Rectangle 48" width="3.247" height="9.804" rx="1.624" transform="translate(668.499 322.747)" fill="#07d197"/>
+      <rect id="Rectangle_49" data-name="Rectangle 49" width="10.15" height="3.273" rx="1.624" transform="translate(657.01 317.86)" fill="#07d197"/>
+      <rect id="Rectangle_50" data-name="Rectangle 50" width="10.15" height="3.273" rx="1.624" transform="translate(673.116 317.86)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-14" id="Group_14" data-name="Group 14" opacity="0.75">
+      <rect id="Rectangle_51" data-name="Rectangle 51" width="3.247" height="9.778" rx="1.624" transform="translate(978.733 263.587)" fill="#07d197"/>
+      <rect id="Rectangle_52" data-name="Rectangle 52" width="3.247" height="9.804" rx="1.624" transform="translate(978.733 279.866)" fill="#07d197"/>
+      <rect id="Rectangle_53" data-name="Rectangle 53" width="10.15" height="3.273" rx="1.624" transform="translate(967.245 274.978)" fill="#07d197"/>
+      <rect id="Rectangle_54" data-name="Rectangle 54" width="10.15" height="3.273" rx="1.624" transform="translate(983.35 274.978)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-15" id="Group_15" data-name="Group 15" opacity="0.75">
+      <rect id="Rectangle_55" data-name="Rectangle 55" width="3.247" height="9.778" rx="1.624" transform="translate(978.441 166.468)" fill="#07d197"/>
+      <rect id="Rectangle_56" data-name="Rectangle 56" width="3.247" height="9.804" rx="1.624" transform="translate(978.441 182.747)" fill="#07d197"/>
+      <rect id="Rectangle_57" data-name="Rectangle 57" width="10.15" height="3.273" rx="1.624" transform="translate(966.952 177.86)" fill="#07d197"/>
+      <rect id="Rectangle_58" data-name="Rectangle 58" width="10.15" height="3.273" rx="1.624" transform="translate(983.058 177.86)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-16" id="Group_16" data-name="Group 16" opacity="0.75">
+      <rect id="Rectangle_59" data-name="Rectangle 59" width="3.247" height="9.778" rx="1.624" transform="translate(1068.441 166.468)" fill="#07d197"/>
+      <rect id="Rectangle_60" data-name="Rectangle 60" width="3.247" height="9.804" rx="1.624" transform="translate(1068.441 182.747)" fill="#07d197"/>
+      <rect id="Rectangle_61" data-name="Rectangle 61" width="10.15" height="3.273" rx="1.624" transform="translate(1056.952 177.86)" fill="#07d197"/>
+      <rect id="Rectangle_62" data-name="Rectangle 62" width="10.15" height="3.273" rx="1.624" transform="translate(1073.058 177.86)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-17" id="Group_17" data-name="Group 17" opacity="0.2">
+      <rect id="Rectangle_63" data-name="Rectangle 63" width="3.247" height="9.778" rx="1.624" transform="translate(931.579 212.581)" fill="#07d197"/>
+      <rect id="Rectangle_64" data-name="Rectangle 64" width="3.247" height="9.804" rx="1.624" transform="translate(931.579 228.86)" fill="#07d197"/>
+      <rect id="Rectangle_65" data-name="Rectangle 65" width="10.15" height="3.273" rx="1.624" transform="translate(920.091 223.973)" fill="#07d197"/>
+      <rect id="Rectangle_66" data-name="Rectangle 66" width="10.15" height="3.273" rx="1.624" transform="translate(936.196 223.973)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-18" id="Group_18" data-name="Group 18" opacity="0.38">
+      <rect id="Rectangle_67" data-name="Rectangle 67" width="3.247" height="9.778" rx="1.624" transform="translate(1023.579 212.581)" fill="#07d197"/>
+      <rect id="Rectangle_68" data-name="Rectangle 68" width="3.247" height="9.804" rx="1.624" transform="translate(1023.579 228.86)" fill="#07d197"/>
+      <rect id="Rectangle_69" data-name="Rectangle 69" width="10.15" height="3.273" rx="1.624" transform="translate(1012.091 223.973)" fill="#07d197"/>
+      <rect id="Rectangle_70" data-name="Rectangle 70" width="10.15" height="3.273" rx="1.624" transform="translate(1028.196 223.973)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-19" id="Group_19" data-name="Group 19" opacity="0.31">
+      <rect id="Rectangle_71" data-name="Rectangle 71" width="3.247" height="9.778" rx="1.624" transform="translate(892.203 263.6)" fill="#07d197"/>
+      <rect id="Rectangle_72" data-name="Rectangle 72" width="3.247" height="9.804" rx="1.624" transform="translate(892.203 279.879)" fill="#07d197"/>
+      <rect id="Rectangle_73" data-name="Rectangle 73" width="10.15" height="3.273" rx="1.624" transform="translate(880.714 274.992)" fill="#07d197"/>
+      <rect id="Rectangle_74" data-name="Rectangle 74" width="10.15" height="3.273" rx="1.624" transform="translate(896.82 274.992)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-20" id="Group_20" data-name="Group 20" opacity="0.31">
+      <rect id="Rectangle_75" data-name="Rectangle 75" width="3.247" height="9.778" rx="1.624" transform="translate(1070.203 263.6)" fill="#07d197"/>
+      <rect id="Rectangle_76" data-name="Rectangle 76" width="3.247" height="9.804" rx="1.624" transform="translate(1070.203 279.879)" fill="#07d197"/>
+      <rect id="Rectangle_77" data-name="Rectangle 77" width="10.15" height="3.273" rx="1.624" transform="translate(1058.714 274.992)" fill="#07d197"/>
+      <rect id="Rectangle_78" data-name="Rectangle 78" width="10.15" height="3.273" rx="1.624" transform="translate(1074.82 274.992)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-21" id="Group_21" data-name="Group 21" opacity="0.56">
+      <rect id="Rectangle_79" data-name="Rectangle 79" width="3.247" height="9.778" rx="1.624" transform="translate(800.585 263.587)" fill="#07d197"/>
+      <rect id="Rectangle_80" data-name="Rectangle 80" width="3.247" height="9.804" rx="1.624" transform="translate(800.585 279.866)" fill="#07d197"/>
+      <rect id="Rectangle_81" data-name="Rectangle 81" width="10.15" height="3.273" rx="1.624" transform="translate(789.096 274.978)" fill="#07d197"/>
+      <rect id="Rectangle_82" data-name="Rectangle 82" width="10.15" height="3.273" rx="1.624" transform="translate(805.201 274.978)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-22" id="Group_22" data-name="Group 22" opacity="0.75">
+      <rect id="Rectangle_83" data-name="Rectangle 83" width="3.247" height="9.778" rx="1.624" transform="translate(714.054 263.6)" fill="#07d197"/>
+      <rect id="Rectangle_84" data-name="Rectangle 84" width="3.247" height="9.804" rx="1.624" transform="translate(714.054 279.879)" fill="#07d197"/>
+      <rect id="Rectangle_85" data-name="Rectangle 85" width="10.15" height="3.273" rx="1.624" transform="translate(702.565 274.992)" fill="#07d197"/>
+      <rect id="Rectangle_86" data-name="Rectangle 86" width="10.15" height="3.273" rx="1.624" transform="translate(718.671 274.992)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-23" id="Group_23" data-name="Group 23" opacity="0.43">
+      <rect id="Rectangle_87" data-name="Rectangle 87" width="3.247" height="9.778" rx="1.624" transform="translate(1023.203 109.182)" fill="#07d197"/>
+      <rect id="Rectangle_88" data-name="Rectangle 88" width="3.247" height="9.804" rx="1.624" transform="translate(1023.203 125.461)" fill="#07d197"/>
+      <rect id="Rectangle_89" data-name="Rectangle 89" width="10.15" height="3.273" rx="1.624" transform="translate(1011.714 120.574)" fill="#07d197"/>
+      <rect id="Rectangle_90" data-name="Rectangle 90" width="10.15" height="3.273" rx="1.624" transform="translate(1027.82 120.574)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-24" id="Group_24" data-name="Group 24" opacity="0.75">
+      <rect id="Rectangle_91" data-name="Rectangle 91" width="3.247" height="9.778" rx="1.624" transform="translate(931.585 109.169)" fill="#07d197"/>
+      <rect id="Rectangle_92" data-name="Rectangle 92" width="3.247" height="9.804" rx="1.624" transform="translate(931.585 125.448)" fill="#07d197"/>
+      <rect id="Rectangle_93" data-name="Rectangle 93" width="10.15" height="3.273" rx="1.624" transform="translate(920.096 120.561)" fill="#07d197"/>
+      <rect id="Rectangle_94" data-name="Rectangle 94" width="10.15" height="3.273" rx="1.624" transform="translate(936.201 120.561)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-25" id="Group_25" data-name="Group 25" opacity="0.38">
+      <rect id="Rectangle_95" data-name="Rectangle 95" width="3.247" height="9.778" rx="1.624" transform="translate(530.648 62.05)" fill="#07d197"/>
+      <rect id="Rectangle_96" data-name="Rectangle 96" width="3.247" height="9.804" rx="1.624" transform="translate(530.648 78.329)" fill="#07d197"/>
+      <rect id="Rectangle_97" data-name="Rectangle 97" width="10.15" height="3.273" rx="1.624" transform="translate(519.159 73.442)" fill="#07d197"/>
+      <rect id="Rectangle_98" data-name="Rectangle 98" width="10.15" height="3.273" rx="1.624" transform="translate(535.265 73.442)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-26" id="Group_26" data-name="Group 26" opacity="0.75">
+      <rect id="Rectangle_99" data-name="Rectangle 99" width="3.247" height="9.778" rx="1.624" transform="translate(484.585 109.169)" fill="#07d197"/>
+      <rect id="Rectangle_100" data-name="Rectangle 100" width="3.247" height="9.804" rx="1.624" transform="translate(484.585 125.448)" fill="#07d197"/>
+      <rect id="Rectangle_101" data-name="Rectangle 101" width="10.15" height="3.273" rx="1.624" transform="translate(473.096 120.561)" fill="#07d197"/>
+      <rect id="Rectangle_102" data-name="Rectangle 102" width="10.15" height="3.273" rx="1.624" transform="translate(489.201 120.561)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-27" id="Group_27" data-name="Group 27" opacity="0.38">
+      <rect id="Rectangle_103" data-name="Rectangle 103" width="3.247" height="9.778" rx="1.624" transform="translate(711.648 62.05)" fill="#07d197"/>
+      <rect id="Rectangle_104" data-name="Rectangle 104" width="3.247" height="9.804" rx="1.624" transform="translate(711.648 78.329)" fill="#07d197"/>
+      <rect id="Rectangle_105" data-name="Rectangle 105" width="10.15" height="3.273" rx="1.624" transform="translate(700.159 73.442)" fill="#07d197"/>
+      <rect id="Rectangle_106" data-name="Rectangle 106" width="10.15" height="3.273" rx="1.624" transform="translate(716.265 73.442)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-28" id="Group_28" data-name="Group 28" opacity="0.75">
+      <rect id="Rectangle_107" data-name="Rectangle 107" width="3.247" height="9.778" rx="1.624" transform="translate(665.585 109.169)" fill="#07d197"/>
+      <rect id="Rectangle_108" data-name="Rectangle 108" width="3.247" height="9.804" rx="1.624" transform="translate(665.585 125.448)" fill="#07d197"/>
+      <rect id="Rectangle_109" data-name="Rectangle 109" width="10.15" height="3.273" rx="1.624" transform="translate(654.096 120.561)" fill="#07d197"/>
+      <rect id="Rectangle_110" data-name="Rectangle 110" width="10.15" height="3.273" rx="1.624" transform="translate(670.201 120.561)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-29" id="Group_29" data-name="Group 29" opacity="0.75">
+      <rect id="Rectangle_111" data-name="Rectangle 111" width="3.247" height="9.778" rx="1.624" transform="translate(845.054 109.182)" fill="#07d197"/>
+      <rect id="Rectangle_112" data-name="Rectangle 112" width="3.247" height="9.804" rx="1.624" transform="translate(845.054 125.461)" fill="#07d197"/>
+      <rect id="Rectangle_113" data-name="Rectangle 113" width="10.15" height="3.273" rx="1.624" transform="translate(833.565 120.574)" fill="#07d197"/>
+      <rect id="Rectangle_114" data-name="Rectangle 114" width="10.15" height="3.273" rx="1.624" transform="translate(849.671 120.574)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-30" id="Group_30" data-name="Group 30" opacity="0.75">
+      <rect id="Rectangle_115" data-name="Rectangle 115" width="3.247" height="9.778" rx="1.624" transform="translate(620.292 62.05)" fill="#07d197"/>
+      <rect id="Rectangle_116" data-name="Rectangle 116" width="3.247" height="9.804" rx="1.624" transform="translate(620.292 78.329)" fill="#07d197"/>
+      <rect id="Rectangle_117" data-name="Rectangle 117" width="10.15" height="3.273" rx="1.624" transform="translate(608.803 73.442)" fill="#07d197"/>
+      <rect id="Rectangle_118" data-name="Rectangle 118" width="10.15" height="3.273" rx="1.624" transform="translate(624.909 73.442)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-31" id="Group_31" data-name="Group 31" opacity="0.75">
+      <rect id="Rectangle_119" data-name="Rectangle 119" width="3.247" height="9.778" rx="1.624" transform="translate(577.054 109.182)" fill="#07d197"/>
+      <rect id="Rectangle_120" data-name="Rectangle 120" width="3.247" height="9.804" rx="1.624" transform="translate(577.054 125.461)" fill="#07d197"/>
+      <rect id="Rectangle_121" data-name="Rectangle 121" width="10.15" height="3.273" rx="1.624" transform="translate(565.565 120.574)" fill="#07d197"/>
+      <rect id="Rectangle_122" data-name="Rectangle 122" width="10.15" height="3.273" rx="1.624" transform="translate(581.671 120.574)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-32" id="Group_32" data-name="Group 32" opacity="0.38">
+      <rect id="Rectangle_123" data-name="Rectangle 123" width="3.247" height="9.778" rx="1.624" transform="translate(799.292 62.05)" fill="#07d197"/>
+      <rect id="Rectangle_124" data-name="Rectangle 124" width="3.247" height="9.804" rx="1.624" transform="translate(799.292 78.329)" fill="#07d197"/>
+      <rect id="Rectangle_125" data-name="Rectangle 125" width="10.15" height="3.273" rx="1.624" transform="translate(787.803 73.442)" fill="#07d197"/>
+      <rect id="Rectangle_126" data-name="Rectangle 126" width="10.15" height="3.273" rx="1.624" transform="translate(803.909 73.442)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-33" id="Group_33" data-name="Group 33" opacity="0.43">
+      <rect id="Rectangle_127" data-name="Rectangle 127" width="3.247" height="9.778" rx="1.624" transform="translate(756.054 109.182)" fill="#07d197"/>
+      <rect id="Rectangle_128" data-name="Rectangle 128" width="3.247" height="9.804" rx="1.624" transform="translate(756.054 125.461)" fill="#07d197"/>
+      <rect id="Rectangle_129" data-name="Rectangle 129" width="10.15" height="3.273" rx="1.624" transform="translate(744.565 120.574)" fill="#07d197"/>
+      <rect id="Rectangle_130" data-name="Rectangle 130" width="10.15" height="3.273" rx="1.624" transform="translate(760.671 120.574)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-34" id="Group_34" data-name="Group 34" opacity="0.64">
+      <rect id="Rectangle_131" data-name="Rectangle 131" width="3.247" height="9.778" rx="1.624" transform="translate(580.226 306.468)" fill="#07d197"/>
+      <rect id="Rectangle_132" data-name="Rectangle 132" width="3.247" height="9.804" rx="1.624" transform="translate(580.226 322.747)" fill="#07d197"/>
+      <rect id="Rectangle_133" data-name="Rectangle 133" width="10.15" height="3.273" rx="1.624" transform="translate(568.738 317.86)" fill="#07d197"/>
+      <rect id="Rectangle_134" data-name="Rectangle 134" width="10.15" height="3.273" rx="1.624" transform="translate(584.843 317.86)" fill="#07d197"/>
+    </g>
+    <g class="aivory-plus aivory-plus-35" id="Group_35" data-name="Group 35">
+      <rect id="Rectangle_135" data-name="Rectangle 135" width="3.247" height="9.778" rx="1.624" transform="translate(623.519 263.587)" fill="#07d197"/>
+      <rect id="Rectangle_136" data-name="Rectangle 136" width="3.247" height="9.804" rx="1.624" transform="translate(623.519 279.866)" fill="#07d197"/>
+      <rect id="Rectangle_137" data-name="Rectangle 137" width="10.15" height="3.273" rx="1.624" transform="translate(612.031 274.978)" fill="#07d197"/>
+      <rect id="Rectangle_138" data-name="Rectangle 138" width="10.15" height="3.273" rx="1.624" transform="translate(628.136 274.978)" fill="#07d197"/>
+    </g>
+  </g>
+</svg>
+
+            
+            <h1 class="hero-title">Know exactly what AI system to build.<br>Before you build it</h1>
+            <h2 class="hero-subtitle">Make AI make sense</h2>
+            <p class="hero-subline">Aivory turns readiness diagnostic into deployable AI systems, built on clarity, not guesswork.</p>
+            
             <div class="hero-cta-group">
-                <button class="cta-button primary" onclick="showSection('diagnostic')">Run AI Readiness Diagnostic</button>
-                <button class="cta-button secondary" onclick="scrollToPricing()">Explore Pricing</button>
+                <button class="cta-button primary" onclick="startFreeDiagnostic()">Run Free AI Readiness Diagnostic</button>
+                <button class="secondary-button" onclick="document.getElementById('use-cases').scrollIntoView({behavior: 'smooth'})">View use cases</button>
+            </div>
+            
+            <!-- Hero Capability Chips -->
+            <div class="hero-chips-container" role="list">
+                <div class="hero-chip" role="listitem">Automate Internal Workflows</div>
+                <div class="hero-chip" role="listitem">Deploy AI Agents</div>
+                <div class="hero-chip" role="listitem">Reduce Manual Work</div>
+                <div class="hero-chip" role="listitem">Generate Reports Automatically</div>
+                <div class="hero-chip" role="listitem">Integrate with Your Tools</div>
+                <div class="hero-chip" role="listitem">Identify High-ROI Opportunities</div>
             </div>
         </div>
 
-        <!-- One-Time Assessments Section -->
-        <div class="pricing-section" id="pricing-section">
-            <h2 class="section-title">AI Readiness Assessments</h2>
-            <p class="section-subtitle">One-time diagnostic services to understand your AI readiness.</p>
+        <!-- What You Can Build Section -->
+        <div class="use-cases-section" id="use-cases">
+            <div class="container">
+                <h2 class="use-cases-title">What You Can Build</h2>
+                <p class="use-cases-subtitle">Real AI systems. Designed and deployed from your diagnostic.</p>
+                
+                <div class="use-cases-grid">
+                    <!-- Card 1: Invoice Processing AI -->
+                    <div class="use-case-card" onclick="startFreeDiagnostic()">
+                        <h3 class="use-case-name">Invoice Processing AI</h3>
+                        <p class="use-case-description">Automatically extract, validate, and route invoice data from incoming documents.</p>
+                        <div class="capability-tags">
+                            <span class="tag">Document parsing</span>
+                            <span class="tag">Data extraction</span>
+                            <span class="tag">ERP integration</span>
+                            <span class="tag">Workflow automation</span>
+                        </div>
+                        <p class="use-case-outcome">Eliminates manual invoice handling and reduces processing time by up to 90%.</p>
+                    </div>
+
+                    <!-- Card 2: Sales Qualification Agent -->
+                    <div class="use-case-card" onclick="startFreeDiagnostic()">
+                        <h3 class="use-case-name">Sales Qualification Agent</h3>
+                        <p class="use-case-description">Analyze inbound leads and automatically qualify, score, and route them.</p>
+                        <div class="capability-tags">
+                            <span class="tag">Lead scoring</span>
+                            <span class="tag">CRM integration</span>
+                            <span class="tag">AI decision logic</span>
+                            <span class="tag">Automated routing</span>
+                        </div>
+                        <p class="use-case-outcome">Ensures your team only focuses on high-value opportunities.</p>
+                    </div>
+
+                    <!-- Card 3: Support Triage AI -->
+                    <div class="use-case-card" onclick="startFreeDiagnostic()">
+                        <h3 class="use-case-name">Support Triage AI</h3>
+                        <p class="use-case-description">Classify, prioritize, and route support tickets automatically.</p>
+                        <div class="capability-tags">
+                            <span class="tag">Intent classification</span>
+                            <span class="tag">Priority detection</span>
+                            <span class="tag">Ticket routing</span>
+                            <span class="tag">Response assistance</span>
+                        </div>
+                        <p class="use-case-outcome">Reduces response time and improves support efficiency.</p>
+                    </div>
+
+                    <!-- Card 4: Internal Knowledge AI -->
+                    <div class="use-case-card" onclick="startFreeDiagnostic()">
+                        <h3 class="use-case-name">Internal Knowledge AI</h3>
+                        <p class="use-case-description">Enable teams to query internal knowledge and get accurate AI answers.</p>
+                        <div class="capability-tags">
+                            <span class="tag">Knowledge retrieval</span>
+                            <span class="tag">Semantic search</span>
+                            <span class="tag">Internal data integration</span>
+                            <span class="tag">AI assistant</span>
+                        </div>
+                        <p class="use-case-outcome">Gives your team instant access to operational knowledge.</p>
+                    </div>
+
+                    <!-- Card 5: Operations Reporting AI -->
+                    <div class="use-case-card" onclick="startFreeDiagnostic()">
+                        <h3 class="use-case-name">Operations Reporting AI</h3>
+                        <p class="use-case-description">Generate operational insights and reports automatically from your systems.</p>
+                        <div class="capability-tags">
+                            <span class="tag">Data aggregation</span>
+                            <span class="tag">Insight generation</span>
+                            <span class="tag">Automated reporting</span>
+                            <span class="tag">Dashboard integration</span>
+                        </div>
+                        <p class="use-case-outcome">Turns raw operational data into actionable insights.</p>
+                    </div>
+
+                    <!-- Card 6: Workflow Orchestration AI -->
+                    <div class="use-case-card" onclick="startFreeDiagnostic()">
+                        <h3 class="use-case-name">Workflow Orchestration AI</h3>
+                        <p class="use-case-description">Coordinate workflows across tools and systems automatically using AI-driven logic.</p>
+                        <div class="capability-tags">
+                            <span class="tag">Workflow automation</span>
+                            <span class="tag">Multi-tool integration</span>
+                            <span class="tag">Decision logic</span>
+                            <span class="tag">Agent orchestration</span>
+                        </div>
+                        <p class="use-case-outcome">Eliminates manual coordination and ensures operations run automatically end-to-end.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI System Lifecycle Section -->
+        <div class="lifecycle-section" id="pricing-section">
+            <h2 class="section-title">Start with clarity. End with deployed AI systems.</h2>
+            <p class="section-subtitle">Aivory guides you from readiness → system design → deployment.</p>
             
-            <div class="pricing-cards">
-                <div class="pricing-card">
-                    <h3>AI Snapshot</h3>
-                    <div class="price-tag">$49</div>
-                    <p class="card-subtitle">Quick AI readiness assessment with structured scoring and automation opportunity signals.</p>
+            <div class="lifecycle-flow">
+                <!-- Step 1: Snapshot -->
+                <div class="lifecycle-card">
+                    <div class="step-label">STEP 1</div>
+                    <h3 class="lifecycle-title">AI Readiness Snapshot</h3>
+                    <div class="lifecycle-price">$15 <span class="price-period">one-time</span></div>
+                    <p class="lifecycle-description">Understand your AI readiness and identify the best systems to build.</p>
                     <ul class="feature-list">
                         <li>AI readiness score</li>
-                        <li>Category positioning</li>
-                        <li>Top 3 automation opportunities</li>
-                        <li>Shareable readiness badge</li>
+                        <li>Gap analysis</li>
+                        <li>Automation opportunities</li>
+                        <li>AI system recommendations</li>
                     </ul>
-                    <button class="pricing-button" onclick="showSection('contact')">Run Snapshot</button>
+                    <button class="pricing-button" onclick="startSnapshot()">Run AI Snapshot — $15</button>
                 </div>
 
-                <div class="pricing-card">
-                    <h3>Deep Diagnostic</h3>
-                    <div class="price-tag">$149</div>
-                    <p class="card-subtitle">Comprehensive workflow diagnosis and AI system blueprint recommendation.</p>
+                <!-- Flow Arrow -->
+                <div class="flow-arrow">→</div>
+
+                <!-- Step 2: Blueprint -->
+                <div class="lifecycle-card featured-lifecycle">
+                    <div class="popular-badge">MOST POPULAR</div>
+                    <div class="step-label">STEP 2</div>
+                    <h3 class="lifecycle-title">AI System Blueprint</h3>
+                    <div class="lifecycle-price">$99 <span class="price-period">one-time</span></div>
+                    <p class="lifecycle-description">Design your AI system architecture and prepare it for deployment.</p>
                     <ul class="feature-list">
-                        <li>Full readiness analysis</li>
-                        <li>Workflow inefficiency mapping</li>
-                        <li>Automation ROI estimation</li>
-                        <li>AI system blueprint draft</li>
-                        <li>Implementation priority roadmap</li>
+                        <li>Full AI system blueprint</li>
+                        <li>Workflow architecture</li>
+                        <li>Agent structure design</li>
+                        <li>Deployment-ready plan</li>
                     </ul>
-                    <button class="pricing-button" onclick="showSection('contact')">Run Deep Diagnostic</button>
+                    <button class="pricing-button" onclick="startBlueprint()">Generate AI Blueprint — $99</button>
+                </div>
+
+                <!-- Flow Arrow -->
+                <div class="flow-arrow">→</div>
+
+                <!-- Step 3: Deploy -->
+                <div class="lifecycle-card">
+                    <div class="step-label">STEP 3</div>
+                    <h3 class="lifecycle-title">Deploy and operate your AI systems</h3>
+                    <div class="lifecycle-price">Subscription</div>
+                    <p class="lifecycle-description">Deploy your AI systems and run them in production using Aivory.</p>
+                    <ul class="feature-list">
+                        <li>Automation Builder access</li>
+                        <li>AI workflow deployment</li>
+                        <li>Agent orchestration</li>
+                        <li>Continuous optimization</li>
+                    </ul>
+                    <button class="pricing-button" onclick="document.querySelector('.subscription-section').scrollIntoView({behavior: 'smooth'})">View Deployment Plans</button>
                 </div>
             </div>
         </div>
@@ -73,105 +451,146 @@
             <p class="section-subtitle">Design your AI system. Then deploy it. Make AI make sense.</p>
             
             <div class="pricing-cards">
-                <div class="pricing-card">
-                    <h3>Foundation</h3>
-                    <p class="tier-tagline">AI Operating Partner — Activate</p>
-                    <div class="price-tag">$200<span class="period">/month</span></div>
-                    <p class="card-subtitle">For teams starting automation.</p>
-                    
-                    <div class="limits-display">
-                        <div class="limit-item">
-                            <span class="limit-label">Workflows:</span>
-                            <span class="limit-value">Up to 3</span>
-                        </div>
-                        <div class="limit-item">
-                            <span class="limit-label">Executions:</span>
-                            <span class="limit-value">3,000/month</span>
-                        </div>
-                    </div>
+                <!-- Builder Tier -->
+                <div class="pricing-card pricing-card-builder">
+                    <h3>Builder</h3>
+                    <div class="price-tag">$199<span class="period">/month</span></div>
+                    <p class="card-subtitle">For teams validating their first AI workflows.</p>
                     
                     <ul class="feature-list">
-                        <li>AI Blueprint → Auto-converted into workflows</li>
-                        <li>Up to 3 active workflows</li>
-                        <li>Up to 3,000 executions per month</li>
-                        <li>Automation Builder access</li>
-                        <li>Monitoring dashboard</li>
-                        <li>Automated monthly AI health scan</li>
-                        <li>Performance alerts</li>
+                        <li>3 Active Workflows</li>
+                        <li>2,500 Executions / month</li>
+                        <li>50 Intelligence Credits <span class="tooltip-icon" data-tooltip="intelligence-credits">ⓘ</span></li>
+                        <li>Aivory Orchestrated Workflows</li>
                         <li>Standard integrations</li>
+                        <li>Email support</li>
                     </ul>
-                    <button class="pricing-button" onclick="selectPlan('foundation')">Start Foundation</button>
+                    <button class="pricing-button" onclick="selectPlan('builder')">Choose Builder</button>
                 </div>
 
-                <div class="pricing-card featured-card">
+                <!-- Operator Tier (Featured) -->
+                <div class="pricing-card featured-card pricing-card-operator">
                     <div class="popular-badge">MOST POPULAR</div>
-                    <h3>Acceleration</h3>
-                    <p class="tier-tagline">AI Operating Partner — Scale</p>
-                    <div class="price-tag">$500<span class="period">/month</span></div>
-                    <p class="card-subtitle">For scaling AI across operations.</p>
-                    
-                    <div class="limits-display">
-                        <div class="limit-item">
-                            <span class="limit-label">Workflows:</span>
-                            <span class="limit-value">Up to 10</span>
-                        </div>
-                        <div class="limit-item">
-                            <span class="limit-label">Executions:</span>
-                            <span class="limit-value">15,000/month</span>
-                        </div>
-                    </div>
+                    <h3>Operator</h3>
+                    <div class="price-tag">$499<span class="period">/month</span></div>
+                    <p class="card-subtitle">For teams running AI decisions daily.</p>
                     
                     <ul class="feature-list">
-                        <li>Up to 10 active workflows</li>
-                        <li>Up to 15,000 executions per month</li>
-                        <li>Agent orchestration</li>
-                        <li>Cross-tool integrations</li>
-                        <li>Workflow impact analytics</li>
-                        <li>Quarterly AI re-diagnostic</li>
-                        <li>Optimization suggestions (AI-generated)</li>
-                    </ul>
-                    <button class="pricing-button primary" onclick="selectPlan('acceleration')">Upgrade to Acceleration</button>
-                </div>
-
-                <div class="pricing-card">
-                    <h3>Intelligence</h3>
-                    <p class="tier-tagline">AI Operating Partner — Operate</p>
-                    <div class="price-tag">$1,000<span class="period">/month</span></div>
-                    <p class="card-subtitle">For org-wide AI deployment.</p>
-                    
-                    <div class="limits-display">
-                        <div class="limit-item">
-                            <span class="limit-label">Workflows:</span>
-                            <span class="limit-value">Unlimited</span>
-                        </div>
-                        <div class="limit-item">
-                            <span class="limit-label">Executions:</span>
-                            <span class="limit-value">Unlimited</span>
-                        </div>
-                    </div>
-                    
-                    <ul class="feature-list">
-                        <li>Unlimited workflows</li>
-                        <li>Unlimited executions</li>
-                        <li>Custom AI agents</li>
-                        <li>Org-level AI performance dashboard</li>
-                        <li>Continuous optimization loop</li>
-                        <li>AI system architecture review</li>
+                        <li>10 Active Workflows</li>
+                        <li>10,000 Executions</li>
+                        <li>300 Intelligence Credits <span class="tooltip-icon" data-tooltip="intelligence-credits">ⓘ</span></li>
+                        <li>Aivory Orchestrated Workflows</li>
+                        <li>Advanced integrations</li>
+                        <li>Conditional logic & branching</li>
                         <li>Priority support</li>
                     </ul>
-                    <button class="pricing-button" onclick="selectPlan('intelligence')">Contact Sales</button>
+                    <button class="pricing-button primary" onclick="selectPlan('operator')">Choose Operator</button>
                 </div>
+
+                <!-- Enterprise Tier -->
+                <div class="pricing-card pricing-card-enterprise">
+                    <h3>Enterprise</h3>
+                    <div class="price-tag"><span class="price-prefix">Starting at</span> $1,200<span class="period">/month</span></div>
+                    <p class="card-subtitle">For organizations deploying AI at scale.</p>
+                    
+                    <ul class="feature-list">
+                        <li>Unlimited Workflows</li>
+                        <li>50,000 Executions included</li>
+                        <li>2,000 Intelligence Credits included <span class="tooltip-icon" data-tooltip="intelligence-credits">ⓘ</span></li>
+                        <li>Advanced Orchestration Controls</li>
+                        <li>Aivory CMR (Custom Mechanism Routing)</li>
+                        <li>Dedicated compute handling</li>
+                        <li>SLA guarantee</li>
+                        <li>Advanced audit logs</li>
+                        <li>Multi-team workspace</li>
+                        <li>Custom integrations</li>
+                        <li>Dedicated account manager</li>
+                    </ul>
+                    <button class="pricing-button" onclick="selectPlan('enterprise')">Talk to Enterprise</button>
+                </div>
+            </div>
+
+            <!-- Tooltip -->
+            <div id="intelligence-credits-tooltip" class="ic-tooltip" style="display: none;">
+                <p>1 Intelligence Credit = 1 AI reasoning execution. Credits are consumed only when workflows require AI decision-making.</p>
             </div>
         </div>
 
-        <!-- Build Automation Now Section -->
+        <!-- Intelligence Credit Marketplace (NEW SECTION) -->
+        <div class="ic-marketplace-section">
+            <h2 class="section-title">Intelligence Credit Marketplace</h2>
+            <p class="section-subtitle">Scale your AI reasoning capacity anytime.</p>
+            
+            <!-- Starter Packs -->
+            <div class="ic-packs-container">
+                <div class="ic-pack-grid">
+                    <div class="ic-pack-card">
+                        <div class="ic-amount">50 IC</div>
+                        <div class="ic-price">$5</div>
+                        <button class="ic-button" onclick="addCredits(50)">Add Credits</button>
+                    </div>
+                    <div class="ic-pack-card">
+                        <div class="ic-amount">100 IC</div>
+                        <div class="ic-price">$9</div>
+                        <button class="ic-button" onclick="addCredits(100)">Add Credits</button>
+                    </div>
+                    <div class="ic-pack-card">
+                        <div class="ic-amount">250 IC</div>
+                        <div class="ic-price">$20</div>
+                        <button class="ic-button" onclick="addCredits(250)">Add Credits</button>
+                    </div>
+                    <div class="ic-pack-card">
+                        <div class="ic-amount">500 IC</div>
+                        <div class="ic-price">$38</div>
+                        <button class="ic-button" onclick="addCredits(500)">Add Credits</button>
+                    </div>
+                    <div class="ic-pack-card">
+                        <div class="ic-amount">1,000 IC</div>
+                        <div class="ic-price">$70</div>
+                        <button class="ic-button" onclick="addCredits(1000)">Add Credits</button>
+                    </div>
+                </div>
+                <p class="ic-pack-note">Ideal for light and experimental usage.</p>
+            </div>
+
+            <!-- Divider -->
+            <div class="ic-divider"></div>
+
+            <!-- Scale Packs -->
+            <div class="ic-packs-container">
+                <div class="ic-pack-grid">
+                    <div class="ic-pack-card">
+                        <div class="ic-amount">2,500 IC</div>
+                        <div class="ic-price">$165</div>
+                        <button class="ic-button" onclick="addCredits(2500)">Add Credits</button>
+                    </div>
+                    <div class="ic-pack-card ic-popular">
+                        <div class="ic-popular-label">MOST POPULAR</div>
+                        <div class="ic-amount">5,000 IC</div>
+                        <div class="ic-price">$300</div>
+                        <button class="ic-button" onclick="addCredits(5000)">Add Credits</button>
+                    </div>
+                    <div class="ic-pack-card">
+                        <div class="ic-amount">10,000 IC</div>
+                        <div class="ic-price">$550</div>
+                        <button class="ic-button" onclick="addCredits(10000)">Add Credits</button>
+                    </div>
+                </div>
+                <p class="ic-pack-note">Designed for sustained AI operations.</p>
+            </div>
+
+            <!-- Footer Note -->
+            <p class="ic-footer-note">Bulk discounts automatically applied for Enterprise customers.</p>
+        </div>
+
+        <!-- Build Now Section -->
         <div class="action-cards-section">
-            <h2 class="section-title">Build Automation Now</h2>
+            <h2 class="section-title">Build Now</h2>
             <div class="action-cards">
                 <div class="action-card">
-                    <h3>Run AI Readiness Diagnostic</h3>
+                    <h3>Run Free Diagnostic</h3>
                     <p>12-question assessment to evaluate your AI readiness in under 3 minutes.</p>
-                    <button class="card-button" onclick="showSection('diagnostic')">Start Diagnostic</button>
+                    <button class="card-button" onclick="startFreeDiagnostic()">Start Free Diagnostic</button>
                 </div>
                 
                 <div class="action-card">
@@ -189,98 +608,145 @@
         </div>
     </section>
 
-    <!-- Section 2: Diagnostic Flow -->
-    <section id="diagnostic" class="section">
+    <!-- Section 2: FREE AI Readiness Diagnostic (12 questions) -->
+    <section id="free-diagnostic" class="section">
         <div class="container">
-            <div id="diagnostic-questions" class="diagnostic-container">
-                <h2>AI Readiness Diagnostic</h2>
+            <div id="free-diagnostic-questions" class="diagnostic-container">
+                <h2>Free AI Readiness Diagnostic</h2>
                 <div class="progress-bar">
-                    <div id="progress-fill" class="progress-fill"></div>
+                    <div id="free-progress-fill" class="progress-fill"></div>
                 </div>
-                <p class="progress-text">Question <span id="current-question">1</span> of 12</p>
+                <p class="progress-text">Question <span id="free-current-question">1</span> of 12</p>
                 
-                <div id="question-container"></div>
+                <div id="free-question-container"></div>
                 
                 <div class="navigation-buttons">
-                    <button id="prev-button" class="nav-button" onclick="previousQuestion()" disabled>Previous</button>
-                    <button id="next-button" class="nav-button" onclick="nextQuestion()" disabled>Next</button>
-                    <button id="submit-button" class="nav-button primary" onclick="submitDiagnostic()" style="display:none;">Submit Diagnostic</button>
+                    <button id="free-prev-button" class="nav-button" onclick="previousFreeQuestion()" disabled>Previous</button>
+                    <button id="free-next-button" class="nav-button" onclick="nextFreeQuestion()" disabled>Next</button>
+                    <button id="free-submit-button" class="nav-button primary" onclick="submitFreeDiagnostic()" style="display:none;">Submit Diagnostic</button>
                 </div>
             </div>
 
             <!-- Loading State -->
-            <div id="diagnostic-loading" class="loading-container" style="display:none;">
+            <div id="free-diagnostic-loading" class="loading-container" style="display:none;">
                 <div class="spinner"></div>
-                <h2>AI is analyzing how your organization works</h2>
-                <p>Identifying bottlenecks, readiness level, and improvement signals</p>
+                <h2>Analyzing Your AI Readiness...</h2>
+                <p>Processing your 12 answers to generate your readiness score</p>
             </div>
 
             <!-- Results -->
-            <div id="diagnostic-results" class="results-container" style="display:none;">
+            <div id="free-diagnostic-results" class="results-container" style="display:none;">
                 <div class="score-section">
-                    <h2>AI Readiness Score</h2>
+                    <h2>Your AI Readiness Score</h2>
                     <div class="score-display">
-                        <span id="score-number" class="score-number">--</span>
-                        <span id="score-category" class="score-category">--</span>
+                        <span id="free-score-number" class="score-number">--</span>
+                        <span id="free-score-category" class="score-category">--</span>
                     </div>
-                    <p id="category-explanation" class="category-explanation"></p>
+                    <p id="free-category-explanation" class="category-explanation"></p>
                 </div>
 
                 <div class="section-box">
                     <h3>Key Insights</h3>
-                    <ul id="insights-list" class="insights-list"></ul>
+                    <ul id="free-insights-list" class="insights-list"></ul>
                 </div>
 
                 <div class="section-box">
                     <h3>Recommendation</h3>
-                    <p id="recommendation-text" class="recommendation-text"></p>
+                    <p id="free-recommendation-text" class="recommendation-text"></p>
                 </div>
 
                 <div class="section-box">
                     <h3>Your AI Readiness Badge</h3>
-                    <div id="badge-container" class="badge-container"></div>
-                    <button class="secondary-button" onclick="downloadBadge()">Download Badge</button>
+                    <div id="free-badge-container" class="badge-container"></div>
+                    <button class="secondary-button" onclick="downloadFreeBadge()">Download Badge</button>
                     <p class="hint-text">Share your readiness score with your team</p>
                 </div>
 
-                <!-- Dynamic Upgrade Recommendation -->
-                <div id="upgrade-recommendation" class="section-box upgrade-box">
-                    <h3>Recommended Next Step</h3>
-                    <div id="recommendation-content"></div>
+                <!-- Access Dashboard CTA -->
+                <div class="cta-section">
+                    <button class="cta-button primary" onclick="accessDashboard('free')">Access Dashboard</button>
+                    <p class="hint-text">View your complete AI readiness analysis</p>
                 </div>
 
-                <!-- Tiered Offerings -->
-                <div class="offerings-section">
-                    <h2>Take the Next Step</h2>
-                    <div class="tier-cards">
-                        <div class="tier-card">
-                            <h4>Quick AI Snapshot</h4>
-                            <div class="price">$49</div>
-                            <p>High-level AI readiness diagnosis. Includes score, category, and recommendations.</p>
-                            <button class="tier-button" onclick="showSection('contact')">Get Snapshot</button>
-                        </div>
-
-                        <div class="tier-card featured">
-                            <div class="featured-badge">Most Popular</div>
-                            <h4>Operational Diagnostic</h4>
-                            <div class="price">$150</div>
-                            <p>Deeper workflow, data, and automation gap analysis with structured report.</p>
-                            <button class="tier-button" onclick="showSection('contact')">Get Diagnostic</button>
-                        </div>
-
-                        <div class="tier-card">
-                            <h4>Deep AI Transformation</h4>
-                            <div class="price">Custom</div>
-                            <p>End-to-end diagnostic, roadmap, and implementation guidance.</p>
-                            <button class="tier-button" onclick="showSection('contact')">Contact Us</button>
-                        </div>
-                    </div>
+                <!-- Upgrade Options (Unlocked after free diagnostic) -->
+                <div id="free-upgrade-options" class="section-box upgrade-box">
+                    <!-- Will be populated by JavaScript after free diagnostic completes -->
                 </div>
 
                 <div class="cta-section">
-                    <button class="cta-button primary" onclick="showSection('homepage')">Start New Diagnostic</button>
+                    <button class="cta-button secondary" onclick="showSection('homepage')">Start New Diagnostic</button>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <!-- Section 2.5: AI SNAPSHOT DIAGNOSTIC (30 questions) -->
+    <section id="snapshot-diagnostic" class="section">
+        <div class="container">
+            <div id="snapshot-diagnostic-questions" class="diagnostic-container">
+                <h2>AI Snapshot Diagnostic ($15)</h2>
+                <p class="lead">30-question structured assessment for AI system design</p>
+                <div class="progress-bar">
+                    <div id="snapshot-progress-fill" class="progress-fill"></div>
+                </div>
+                <p class="progress-text">Question <span id="snapshot-current-question">1</span> of 30</p>
+                
+                <div id="snapshot-question-container"></div>
+                
+                <div class="navigation-buttons">
+                    <button id="snapshot-prev-button" class="nav-button" onclick="previousSnapshotQuestion()" disabled>Previous</button>
+                    <button id="snapshot-next-button" class="nav-button" onclick="nextSnapshotQuestion()" disabled>Next</button>
+                    <button id="snapshot-submit-button" class="nav-button primary" onclick="submitSnapshotDiagnostic()" style="display:none;">Submit Snapshot Diagnostic</button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="snapshot-diagnostic-loading" class="loading-container" style="display:none;">
+                <div class="spinner"></div>
+                <h2>Generating Your AI Snapshot...</h2>
+                <p>Processing your 30 answers to generate system design direction with A-to-A pseudo-code...</p>
+            </div>
+
+            <!-- Results handled by dashboard -->
+            <div id="snapshot-diagnostic-results" class="results-container" style="display:none;">
+                <!-- Results will redirect to dashboard -->
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Snapshot Loading Section -->
+    <section id="snapshot-loading" class="section">
+        <div class="container">
+            <div class="loading-container">
+                <div class="spinner"></div>
+                <h2>Generating Your AI Snapshot...</h2>
+                <p>Our AI is analyzing your readiness using your free diagnostic answers. This takes 5-10 seconds.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Snapshot Results Section -->
+    <section id="snapshot-results" class="section">
+        <div class="container">
+            <div id="snapshot-results-container"></div>
+        </div>
+    </section>
+
+    <!-- AI Blueprint Loading Section -->
+    <section id="blueprint-loading" class="section">
+        <div class="container">
+            <div class="loading-container">
+                <div class="spinner"></div>
+                <h2>Generating Your AI System Blueprint...</h2>
+                <p>Our AI is designing your custom system using your free diagnostic answers. This takes 10-15 seconds.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Blueprint Results Section -->
+    <section id="blueprint-results" class="section">
+        <div class="container">
+            <div id="blueprint-results-container"></div>
         </div>
     </section>
 
@@ -292,19 +758,50 @@
             
             <div class="features-grid">
                 <div class="feature-item">
-                    <h3>🔄 Workflow Automation</h3>
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
+                            <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                        </svg>
+                        Workflow Automation
+                    </h3>
                     <p>Automate repetitive processes and free up your team for strategic work.</p>
                 </div>
                 <div class="feature-item">
-                    <h3>🤖 AI Agents</h3>
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="3"/>
+                            <line x1="12" y1="2" x2="12" y2="9"/>
+                            <line x1="12" y1="15" x2="12" y2="22"/>
+                            <line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/>
+                            <line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/>
+                            <line x1="2" y1="12" x2="9" y2="12"/>
+                            <line x1="15" y1="12" x2="22" y2="12"/>
+                            <line x1="4.93" y1="19.07" x2="9.17" y2="14.83"/>
+                            <line x1="14.83" y1="9.17" x2="19.07" y2="4.93"/>
+                        </svg>
+                        AI Agents
+                    </h3>
                     <p>Deploy intelligent agents that handle complex tasks autonomously.</p>
                 </div>
                 <div class="feature-item">
-                    <h3>🔗 ERP Integration</h3>
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                        </svg>
+                        ERP Integration
+                    </h3>
                     <p>Connect your systems and create seamless data flows.</p>
                 </div>
                 <div class="feature-item">
-                    <h3>📊 Decision Support</h3>
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
+                            <line x1="18" y1="20" x2="18" y2="10"/>
+                            <line x1="12" y1="20" x2="12" y2="4"/>
+                            <line x1="6" y1="20" x2="6" y2="14"/>
+                        </svg>
+                        Decision Support
+                    </h3>
                     <p>Get AI-powered insights for faster, better decision-making.</p>
                 </div>
             </div>
@@ -323,19 +820,44 @@
             
             <div class="features-grid">
                 <div class="feature-item">
-                    <h3>🎯 Strategic Planning</h3>
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v6l4 2"/>
+                        </svg>
+                        Strategic Planning
+                    </h3>
                     <p>Use diagnostic signals to inform your AI strategy and roadmap.</p>
                 </div>
                 <div class="feature-item">
-                    <h3>🏗️ Architecture Design</h3>
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
+                            <rect x="3" y="3" width="7" height="7" rx="1"/>
+                            <rect x="14" y="3" width="7" height="7" rx="1"/>
+                            <rect x="14" y="14" width="7" height="7" rx="1"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        </svg>
+                        Architecture Design
+                    </h3>
                     <p>Build scalable, maintainable AI systems from the ground up.</p>
                 </div>
                 <div class="feature-item">
-                    <h3>📈 Roadmap Development</h3>
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                        </svg>
+                        Roadmap Development
+                    </h3>
                     <p>Create a phased implementation plan aligned with business goals.</p>
                 </div>
                 <div class="feature-item">
-                    <h3>🔍 Technology Selection</h3>
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        Technology Selection
+                    </h3>
                     <p>Choose the right tools and platforms for your specific needs.</p>
                 </div>
             </div>
@@ -417,6 +939,99 @@
         </div>
     </footer>
 
+    <script src="diagnostic-questions-paid.js"></script>
+    <script src="diagnostic-questions-snapshot.js"></script>
     <script src="app.js"></script>
+    
+    <script>
+        // Dashboard Login Functions
+        function showLoginModal() {
+            document.getElementById('loginModal').style.display = 'flex';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('loginError').style.display = 'none';
+            
+            // Force input styles
+            const inputs = document.querySelectorAll('#loginModal .login-input');
+            inputs.forEach(input => {
+                input.style.background = 'rgba(255, 255, 255, 0.08)';
+                input.style.border = '1.5px solid rgba(255, 255, 255, 0.2)';
+                input.style.borderRadius = '9999px';
+                input.style.padding = '1rem 1.5rem';
+                input.style.color = 'white';
+            });
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+
+        function handleLogin() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+
+            // Mock credentials
+            const validUsername = 'LordAivory';
+            const validPassword = 'kayarayasampaijannah';
+
+            if (username === validUsername && password === validPassword) {
+                // Store session in sessionStorage
+                sessionStorage.setItem('isLoggedIn', 'true');
+                sessionStorage.setItem('username', username);
+                
+                // Redirect to dashboard
+                window.location.href = 'dashboard.html';
+            } else {
+                // Show error
+                errorDiv.textContent = 'Invalid username or password';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function showRegisterMessage() {
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.textContent = 'Feature under construction';
+            errorDiv.style.color = '#ffaa00';
+            errorDiv.style.display = 'block';
+        }
+
+        function handleGoogleSignIn() {
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.textContent = 'Google Sign In - Feature under construction';
+            errorDiv.style.color = '#ffaa00';
+            errorDiv.style.display = 'block';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('loginModal');
+            if (event.target === modal) {
+                closeLoginModal();
+            }
+        }
+
+        // Allow Enter key to submit login
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('password');
+            const usernameInput = document.getElementById('username');
+            
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        handleLogin();
+                    }
+                });
+            }
+            
+            if (usernameInput) {
+                usernameInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        handleLogin();
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

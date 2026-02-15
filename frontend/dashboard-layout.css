@@ -1,0 +1,393 @@
+/**
+ * AIVORY Dashboard Layout System
+ * Enterprise-grade dashboard layout with persistent sidebar and main canvas
+ */
+
+/* ============================================================================
+   DASHBOARD GRID LAYOUT
+   ============================================================================ */
+
+.dashboard-layout {
+    display: grid;
+    grid-template-areas:
+        "topbar topbar"
+        "sidebar main";
+    grid-template-columns: 200px 1fr;
+    grid-template-rows: 60px 1fr;
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* ============================================================================
+   TOP BAR
+   ============================================================================ */
+
+.dashboard-topbar {
+    grid-area: topbar;
+    background: rgba(64, 32, 165, 0.85);
+    border-bottom: 1px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-3);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.topbar-logo {
+    height: 32px;
+    cursor: pointer;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.topbar-stat {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 0.5rem 1rem;
+    background: var(--card-bg);
+    border-radius: var(--radius-button);
+    border: 1px solid var(--card-border);
+}
+
+.topbar-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.topbar-stat-value {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    font-weight: var(--font-weight-normal);
+}
+
+.topbar-stat-value.success {
+    color: var(--success);
+}
+
+.topbar-stat-value.warning {
+    color: var(--warning);
+}
+
+.topbar-stat-value.error {
+    color: var(--error);
+}
+
+/* ============================================================================
+   SIDEBAR NAVIGATION
+   ============================================================================ */
+
+.dashboard-sidebar {
+    grid-area: sidebar;
+    background: rgba(64, 32, 165, 0.85);
+    border-right: 1px solid var(--card-border);
+    padding: var(--space-3) 0;
+    position: sticky;
+    top: 60px;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.sidebar-nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: var(--transition-standard);
+    cursor: pointer;
+    border-left: 3px solid transparent;
+}
+
+.sidebar-nav-item:hover {
+    background: var(--card-bg);
+    color: var(--text-primary);
+    border-left-color: var(--mint-green);
+}
+
+.sidebar-nav-item.active {
+    background: var(--card-bg);
+    color: var(--mint-green);
+    border-left-color: var(--mint-green);
+}
+
+.sidebar-nav-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sidebar-nav-icon svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+}
+
+.sidebar-section-title {
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: var(--space-2);
+}
+
+/* ============================================================================
+   MAIN CANVAS
+   ============================================================================ */
+
+.dashboard-main {
+    grid-area: main;
+    padding: var(--space-4);
+    overflow-y: auto;
+    max-height: calc(100vh - 60px);
+}
+
+.main-header {
+    margin-bottom: var(--space-4);
+}
+
+.main-title {
+    font-size: 2rem;
+    font-weight: var(--font-weight-light);
+    margin-bottom: var(--space-1);
+}
+
+.main-subtitle {
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.main-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+/* ============================================================================
+   WORKFLOW VISUALIZATION (n8n-style)
+   ============================================================================ */
+
+.workflow-canvas {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    padding: var(--space-4);
+    min-height: 400px;
+    position: relative;
+}
+
+.workflow-graph {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.workflow-node {
+    background: rgba(255, 255, 255, 0.06);
+    border: 2px solid var(--card-border);
+    border-radius: var(--radius-small);
+    padding: var(--space-2) var(--space-3);
+    min-width: 180px;
+    text-align: center;
+    position: relative;
+    transition: var(--transition-standard);
+}
+
+.workflow-node:hover {
+    border-color: var(--mint-green);
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(7, 209, 151, 0.2);
+}
+
+.workflow-node-icon {
+    font-size: 1.5rem;
+    margin-bottom: var(--space-1);
+}
+
+.workflow-node-title {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    font-weight: var(--font-weight-normal);
+    margin-bottom: 0.25rem;
+}
+
+.workflow-node-type {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+/* Node Types */
+.workflow-node.trigger {
+    border-color: var(--mint-green);
+    background: rgba(7, 209, 151, 0.08);
+}
+
+.workflow-node.action {
+    border-color: var(--brand-purple);
+    background: rgba(64, 32, 165, 0.08);
+}
+
+.workflow-node.decision {
+    border-color: var(--warning);
+    background: rgba(255, 170, 0, 0.08);
+}
+
+.workflow-node.retry {
+    border-color: var(--warning);
+    background: rgba(255, 170, 0, 0.05);
+}
+
+.workflow-node.fail {
+    border-color: var(--error);
+    background: rgba(255, 68, 68, 0.08);
+}
+
+/* Workflow Connections */
+.workflow-connection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.workflow-arrow {
+    width: 2px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--card-border), transparent);
+    position: relative;
+}
+
+.workflow-arrow::after {
+    content: '▼';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+}
+
+.workflow-arrow.success {
+    background: linear-gradient(to bottom, var(--success), transparent);
+}
+
+.workflow-arrow.error {
+    background: linear-gradient(to bottom, var(--error), transparent);
+}
+
+/* Multi-branch Layout */
+.workflow-branch {
+    display: flex;
+    gap: var(--space-4);
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.workflow-branch-label {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-1);
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 1023px) {
+    .dashboard-layout {
+        grid-template-areas:
+            "topbar"
+            "main";
+        grid-template-columns: 1fr;
+        grid-template-rows: 60px 1fr;
+    }
+    
+    .dashboard-sidebar {
+        display: none;
+    }
+    
+    .dashboard-main {
+        padding: var(--space-3);
+    }
+}
+
+@media (max-width: 767px) {
+    .dashboard-topbar {
+        padding: 0 var(--space-2);
+    }
+    
+    .topbar-stat {
+        padding: 0.5rem;
+    }
+    
+    .topbar-stat-label {
+        display: none;
+    }
+    
+    .dashboard-main {
+        padding: var(--space-2);
+    }
+    
+    .workflow-branch {
+        flex-direction: column;
+    }
+}
+
+
+/* Language Toggle in Topbar */
+.language-toggle {
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem;
+    border-radius: 9999px;
+}
+
+.lang-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 9999px;
+    transition: all 0.2s ease;
+}
+
+.lang-btn.active {
+    background: var(--mint-green);
+    color: #1a0b2e;
+}
+
+.lang-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.9);
+}
