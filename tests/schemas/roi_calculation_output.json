@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ROI Calculation Output",
+  "type": "object",
+  "required": ["mode", "monthly_savings", "annual_savings", "payback_period_months", "three_year_roi", "assumptions"],
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["conservative", "growth"],
+      "description": "Calculation mode"
+    },
+    "monthly_savings": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Monthly cost savings in USD"
+    },
+    "annual_savings": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Annual cost savings in USD"
+    },
+    "payback_period_months": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Time to recover implementation cost"
+    },
+    "three_year_roi": {
+      "type": "number",
+      "description": "3-year ROI percentage"
+    },
+    "assumptions": {
+      "type": "object",
+      "required": ["efficiency_gain", "maintenance_cost_factor"],
+      "properties": {
+        "efficiency_gain": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "maintenance_cost_factor": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "calculated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

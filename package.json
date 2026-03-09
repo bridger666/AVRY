@@ -1,0 +1,14 @@
+{
+  "name": "aivory-frontend",
+  "version": "1.0.0",
+  "description": "Aivory AI Readiness Platform - Frontend",
+  "scripts": {
+    "dev": "python3 simple_server.py",
+    "start": "python3 simple_server.py",
+    "backend": "cd .. && python3 -m uvicorn app.main:app --reload --port 8000",
+    "test": "echo \"No tests configured yet\""
+  },
+  "keywords": ["ai", "readiness", "diagnostic", "automation"],
+  "author": "Aivory",
+  "license": "MIT"
+}

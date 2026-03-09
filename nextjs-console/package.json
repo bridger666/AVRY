@@ -1,0 +1,41 @@
+{
+  "name": "aivory-console",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "next lint",
+    "test": "vitest --run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.10.1",
+    "docx": "^9.6.0",
+    "file-saver": "^2.0.5",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.0",
+    "mammoth": "^1.11.0",
+    "next": "^14.2.5",
+    "pdfjs-dist": "^5.5.207",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
+    "react-syntax-highlighter": "^16.1.1"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^14.0.0",
+    "@types/file-saver": "^2.0.7",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "@vitejs/plugin-react": "^4.0.0",
+    "@vitest/ui": "^1.0.0",
+    "fast-check": "^3.14.0",
+    "jsdom": "^23.0.0",
+    "typescript": "^5",
+    "vitest": "^1.0.0"
+  }
+}

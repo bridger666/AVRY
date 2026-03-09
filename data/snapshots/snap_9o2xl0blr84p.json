@@ -1,0 +1,157 @@
+{
+  "snapshot_id": "snap_9o2xl0blr84p",
+  "diagnostic_id": null,
+  "user_id": "user_superadmin",
+  "user_email": null,
+  "company_name": null,
+  "industry": null,
+  "answers": [
+    {
+      "question_id": "primary_objective",
+      "selected_option": 0
+    },
+    {
+      "question_id": "secondary_objective",
+      "selected_option": 3
+    },
+    {
+      "question_id": "target_department",
+      "selected_option": 3
+    },
+    {
+      "question_id": "timeline",
+      "selected_option": 3
+    },
+    {
+      "question_id": "success_metric",
+      "selected_option": 2
+    },
+    {
+      "question_id": "workflows_documented",
+      "selected_option": 2
+    },
+    {
+      "question_id": "manual_tasks_percentage",
+      "selected_option": 2
+    },
+    {
+      "question_id": "sop_standardization",
+      "selected_option": 0
+    },
+    {
+      "question_id": "bottlenecks_frequency",
+      "selected_option": 1
+    },
+    {
+      "question_id": "escalation_clarity",
+      "selected_option": 1
+    },
+    {
+      "question_id": "cross_team_visibility",
+      "selected_option": 1
+    },
+    {
+      "question_id": "cycle_time_tracking",
+      "selected_option": 1
+    },
+    {
+      "question_id": "output_quality_measurement",
+      "selected_option": 2
+    },
+    {
+      "question_id": "data_centralized",
+      "selected_option": 2
+    },
+    {
+      "question_id": "crm_usage_maturity",
+      "selected_option": 2
+    },
+    {
+      "question_id": "api_accessibility",
+      "selected_option": 2
+    },
+    {
+      "question_id": "dashboard_maturity",
+      "selected_option": 2
+    },
+    {
+      "question_id": "data_accuracy_confidence",
+      "selected_option": 1
+    },
+    {
+      "question_id": "data_ownership_clarity",
+      "selected_option": 2
+    },
+    {
+      "question_id": "historical_data_volume",
+      "selected_option": 1
+    },
+    {
+      "question_id": "existing_automation_tools",
+      "selected_option": 1
+    },
+    {
+      "question_id": "tool_integrations_maturity",
+      "selected_option": 2
+    },
+    {
+      "question_id": "manual_repetitive_tasks",
+      "selected_option": 1
+    },
+    {
+      "question_id": "ticket_lead_volume",
+      "selected_option": 1
+    },
+    {
+      "question_id": "process_duplication",
+      "selected_option": 2
+    },
+    {
+      "question_id": "leadership_ai_support",
+      "selected_option": 3
+    },
+    {
+      "question_id": "ai_literacy_level",
+      "selected_option": 2
+    },
+    {
+      "question_id": "budget_allocated",
+      "selected_option": 4
+    },
+    {
+      "question_id": "change_resistance",
+      "selected_option": 3
+    },
+    {
+      "question_id": "dedicated_system_owner",
+      "selected_option": 1
+    }
+  ],
+  "readiness_score": 45,
+  "category_scores": {
+    "workflow": 37.5,
+    "data": 42.86,
+    "automation": 45.0,
+    "organization": 55.0
+  },
+  "primary_objective": "increase_revenue",
+  "top_recommendations": [
+    "lead_scoring_agent",
+    "sales_qualification_agent",
+    "conversion_intelligence_dashboard"
+  ],
+  "pain_points": [
+    "High manual workload"
+  ],
+  "workflows": [
+    "Documented workflow processes"
+  ],
+  "key_processes": [
+    "Business operations",
+    "Core workflows",
+    "Data management"
+  ],
+  "automation_level": "Partial",
+  "data_quality_score": 37,
+  "created_at": "2026-02-26T16:10:53.056206"
+}

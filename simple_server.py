@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-Simple standalone server for Aivory diagnostic
+Aivory Development Server
+Serves frontend static files and handles API requests
 No external dependencies required - uses only Python standard library
 """
 
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 import json
-import urllib.parse
+import os
+from pathlib import Path
 
 # Scoring configuration
 QUESTIONS = [
@@ -101,29 +103,43 @@ def generate_badge(score, category):
   <text x="200" y="235" font-size="14" fill="rgba(255,255,255,0.7)" text-anchor="middle" font-family="Arial, sans-serif">Diagnostic Score</text>
 </svg>'''
 
-class RequestHandler(BaseHTTPRequestHandler):
+class RequestHandler(SimpleHTTPRequestHandler):
+    """Custom request handler that serves static files and handles API requests"""
+    
+    def __init__(self, *args, **kwargs):
+        # Set the directory to serve files from
+        super().__init__(*args, directory='frontend', **kwargs)
+    
+    def end_headers(self):
+        """Add CORS headers to all responses"""
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        super().end_headers()
+    
     def do_OPTIONS(self):
         """Handle CORS preflight"""
         self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
     
     def do_GET(self):
-        """Handle GET requests"""
-        if self.path == '/health':
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            response = {"status": "healthy", "llm_available": False}
-            self.wfile.write(json.dumps(response).encode())
+        """Handle GET requests - serve static files or API endpoints"""
+        if self.path.startswith('/api/'):
+            # Handle API GET requests
+            if self.path == '/api/health':
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                response = {"status": "healthy", "llm_available": False}
+                self.wfile.write(json.dumps(response).encode())
+            else:
+                self.send_error(404, "API endpoint not found")
         else:
-            self.send_error(404)
+            # Serve static files from frontend directory
+            super().do_GET()
     
     def do_POST(self):
-        """Handle POST requests"""
+        """Handle POST requests - API only"""
         if self.path == '/api/v1/diagnostic/run':
             try:
                 # Read request body
@@ -161,7 +177,6 @@ class RequestHandler(BaseHTTPRequestHandler):
                 # Send response
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
                 self.wfile.write(json.dumps(result).encode())
                 
@@ -188,7 +203,6 @@ class RequestHandler(BaseHTTPRequestHandler):
                 
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
                 self.wfile.write(json.dumps(result).encode())
                 
@@ -202,14 +216,23 @@ class RequestHandler(BaseHTTPRequestHandler):
         print(f"[{self.log_date_time_string()}] {format % args}")
 
 if __name__ == '__main__':
-    PORT = 8081
+    PORT = 9000
+    
+    # Change to project root directory
+    os.chdir(Path(__file__).parent)
+    
     server = HTTPServer(('0.0.0.0', PORT), RequestHandler)
     print("=" * 60)
-    print("🚀 Aivory Backend Server (Simple Version)")
+    print("🚀 Aivory Development Server")
     print("=" * 60)
     print(f"\n✓ Server running on http://localhost:{PORT}")
-    print(f"✓ Health check: http://localhost:{PORT}/health")
-    print(f"\n📂 Open frontend/index.html in your browser")
+    print(f"✓ Frontend: http://localhost:{PORT}/index.html")
+    print(f"✓ Dashboard: http://localhost:{PORT}/dashboard.html")
+    print(f"✓ Console: http://localhost:{PORT}/console.html")
+    print(f"✓ API Health: http://localhost:{PORT}/api/health")
+    print(f"\n📂 Serving files from: ./frontend/")
+    print(f"\n⚠️  IMPORTANT: Open http://localhost:{PORT} in your browser")
+    print(f"   DO NOT open files directly (file://) - this causes CORS errors")
     print(f"\nPress Ctrl+C to stop\n")
     print("=" * 60)
     

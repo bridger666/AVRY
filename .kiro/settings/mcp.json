@@ -1,0 +1,11 @@
+{
+  "toolsSettings": {
+    "shell": {
+      "allowedCommands": ["*", "click-run", "run-command"],
+      "autoAllowReadonly": true
+    }
+  },
+  "mcpServers": {
+    // ...
+  }
+}

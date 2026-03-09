@@ -1,184 +1,145 @@
-# Aivory - AI Readiness Diagnostic Platform
+# Aivory - AI Automation Platform
 
-A complete web application that helps organizations understand their AI readiness, identify automation opportunities, and convert diagnostic insights into monetization paths.
-
-## Features
-
-- **Homepage**: Clear value proposition with three entry points
-- **12-Question Diagnostic**: Google Form-style assessment in under 3 minutes
-- **AI Readiness Score**: Normalized 0-100 score with category classification
-- **AI Enrichment**: LLM-powered insights with graceful degradation
-- **Downloadable Badge**: Visual representation of readiness score
-- **Tiered Offerings**: Three monetization levels ($49, $150, Custom)
-- **Build Automation Section**: Information about automation services
-- **Design AI System Section**: Strategic architecture planning
-- **Contact Form**: Consultation request submission
-
-## Tech Stack
-
-- **Backend**: Python FastAPI running on localhost:8081
-- **Frontend**: HTML, CSS, JavaScript (vanilla)
-- **LLM**: Mistral-7B-Instruct via Ollama
-- **Architecture**: Graceful degradation ensures UI works even if AI fails
+Aivory helps organizations assess their AI readiness, identify automation opportunities, and deploy intelligent workflow systems.
 
 ## Quick Start
 
-### Prerequisites
-
-- Python 3.8 or higher
-- Ollama with Mistral-7B-Instruct model (optional, system works without it)
-
-### Installation
-
-1. Clone the repository
-2. Run the startup script:
-
 ```bash
-./start.sh
+# 1. Start Backend
+source venv/bin/activate
+python -m uvicorn app.main:app --reload --port 8000
+
+# 2. Start Frontend
+python simple_server.py
+
+# 3. Open Browser
+http://localhost:8080
 ```
 
-Or manually:
+## Features
 
-```bash
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+- **Free Diagnostic** - 12-question AI readiness assessment
+- **AI Snapshot** ($15) - 30-question deep analysis with recommendations
+- **AI Blueprint** ($79) - Complete system architecture and deployment plan
+- **AI Console** - Interactive ARIA agent for workflow guidance
+- **Dashboard** - Unified view of diagnostics, snapshots, and blueprints
+- **Workflow Management** - Deploy and monitor AI workflows
 
-# Install dependencies
-pip install -r requirements.txt
+## Documentation
 
-# Copy environment file
-cp .env.example .env
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Setup and deployment guide
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture overview
+- **[docs/archive/](docs/archive/)** - Historical documentation
 
-# Start the backend
-uvicorn app.main:app --host 0.0.0.0 --port 8081 --reload
-```
+## Tech Stack
 
-### Viewing the Application
+**Backend:**
+- Python 3.9+ with FastAPI
+- Supabase (PostgreSQL + Auth)
+- OpenRouter (LLM API)
 
-Option 1: Open `frontend/index.html` directly in your browser
-
-Option 2: Use a simple HTTP server:
-```bash
-python3 -m http.server 8080 --directory frontend
-```
-Then visit http://localhost:8080
-
-## Configuration
-
-Edit `.env` file to configure:
-
-```env
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=mistralai/Mistral-7B-Instruct
-LLM_TIMEOUT=5.0
-LLM_MAX_TOKENS=500
-LLM_TEMPERATURE=0.7
-PORT=8081
-```
-
-## API Endpoints
-
-### Health Check
-```
-GET /health
-```
-Returns system health and LLM availability status.
-
-### Run Diagnostic
-```
-POST /api/v1/diagnostic/run
-```
-Submit 12 diagnostic answers and receive AI readiness results.
-
-### Submit Contact Form
-```
-POST /api/v1/contact
-```
-Submit consultation request.
-
-### Test LLM
-```
-GET /api/v1/diagnostic/test-llm
-```
-Test Ollama connection.
-
-## Architecture
-
-### Mandatory Scoring (Always Works)
-- Calculates raw score (0-36) from 12 questions
-- Normalizes to 0-100 scale
-- Assigns category: AI Unready, AI Curious, AI Ready, or AI Native
-- Works independently of LLM availability
-
-### AI Enrichment (Optional)
-- Generates 3 personalized insights
-- Creates custom recommendation paragraph
-- Assigns readiness narrative
-- Falls back to static content if LLM unavailable
-
-### Graceful Degradation
-- System provides value even when AI components fail
-- Static content for each readiness category
-- UI always renders and functions
-- No blocking on LLM availability
+**Frontend:**
+- Vanilla JavaScript (ES6+)
+- HTML5 + CSS3
+- Unified shell design
 
 ## Project Structure
 
 ```
-.
-├── app/
-│   ├── api/routes/          # API endpoints
-│   ├── models/              # Pydantic data models
-│   ├── services/            # Business logic
-│   │   ├── scoring_config.py
-│   │   ├── scoring_service.py
-│   │   ├── static_content.py
-│   │   ├── ai_enrichment.py
-│   │   └── badge_service.py
-│   ├── llm/                 # LLM client
-│   ├── config.py            # Configuration
-│   └── main.py              # FastAPI app
-├── frontend/
-│   ├── index.html           # Complete SPA
-│   ├── app.js               # JavaScript logic
-│   └── styles.css           # Styling
-├── .env.example             # Environment template
-├── requirements.txt         # Python dependencies
-├── start.sh                 # Startup script
-└── README.md
+Aivory/
+├── README.md                    ← You are here
+├── ARCHITECTURE.md              ← System architecture
+├── DEPLOYMENT.md                ← Setup guide
+├── requirements.txt             ← Python dependencies
+│
+├── app/                         ← Backend (FastAPI)
+│   ├── main.py                  ← API entry point
+│   ├── api/routes/              ← API endpoints
+│   ├── services/                ← Business logic
+│   ├── models/                  ← Data models
+│   └── llm/                     ← LLM integrations
+│
+├── frontend/                    ← Frontend (Static)
+│   ├── index.html               ← Landing page
+│   ├── console-unified.html     ← AI Console
+│   ├── dashboard.html           ← Dashboard
+│   ├── workflows.html           ← Workflows
+│   ├── logs.html                ← Logs
+│   ├── settings.html            ← Settings
+│   ├── app-shell.css            ← Unified shell
+│   ├── console-aria.js          ← ARIA agent
+│   ├── dashboard.js             ← Dashboard logic
+│   └── legacy/                  ← Old files (archived)
+│
+└── docs/archive/                ← Historical docs
 ```
+
+## Configuration
+
+Create `.env.local` with:
+
+```env
+# Supabase
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_KEY=your_supabase_service_key
+
+# OpenRouter
+OPENROUTER_API_KEY=your_openrouter_key
+
+# JWT
+JWT_SECRET=your_secret_key
+JWT_ALGORITHM=HS256
+
+# API
+API_BASE_URL=http://localhost:8000
+```
+
+## API Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/health` | GET | Health check |
+| `/api/v1/diagnostic/run` | POST | Free diagnostic |
+| `/api/v1/diagnostic/snapshot` | POST | AI Snapshot |
+| `/api/v1/blueprint/{id}` | GET | Get blueprint |
+| `/api/v1/console/chat` | POST | Console chat |
+| `/api/v1/workflows` | GET | List workflows |
+
+**Interactive API Docs:** http://localhost:8000/docs
 
 ## Development
 
-### Running Tests
 ```bash
-pytest
-```
+# Install dependencies
+pip install -r requirements.txt
 
-### Code Style
-```bash
-black app/
-flake8 app/
-```
+# Run backend with auto-reload
+python -m uvicorn app.main:app --reload --port 8000
 
-### Adding New Questions
-Edit `app/services/scoring_config.py` and `frontend/app.js` to add questions.
+# Run frontend
+python simple_server.py
+```
 
 ## Deployment
 
-For production deployment:
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
 
-1. Set proper CORS origins in `app/config.py`
-2. Use a production ASGI server (e.g., Gunicorn with Uvicorn workers)
-3. Serve frontend through a web server (Nginx, Apache)
-4. Set up proper logging and monitoring
-5. Configure LLM service for production use
+**Quick Deploy:**
+- Backend: Railway, Render, or AWS ECS
+- Frontend: Netlify, Vercel, or Cloudflare Pages
+- Database: Supabase (managed PostgreSQL)
+
+## Support
+
+For questions or issues:
+1. Check [DEPLOYMENT.md](DEPLOYMENT.md) for setup help
+2. Check [ARCHITECTURE.md](ARCHITECTURE.md) for system details
+3. Check [docs/archive/](docs/archive/) for historical docs
+4. Contact the Aivory team
 
 ## License
 
 Proprietary - Aivory Platform
 
-## Support
-
-For questions or issues, contact the Aivory team.
+Copyright © 2024-2025 Aivory. All rights reserved.
