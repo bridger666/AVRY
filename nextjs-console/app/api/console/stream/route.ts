@@ -77,8 +77,8 @@ export async function POST(request: NextRequest) {
     // Get VPS bridge configuration (Requirement 1.1, 1.2)
     const config = getConfig()
 
-    // Forward request to VPS bridge with API key (Requirement 5.6)
-    const vpsBridgeUrl = `${config.VPS_BRIDGE_URL}/console/stream`
+    // Forward request to VPS bridge — routes through ZeroClaw (AIRA runtime)
+    const vpsBridgeUrl = `${config.VPS_BRIDGE_URL}/bridge/aira`
 
     // FIXED: TIMEOUT INCREASE — abort after 115s (just under Vercel's 120s hard limit)
     const controller = new AbortController()
@@ -93,9 +93,13 @@ export async function POST(request: NextRequest) {
           'X-Api-Key': config.VPS_BRIDGE_API_KEY
         },
         body: JSON.stringify({
-          session_id,
-          organization_id,
-          messages
+          // Extract the last user message as the primary prompt
+          message: messages.filter(m => m.role === 'user').at(-1)?.content ?? '',
+          context: {
+            session_id,
+            organization_id,
+            history: messages
+          }
         }),
         signal: controller.signal
       })
@@ -110,45 +114,42 @@ export async function POST(request: NextRequest) {
 
       try {
         const errorData = await vpsBridgeResponse.json()
-        errorMessage = errorData.message || errorMessage
+        errorMessage = errorData.message || errorData.detail || errorMessage
         errorDetails = errorData.details
       } catch {
-        // If error response is not JSON, use status text
         errorMessage = vpsBridgeResponse.statusText || errorMessage
       }
 
       return Response.json(
-        createErrorResponse(
-          'VPSBridgeError',
-          errorMessage,
-          errorDetails
-        ),
+        createErrorResponse('VPSBridgeError', errorMessage, errorDetails),
         { status: vpsBridgeResponse.status }
       )
     }
 
-    // Stream response back to client (Requirement 5.7)
-    // FIXED: STREAM HEARTBEAT — wrap the VPS bridge body in a TransformStream
-    // that injects ": ping\n\n" every 10s to prevent idle timeout on long AI responses
-    const sourceBody = vpsBridgeResponse.body!
+    // /bridge/aira returns JSON — convert to SSE so the frontend chat stream works
+    const bridgeData = await vpsBridgeResponse.json() as {
+      mode: string
+      model: string
+      raw_agent_response: string
+      tool_calls: unknown[]
+    }
+
+    const text = bridgeData.raw_agent_response ?? ''
+    const enc = new TextEncoder()
+
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
 
     ;(async () => {
-      const reader = sourceBody.getReader()
-      // FIXED: STREAM HEARTBEAT — send a ping comment every 10s while waiting for data
-      let heartbeatTimer: ReturnType<typeof setInterval> | null = setInterval(async () => {
-        try { await writer.write(new TextEncoder().encode(': ping\n\n')) } catch { /* stream closed */ }
-      }, 10000)
-
       try {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          await writer.write(value)
-        }
-      } catch { /* upstream closed */ } finally {
-        if (heartbeatTimer) clearInterval(heartbeatTimer)
+        // Emit the full response as a single chunk (ZeroClaw is non-streaming)
+        await writer.write(enc.encode(
+          `data: ${JSON.stringify({ type: 'chunk', content: text })}\n\n`
+        ))
+        await writer.write(enc.encode(
+          `data: ${JSON.stringify({ type: 'done' })}\n\n`
+        ))
+      } finally {
         try { await writer.close() } catch { /* already closed */ }
       }
     })()

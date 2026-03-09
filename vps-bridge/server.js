@@ -30,6 +30,7 @@ const {
   handleBlueprintGeneration,
   handleWorkflowGeneration,
   handleWorkflowSynthesis,
+  handleBridgeAira,
   handleBridgeKiro,
   handleHealthCheck
 } = require('./endpoints');
@@ -257,6 +258,20 @@ app.post('/workflows/synthesize', handleWorkflowSynthesis);
 // ============================================================================
 
 /**
+ * POST /bridge/aira
+ * General AIRA entry point for all Aivory clients.
+ * Builds a rich prompt from message + context, routes through ZeroClaw.
+ *
+ * Request body: { message: string, context?: object }
+ * Returns: { mode: "zeroclaw", model, raw_agent_response, tool_calls }
+ */
+app.post('/bridge/aira', (req, res, next) => {
+  req.requestId = require('uuid').v4();
+  req.startTime = Date.now();
+  next();
+}, handleBridgeAira);
+
+/**
  * POST /bridge/kiro
  * Routes a Kiro-originated message through the Zeroclaw orchestrator.
  *
@@ -307,6 +322,7 @@ const server = app.listen(config.port, '0.0.0.0', () => {
   logger.info('  POST /diagnostics/free/run');
   logger.info('  POST /blueprints/generate');
   logger.info('  POST /workflows/synthesize');
+  logger.info('  POST /bridge/aira');
   logger.info('  POST /bridge/kiro');
 });
 

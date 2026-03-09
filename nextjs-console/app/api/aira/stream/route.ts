@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
     }
 
     const config = getConfig()
-    const bridgeUrl = `${config.VPS_BRIDGE_URL}/aria/stream`
+    // Route through /bridge/aira — the single ZeroClaw entry point
+    const bridgeUrl = `${config.VPS_BRIDGE_URL}/bridge/aira`
 
     // FIXED: TIMEOUT INCREASE — abort after 115s
     const controller = new AbortController()
@@ -37,7 +38,10 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'X-Api-Key': config.VPS_BRIDGE_API_KEY,
         },
-        body: JSON.stringify({ session_id, organization_id, messages, context }),
+        body: JSON.stringify({
+        message: messages.filter((m: { role: string }) => m.role === 'user').at(-1)?.content ?? '',
+        context: { session_id, organization_id, history: messages, ...context }
+      }),
         signal: controller.signal,
       })
     } finally {
@@ -46,29 +50,27 @@ export async function POST(request: NextRequest) {
 
     if (!bridgeResponse.ok) {
       let msg = 'Bridge error'
-      try { const e = await bridgeResponse.json(); msg = e.message || msg } catch { /* ignore */ }
+      try { const e = await bridgeResponse.json(); msg = e.message || e.detail || msg } catch { /* ignore */ }
       return Response.json({ error: true, message: msg }, { status: bridgeResponse.status })
     }
 
-    // Stream bridge response straight through — bridge already sends heartbeats
-    const sourceBody = bridgeResponse.body!
+    // /bridge/aira returns JSON — convert to SSE for the frontend chat stream
+    const bridgeData = await bridgeResponse.json() as { raw_agent_response?: string }
+    const text = bridgeData.raw_agent_response ?? ''
+    const enc = new TextEncoder()
+
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
 
     ;(async () => {
-      const reader = sourceBody.getReader()
-      // FIXED: STREAM HEARTBEAT — extra SSE ping every 8s in case bridge heartbeat is delayed
-      const heartbeat = setInterval(async () => {
-        try { await writer.write(new TextEncoder().encode(': ping\n\n')) } catch { /* closed */ }
-      }, 8000)
       try {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          await writer.write(value)
-        }
-      } catch { /* upstream closed */ } finally {
-        clearInterval(heartbeat)
+        await writer.write(enc.encode(
+          `data: ${JSON.stringify({ type: 'chunk', content: text })}\n\n`
+        ))
+        await writer.write(enc.encode(
+          `data: ${JSON.stringify({ type: 'done' })}\n\n`
+        ))
+      } finally {
         try { await writer.close() } catch { /* already closed */ }
       }
     })()

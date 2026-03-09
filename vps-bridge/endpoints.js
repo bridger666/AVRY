@@ -842,6 +842,80 @@ async function handleWorkflowSynthesis(req, res, next) {
 }
 
 // ============================================================================
+// BRIDGE / AIRA ENDPOINT  (general AIRA entry point for all Aivory clients)
+// ============================================================================
+
+/**
+ * POST /bridge/aira
+ * Single entry point for all AIRA chat traffic from Aivory frontend/backend.
+ * Builds a rich prompt from message + context, calls ZeroClaw, and returns
+ * a normalised response.
+ *
+ * Request body:
+ * {
+ *   message: string,    // required
+ *   context?: object    // optional — user/workspace/page state
+ * }
+ *
+ * Returns:
+ * {
+ *   mode: "zeroclaw",
+ *   model: string,
+ *   raw_agent_response: string,
+ *   tool_calls: []
+ * }
+ */
+async function handleBridgeAira(req, res, next) {
+  try {
+    const { message, context } = req.body;
+
+    if (!message || typeof message !== 'string') {
+      const error = new Error('Missing or invalid field: message (expected string)');
+      error.statusCode = 400;
+      error.errorCode = 'BAD_REQUEST';
+      error.details = { field: 'message', expected: 'string' };
+      return next(error);
+    }
+
+    // Build a richer prompt that gives ZeroClaw full context
+    const prompt = `You are AIRA, the central AI orchestrator for the Aivory platform.
+
+User message:
+${message}
+
+Context (JSON):
+${JSON.stringify(context ?? {}, null, 2)}`;
+
+    const { callZeroclaw } = require('./zeroclawClient');
+    const result = await callZeroclaw(prompt);
+
+    res.json({
+      mode: 'zeroclaw',
+      model: result.model,
+      raw_agent_response: result.response,
+      tool_calls: []
+    });
+
+  } catch (error) {
+    logger.error('[bridge/aira] error', { error: error.message });
+    // Distinguish ZeroClaw HTTP errors from unexpected errors
+    const statusMatch = error.message?.match(/Zeroclaw returned (\d+)/);
+    if (statusMatch) {
+      return res.status(502).json({
+        error: 'zeroclaw_error',
+        status: parseInt(statusMatch[1], 10),
+        detail: error.message
+      });
+    }
+    return res.status(500).json({
+      error: 'zeroclaw_error',
+      status: 500,
+      detail: error.message || 'Unexpected error calling ZeroClaw'
+    });
+  }
+}
+
+// ============================================================================
 // BRIDGE / KIRO ENDPOINT
 // ============================================================================
 
@@ -887,10 +961,9 @@ async function handleBridgeKiro(req, res, next) {
     res.json({
       mode: 'zeroclaw',
       model: result.model,
-      raw_agent_response: result.raw_agent_response,
-      tool_calls: result.tool_calls
+      raw_agent_response: result.response,
+      tool_calls: []
     });
-
   } catch (error) {
     logger.error('[bridge/kiro] error', { error: error.message });
     next(error);
@@ -946,6 +1019,7 @@ module.exports = {
   handleBlueprintGeneration,
   handleWorkflowGeneration,
   handleWorkflowSynthesis,
+  handleBridgeAira,
   handleBridgeKiro,
   handleHealthCheck
 };
