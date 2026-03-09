@@ -316,8 +316,9 @@ const config = {
   zeroclawToken: process.env.ZEROCLAW_TOKEN || '',
   zeroclawTimeout: 115000, // 115s — just under Next.js 120s hard limit
 
-  // Zeroclaw Kiro endpoint (used by /bridge/kiro)
-  zeroclawKiroUrl: process.env.ZEROCLAW_KIRO_URL || 'http://43.156.108.96:3010',
+  // Zeroclaw Kiro/AIRA webhook base URL (used by /bridge/aira and /bridge/kiro)
+  // zeroclawClient.js reads ZEROCLAW_BASE_URL directly from env
+  zeroclawKiroUrl: process.env.ZEROCLAW_BASE_URL || process.env.ZEROCLAW_KIRO_URL || 'http://43.156.108.96:3010',
   
   // Logging
   logLevel: process.env.LOG_LEVEL || 'info'
