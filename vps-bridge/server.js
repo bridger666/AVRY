@@ -30,6 +30,7 @@ const {
   handleBlueprintGeneration,
   handleWorkflowGeneration,
   handleWorkflowSynthesis,
+  handleBridgeKiro,
   handleHealthCheck
 } = require('./endpoints');
 
@@ -83,6 +84,7 @@ app.use('/diagnostics/', limiter);
 app.use('/blueprints/', limiter);
 app.use('/workflows/', limiter);
 app.use('/aria/', limiter);
+app.use('/bridge/', limiter);
 
 // ============================================================================
 // HEALTH CHECK ENDPOINT (No authentication required)
@@ -251,6 +253,23 @@ app.post('/blueprints/generate-workflow', (req, res, next) => {
 app.post('/workflows/synthesize', handleWorkflowSynthesis);
 
 // ============================================================================
+// BRIDGE ENDPOINTS
+// ============================================================================
+
+/**
+ * POST /bridge/kiro
+ * Routes a Kiro-originated message through the Zeroclaw orchestrator.
+ *
+ * Request body: { message: string, context?: object }
+ * Returns: { mode: "zeroclaw", model, raw_agent_response, tool_calls }
+ */
+app.post('/bridge/kiro', (req, res, next) => {
+  req.requestId = require('uuid').v4();
+  req.startTime = Date.now();
+  next();
+}, handleBridgeKiro);
+
+// ============================================================================
 // ERROR HANDLING
 // ============================================================================
 
@@ -288,6 +307,7 @@ const server = app.listen(config.port, '0.0.0.0', () => {
   logger.info('  POST /diagnostics/free/run');
   logger.info('  POST /blueprints/generate');
   logger.info('  POST /workflows/synthesize');
+  logger.info('  POST /bridge/kiro');
 });
 
 // ============================================================================
