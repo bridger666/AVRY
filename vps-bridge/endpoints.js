@@ -842,6 +842,62 @@ async function handleWorkflowSynthesis(req, res, next) {
 }
 
 // ============================================================================
+// BRIDGE / KIRO ENDPOINT
+// ============================================================================
+
+/**
+ * POST /bridge/kiro
+ * Routes a Kiro-originated message through the Zeroclaw orchestrator.
+ *
+ * Request body:
+ * {
+ *   message: string,       // required — the user/agent message
+ *   context?: object       // optional — additional context merged into the prompt
+ * }
+ *
+ * Returns:
+ * {
+ *   mode: "zeroclaw",
+ *   model: string,
+ *   raw_agent_response: string,
+ *   tool_calls: []
+ * }
+ */
+async function handleBridgeKiro(req, res, next) {
+  try {
+    const { message, context } = req.body;
+
+    if (!message || typeof message !== 'string') {
+      const error = new Error('Missing or invalid field: message (expected string)');
+      error.statusCode = 400;
+      error.errorCode = 'BAD_REQUEST';
+      error.details = { field: 'message', expected: 'string' };
+      return next(error);
+    }
+
+    // Build prompt — append context block if provided
+    let prompt = message;
+    if (context && typeof context === 'object' && Object.keys(context).length > 0) {
+      prompt += `\n\n[Context]\n${JSON.stringify(context, null, 2)}`;
+    }
+
+    const { callZeroclaw } = require('./zeroclawClient');
+    const result = await callZeroclaw(prompt);
+
+    res.json({
+      mode: 'zeroclaw',
+      model: result.model,
+      raw_agent_response: result.raw_agent_response,
+      tool_calls: result.tool_calls
+    });
+
+  } catch (error) {
+    logger.error('[bridge/kiro] error', { error: error.message });
+    next(error);
+  }
+}
+
+// ============================================================================
 // HEALTH CHECK ENDPOINT
 // ============================================================================
 
@@ -890,5 +946,6 @@ module.exports = {
   handleBlueprintGeneration,
   handleWorkflowGeneration,
   handleWorkflowSynthesis,
+  handleBridgeKiro,
   handleHealthCheck
 };
