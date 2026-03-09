@@ -22,6 +22,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Markdown docs — never push to public repo
+*.md
+
 # local env files — never commit secrets
 .env
 .env.*

@@ -1,5 +1,7 @@
 node_modules/
 *.log
+# Markdown docs — never push to public repo
+*.md
 # Never commit secrets
 .env
 .env.*
