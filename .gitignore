@@ -9,6 +9,9 @@ env/
 ENV/
 .venv
 
+# Markdown docs — never push to public repo
+*.md
+
 # Environment — never commit secrets
 .env
 .env.*
