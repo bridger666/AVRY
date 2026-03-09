@@ -1,55 +1,80 @@
 /**
  * Zeroclaw Client
- * Direct HTTP client for the Zeroclaw orchestrator webhook.
- * Used by /bridge/kiro to route Kiro-originated messages through Zeroclaw.
+ * HTTP client for the Zeroclaw orchestrator webhook.
+ * Used by /bridge/aira (AIRA chat) and /bridge/kiro (Kiro-originated messages).
+ *
+ * Base URL: process.env.ZEROCLAW_BASE_URL || "http://43.156.108.96:3010"
  */
 
-const axios = require('axios');
-const { config } = require('./config');
+const https = require('https');
+const http = require('http');
 const { logger } = require('./logger');
 
+const ZEROCLAW_BASE_URL =
+  process.env.ZEROCLAW_BASE_URL ||
+  process.env.ZEROCLAW_KIRO_URL ||
+  'http://43.156.108.96:3010';
+
 /**
- * Sends a message to the Zeroclaw /webhook endpoint and returns the response.
+ * Sends a message to the Zeroclaw /webhook endpoint.
  *
  * @param {string} message - The prompt/message to send
- * @returns {Promise<{ model: string, raw_agent_response: string, tool_calls: [] }>}
+ * @returns {Promise<{ model: string, response: string }>}
+ * @throws {Error} if the HTTP response is not 2xx
  */
-async function callZeroclaw(message) {
-  const url = `${config.zeroclawKiroUrl}/webhook`;
+function callZeroclaw(message) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(`${ZEROCLAW_BASE_URL}/webhook`);
+    const payload = JSON.stringify({ message });
 
-  logger.info('[zeroclawClient] calling Zeroclaw', { url });
+    logger.info('[zeroclawClient] POST', { url: url.href });
 
-  const payload = {
-    message,
-    source: 'kiro_bridge',
-    intent: 'kiro_assistant'
-  };
+    const transport = url.protocol === 'https:' ? https : http;
+    const options = {
+      hostname: url.hostname,
+      port: url.port || (url.protocol === 'https:' ? 443 : 80),
+      path: url.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(payload)
+      },
+      timeout: parseInt(process.env.ZEROCLAW_TIMEOUT_MS || '115000', 10)
+    };
 
-  const response = await axios.post(url, payload, {
-    headers: { 'Content-Type': 'application/json' },
-    timeout: config.zeroclawTimeout
+    const req = transport.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => { body += chunk; });
+      res.on('end', () => {
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          const snippet = body.slice(0, 200);
+          return reject(new Error(`Zeroclaw returned ${res.statusCode}: ${snippet}`));
+        }
+        try {
+          const data = JSON.parse(body);
+          const model = data?.model || data?.choices?.[0]?.model || 'zeroclaw';
+          const response =
+            data?.response ||
+            data?.content ||
+            data?.text ||
+            data?.choices?.[0]?.message?.content ||
+            (typeof data === 'string' ? data : JSON.stringify(data));
+          resolve({ model, response });
+        } catch {
+          reject(new Error(`Zeroclaw returned non-JSON body: ${body.slice(0, 200)}`));
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Zeroclaw request timed out'));
+    });
+
+    req.write(payload);
+    req.end();
   });
-
-  const data = response.data;
-
-  // Normalise to a consistent shape regardless of what Zeroclaw returns
-  const raw_agent_response =
-    data?.response ||
-    data?.content ||
-    data?.text ||
-    data?.choices?.[0]?.message?.content ||
-    (typeof data === 'string' ? data : JSON.stringify(data));
-
-  const model =
-    data?.model ||
-    data?.choices?.[0]?.model ||
-    'zeroclaw';
-
-  return {
-    model,
-    raw_agent_response,
-    tool_calls: data?.tool_calls || []
-  };
 }
 
-module.exports = { callZeroclaw };
+module.exports = { callZeroclaw, ZEROCLAW_BASE_URL };
