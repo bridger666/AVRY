@@ -1,0 +1,9 @@
+{
+  "payment_id": "superadmin_subscription_lifetime",
+  "user_id": "GrandMasterRCH",
+  "product": "step3_subscription",
+  "amount": 0.0,
+  "status": "paid",
+  "payment_method": "seeded",
+  "created_at": "2024-01-01T00:00:00Z"
+}

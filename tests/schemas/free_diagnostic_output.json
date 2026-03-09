@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Free AI Readiness Diagnostic Output",
+  "type": "object",
+  "required": ["score", "category", "gaps", "recommendations"],
+  "properties": {
+    "score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "AI readiness score"
+    },
+    "category": {
+      "type": "string",
+      "enum": ["Emerging", "Developing", "Mature", "Advanced"],
+      "description": "AI maturity category"
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["area", "severity", "description"],
+        "properties": {
+          "area": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["low", "moderate", "high", "critical"]
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["priority", "action", "impact"],
+        "properties": {
+          "priority": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "action": {
+            "type": "string"
+          },
+          "impact": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

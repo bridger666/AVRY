@@ -1,0 +1,9 @@
+# Workflow Hub — Selection & Preview/Active Model
+
+## How Selection Works
+
+The Workflow Hub (`/workflows`) maintains a single `selectedId` string in React state. On mount, it reads all workflows from `localStorage` via `loadWorkflows()` and checks the `?selected=` query param — if the param matches a stored workflow ID, that workflow is auto-selected; otherwise the first workflow in the list is selected. The list also subscribes to the `aivory_workflows_updated` custom event (same-tab) and the native `storage` event (cross-tab), so any workflow saved from another page (e.g. Blueprint) immediately appears without a manual refresh. When the user clicks a different item in the left list, `selectedId` updates and the canvas receives a new `key` prop (`workflow_id + n8n_workflow_id`), which forces React to fully remount the canvas and load the correct graph. This composite key also ensures the canvas remounts automatically when a workflow transitions from Preview to Active after activation.
+
+## How Preview vs Active Is Determined
+
+A workflow is considered **Active** only when two conditions are both true: its `status` field is `'active'` AND it has a `n8n_workflow_id` value (meaning it was successfully deployed to n8n via the Activate flow). Everything else is **Preview**. This is surfaced in two places: the left list shows a small `Preview` or `Active` badge next to each workflow title, and the canvas header shows a "Preview Mode" label for preview workflows. The `N8nWorkflowCanvas` component receives an `isActive` boolean and an `n8nWorkflowId` prop — for preview workflows it skips the n8n fetch entirely and renders the stored steps directly from `localStorage`, so the user always sees a meaningful graph. For active workflows it fetches the live graph from n8n using the real `n8n_workflow_id`, and only active workflows show the "Save changes" button and "Execution Logs" tab.

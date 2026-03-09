@@ -1,0 +1,189 @@
+{
+  "bp_8380db948a4b": {
+    "blueprint_id": "bp_8380db948a4b",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Example Corp AI System",
+    "created_at": "2026-02-26T15:15:29.562543",
+    "version": "1.0",
+    "json_path": "blueprints/GrandMasterRCH/bp_8380db948a4b/v1.0/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_8380db948a4b/v1.0/blueprint.pdf",
+    "snapshot_id": "snap_test456"
+  },
+  "bp_5c4aef43370d": {
+    "blueprint_id": "bp_5c4aef43370d",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Demo Corp AI System",
+    "created_at": "2026-02-26T19:49:19.825391",
+    "version": "1.0",
+    "json_path": "blueprints/GrandMasterRCH/bp_5c4aef43370d/v1.0/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_5c4aef43370d/v1.0/blueprint.pdf",
+    "snapshot_id": "snap_superadmin_demo"
+  },
+  "bp_59c6326d2972": {
+    "blueprint_id": "bp_59c6326d2972",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Demo Corp AI System",
+    "created_at": "2026-02-26T19:53:25.906874",
+    "version": "1.1",
+    "json_path": "blueprints/GrandMasterRCH/bp_59c6326d2972/v1.1/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_59c6326d2972/v1.1/blueprint.pdf",
+    "snapshot_id": "snap_superadmin_demo"
+  },
+  "bp_d95a42aea62b": {
+    "blueprint_id": "bp_d95a42aea62b",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Demo Corp AI System",
+    "created_at": "2026-02-26T19:56:35.585114",
+    "version": "1.2",
+    "json_path": "blueprints/GrandMasterRCH/bp_d95a42aea62b/v1.2/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_d95a42aea62b/v1.2/blueprint.pdf",
+    "snapshot_id": "snap_superadmin_demo"
+  },
+  "bp_071657fcda66": {
+    "blueprint_id": "bp_071657fcda66",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Demo Corp AI System",
+    "created_at": "2026-02-26T20:00:18.524257",
+    "version": "1.3",
+    "json_path": "blueprints/GrandMasterRCH/bp_071657fcda66/v1.3/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_071657fcda66/v1.3/blueprint.pdf",
+    "snapshot_id": "snap_superadmin_demo"
+  },
+  "bp_6124a042b2a3": {
+    "blueprint_id": "bp_6124a042b2a3",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Demo Corp AI System",
+    "created_at": "2026-02-26T20:03:48.448784",
+    "version": "1.4",
+    "json_path": "blueprints/GrandMasterRCH/bp_6124a042b2a3/v1.4/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_6124a042b2a3/v1.4/blueprint.pdf",
+    "snapshot_id": "snap_superadmin_demo"
+  },
+  "bp_fde7bfe5bcb5": {
+    "blueprint_id": "bp_fde7bfe5bcb5",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Demo Corp AI System",
+    "created_at": "2026-02-26T20:08:04.553020",
+    "version": "1.5",
+    "json_path": "blueprints/GrandMasterRCH/bp_fde7bfe5bcb5/v1.5/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_fde7bfe5bcb5/v1.5/blueprint.pdf",
+    "snapshot_id": "snap_superadmin_demo"
+  },
+  "bp_9f5a3c12f621": {
+    "blueprint_id": "bp_9f5a3c12f621",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Demo Corp AI System",
+    "created_at": "2026-02-26T20:09:22.471365",
+    "version": "1.6",
+    "json_path": "blueprints/GrandMasterRCH/bp_9f5a3c12f621/v1.6/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_9f5a3c12f621/v1.6/blueprint.pdf",
+    "snapshot_id": "snap_superadmin_demo"
+  },
+  "bp_99728fbb654d": {
+    "blueprint_id": "bp_99728fbb654d",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Demo Corp AI System",
+    "created_at": "2026-02-26T20:09:38.752210",
+    "version": "1.7",
+    "json_path": "blueprints/GrandMasterRCH/bp_99728fbb654d/v1.7/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_99728fbb654d/v1.7/blueprint.pdf",
+    "snapshot_id": "snap_superadmin_demo"
+  },
+  "bp_80adc5a2be72": {
+    "blueprint_id": "bp_80adc5a2be72",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Demo Corp AI System",
+    "created_at": "2026-02-26T20:19:27.101526",
+    "version": "1.8",
+    "json_path": "blueprints/GrandMasterRCH/bp_80adc5a2be72/v1.8/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_80adc5a2be72/v1.8/blueprint.pdf",
+    "snapshot_id": "snap_superadmin_demo"
+  },
+  "bp_bdb759b6d2f5": {
+    "blueprint_id": "bp_bdb759b6d2f5",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Demo Corp AI System",
+    "created_at": "2026-02-26T20:20:54.946933",
+    "version": "1.9",
+    "json_path": "blueprints/GrandMasterRCH/bp_bdb759b6d2f5/v1.9/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_bdb759b6d2f5/v1.9/blueprint.pdf",
+    "snapshot_id": "snap_superadmin_demo"
+  },
+  "bp_f5e13dddac11": {
+    "blueprint_id": "bp_f5e13dddac11",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Demo Corp AI System",
+    "created_at": "2026-02-26T20:22:15.320696",
+    "version": "1.10",
+    "json_path": "blueprints/GrandMasterRCH/bp_f5e13dddac11/v1.10/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_f5e13dddac11/v1.10/blueprint.pdf",
+    "snapshot_id": "snap_superadmin_demo"
+  },
+  "bp_812f6a238095": {
+    "blueprint_id": "bp_812f6a238095",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Demo Corp AI System",
+    "created_at": "2026-02-26T20:24:03.670143",
+    "version": "1.10",
+    "json_path": "blueprints/GrandMasterRCH/bp_812f6a238095/v1.10/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_812f6a238095/v1.10/blueprint.pdf",
+    "snapshot_id": "snap_superadmin_demo"
+  },
+  "bp_3a2b328df210": {
+    "blueprint_id": "bp_3a2b328df210",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Demo Corp AI System",
+    "created_at": "2026-02-26T20:26:07.700081",
+    "version": "1.10",
+    "json_path": "blueprints/GrandMasterRCH/bp_3a2b328df210/v1.10/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_3a2b328df210/v1.10/blueprint.pdf",
+    "snapshot_id": "snap_superadmin_demo"
+  },
+  "bp_203cf37811e8": {
+    "blueprint_id": "bp_203cf37811e8",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Demo Corp AI System",
+    "created_at": "2026-02-26T20:28:44.253992",
+    "version": "1.10",
+    "json_path": "blueprints/GrandMasterRCH/bp_203cf37811e8/v1.10/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_203cf37811e8/v1.10/blueprint.pdf",
+    "snapshot_id": "snap_superadmin_demo"
+  },
+  "superadmin_blueprint_001": {
+    "blueprint_id": "superadmin_blueprint_001",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Enterprise AI Platform",
+    "created_at": "2026-02-27T15:00:14.734091",
+    "version": "1.0",
+    "json_path": "blueprints/GrandMasterRCH/superadmin_blueprint_001/v1.0/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/superadmin_blueprint_001/v1.0/blueprint.pdf",
+    "snapshot_id": "superadmin_snapshot_001"
+  },
+  "bp_c7976e0979bc": {
+    "blueprint_id": "bp_c7976e0979bc",
+    "user_id": "GrandMasterRCH",
+    "schema_version": "aivory-v1",
+    "system_name": "Aivory Demo Corp AI System",
+    "created_at": "2026-02-27T16:10:05.856511",
+    "version": "1.10",
+    "json_path": "blueprints/GrandMasterRCH/bp_c7976e0979bc/v1.10/blueprint.json",
+    "pdf_path": "blueprints/GrandMasterRCH/bp_c7976e0979bc/v1.10/blueprint.pdf",
+    "snapshot_id": "snap_superadmin_demo"
+  }
+}

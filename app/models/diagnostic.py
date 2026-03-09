@@ -1,47 +1,53 @@
-"""Data models for diagnostic flow"""
-from typing import List
+"""
+Diagnostic data models for persistence and API.
+"""
+
+from pydantic import BaseModel, Field, EmailStr
+from typing import List, Optional, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, Field
 
 
 class DiagnosticAnswer(BaseModel):
-    """Single diagnostic answer"""
+    """Single diagnostic question answer."""
     question_id: str = Field(description="Question identifier")
-    selected_option: int = Field(ge=0, le=3, description="Selected option index (0-3)")
+    selected_option: int = Field(ge=0, le=4, description="Selected option index (0-4)")
 
 
 class DiagnosticSubmission(BaseModel):
-    """Diagnostic submission from frontend"""
-    answers: List[DiagnosticAnswer] = Field(
-        min_length=12,
-        max_length=12,
-        description="Exactly 12 diagnostic answers"
-    )
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-
-
-class ScoringResult(BaseModel):
-    """Result of scoring calculation"""
-    raw_score: int = Field(ge=0, le=36, description="Sum of all answer scores")
-    normalized_score: float = Field(ge=0, le=100, description="Score normalized to 0-100 scale")
-    category: str = Field(description="AI readiness category")
-    category_explanation: str = Field(description="Explanation of the category")
-
-
-class AIEnrichment(BaseModel):
-    """AI-generated enrichment content"""
-    insights: List[str] = Field(min_length=3, max_length=3, description="3 insights")
-    recommendation: str = Field(description="Recommendation paragraph")
-    narrative: str = Field(description="Readiness narrative")
+    """Request to submit diagnostic."""
+    user_id: Optional[str] = Field(default=None, description="User identifier (optional)")
+    user_email: Optional[EmailStr] = Field(default=None, description="User email")
+    company_name: Optional[str] = Field(default=None, description="Company name")
+    industry: Optional[str] = Field(default=None, description="Industry sector")
+    answers: List[DiagnosticAnswer] = Field(description="Diagnostic answers")
 
 
 class DiagnosticResult(BaseModel):
-    """Complete diagnostic result returned to frontend"""
-    score: float = Field(description="Normalized AI readiness score (0-100)")
+    """Result of diagnostic assessment."""
+    diagnostic_id: str = Field(description="Unique diagnostic identifier")
+    user_id: Optional[str] = Field(description="User identifier")
+    user_email: Optional[str] = Field(description="User email")
+    company_name: Optional[str] = Field(description="Company name")
+    industry: Optional[str] = Field(description="Industry sector")
+    score: int = Field(ge=0, le=100, description="Readiness score")
     category: str = Field(description="Readiness category")
     category_explanation: str = Field(description="Category explanation")
-    insights: List[str] = Field(description="3 bullet-point insights")
-    recommendation: str = Field(description="Recommendation paragraph")
-    badge_svg: str = Field(description="SVG badge markup")
-    enriched_by_ai: bool = Field(description="True if AI enrichment succeeded")
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    insights: List[str] = Field(description="Key insights")
+    recommendation: str = Field(description="Recommendation")
+    badge_svg: str = Field(description="Badge SVG")
+    enriched_by_ai: bool = Field(description="Whether AI enrichment was used")
+    answers: List[DiagnosticAnswer] = Field(description="Original answers")
+    created_at: datetime = Field(default_factory=datetime.utcnow, description="Creation timestamp")
+
+
+class DiagnosticRecord(BaseModel):
+    """Database record for diagnostic."""
+    diagnostic_id: str
+    user_id: Optional[str]
+    user_email: Optional[str]
+    company_name: Optional[str]
+    industry: Optional[str]
+    answers: List[Dict[str, Any]]  # JSON serialized
+    score: int
+    category: str
+    created_at: datetime

@@ -1,0 +1,65 @@
+{
+  "blueprint_id": "bp_59c6326d2972",
+  "version": "1.1",
+  "system_name": "Aivory Demo Corp AI System",
+  "generated_for": "grandmaster@aivory.ai",
+  "generated_at": "2026-02-26 19:53:25.838393",
+  "snapshot_id": "snap_superadmin_demo",
+  "agents": [
+    {
+      "id": "agent_01",
+      "name": "Automation Agent 1",
+      "trigger": "manual",
+      "tools": [
+        "api",
+        "database"
+      ],
+      "pseudo_logic": [
+        "IF task_received \u2192 execute_task()",
+        "ELSE IF error_detected \u2192 log_error()",
+        "ELSE \u2192 wait_for_task()"
+      ]
+    },
+    {
+      "id": "agent_02",
+      "name": "Automation Agent 2",
+      "trigger": "manual",
+      "tools": [
+        "api",
+        "database"
+      ],
+      "pseudo_logic": [
+        "IF task_received \u2192 execute_task()",
+        "ELSE IF error_detected \u2192 log_error()",
+        "ELSE \u2192 wait_for_task()"
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "id": "workflow_01",
+      "name": "Primary Automation Workflow",
+      "agents": [
+        "agent_01",
+        "agent_02"
+      ],
+      "description": "Automated workflow connecting Automation Agent 1 and Automation Agent 2 for streamlined processing"
+    }
+  ],
+  "integrations_required": [
+    {
+      "service_name": "Database",
+      "integration_type": "Database",
+      "priority": "high",
+      "reason": "Data storage and retrieval"
+    },
+    {
+      "service_name": "REST API",
+      "integration_type": "API",
+      "priority": "medium",
+      "reason": "External service integration"
+    }
+  ],
+  "deployment_estimate": "20-40 hours",
+  "schema_version": "aivory-v1"
+}

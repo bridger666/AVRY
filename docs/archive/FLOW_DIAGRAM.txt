@@ -1,0 +1,139 @@
+================================================================================
+AIVORY AI READINESS PLATFORM - THREE SEPARATE FLOWS
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              HOMEPAGE                                        │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────┐   │
+│  │  CTA: "Run Free AI Readiness Diagnostic"                           │   │
+│  │  Status: ALWAYS AVAILABLE                                           │   │
+│  │  onclick="startFreeDiagnostic()"                                    │   │
+│  └────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────┐   │
+│  │  CTA: "Run AI Snapshot — $15"                                      │   │
+│  │  Status: 🔒 LOCKED (until free diagnostic completed)               │   │
+│  │  onclick="startSnapshot()"                                          │   │
+│  └────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────┐   │
+│  │  CTA: "Generate AI System Blueprint — $99"                         │   │
+│  │  Status: 🔒 LOCKED (until free diagnostic completed)               │   │
+│  │  onclick="startBlueprint()"                                         │   │
+│  └────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ User clicks free diagnostic
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    FLOW 1: FREE AI READINESS DIAGNOSTIC                     │
+│                                                                              │
+│  Questions: 12 questions (business_objective, current_ai_usage, etc.)      │
+│  State: freeDiagnosticAnswers = {}                                         │
+│  Function: startFreeDiagnostic() → submitFreeDiagnostic()                 │
+│                                                                              │
+│  API Call:                                                                  │
+│  POST /api/v1/diagnostic/run                                               │
+│  {                                                                          │
+│    "answers": [                                                             │
+│      {"question_id": "business_objective", "selected_option": 2},          │
+│      {"question_id": "current_ai_usage", "selected_option": 1},            │
+│      ... (12 total)                                                         │
+│    ]                                                                        │
+│  }                                                                          │
+│                                                                              │
+│  Response:                                                                  │
+│  {                                                                          │
+│    "score": 75.5,                                                           │
+│    "category": "AI-Ready",                                                  │
+│    "insights": ["...", "...", "..."],                                       │
+│    "recommendation": "...",                                                 │
+│    "badge_svg": "<svg>...</svg>"                                            │
+│  }                                                                          │
+│                                                                              │
+│  Result Display:                                                            │
+│  - Score and category                                                       │
+│  - Insights list                                                            │
+│  - Recommendation                                                           │
+│  - Downloadable badge                                                       │
+│  - ✅ UPGRADE OPTIONS NOW UNLOCKED                                          │
+│                                                                              │
+│  State Update: freeDiagnosticCompleted = true                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ User sees upgrade options
+                                    │
+                    ┌───────────────┴───────────────┐
+                    │                               │
+                    ▼                               ▼
+┌──────────────────────────────────┐  ┌──────────────────────────────────┐
+│  FLOW 2: AI SNAPSHOT ($15)       │  │  FLOW 3: AI BLUEPRINT ($99)      │
+│                                   │  │                                   │
+│  Trigger: startSnapshot()         │  │  Trigger: startBlueprint()        │
+│  Check: freeDiagnosticCompleted   │  │  Check: freeDiagnosticCompleted   │
+│  Model: kimi-k2-250905            │  │  Model: glm-4-7-251222            │
+│                                   │  │                                   │
+│  API Call:                        │  │  API Call:                        │
+│  POST /api/v1/diagnostic/snapshot│  │  POST /api/v1/diagnostic/blueprint│
+│  {                                │  │  {                                │
+│    "free_diagnostic_answers": [  │  │    "free_diagnostic_answers": [  │
+│      ... (12 answers from free)  │  │      ... (12 answers from free)  │
+│    ],                             │  │    ],                             │
+│    "language": "en"               │  │    "language": "en"               │
+│  }                                │  │  }                                │
+│                                   │  │                                   │
+│  Response:                        │  │  Response:                        │
+│  {                                │  │  {                                │
+│    "readiness_score": 68,         │  │    "system_recommendation": {    │
+│    "summary": "...",              │  │      "system_name": "...",       │
+│    "recommended_use_cases": [...],│  │      "description": "...",       │
+│    "priority_actions": [...]      │  │      "confidence_level": "High"  │
+│  }                                │  │    },                             │
+│                                   │  │    "workflow": [...],             │
+│  Result Display:                  │  │    "agent_structure": [...],     │
+│  - Readiness score                │  │    "expected_ROI": "...",        │
+│  - Summary                        │  │    "deployment_plan": "..."      │
+│  - Recommended use cases          │  │  }                                │
+│  - Priority actions (30 days)     │  │                                   │
+│  - Upgrade to Blueprint CTA       │  │  Result Display:                  │
+│                                   │  │  - System recommendation          │
+│                                   │  │  - Workflow architecture          │
+│                                   │  │  - Agent structure                │
+│                                   │  │  - Expected ROI                   │
+│                                   │  │  - Deployment plan                │
+│                                   │  │  - Deploy CTA                     │
+└──────────────────────────────────┘  └──────────────────────────────────┘
+
+================================================================================
+KEY POINTS
+================================================================================
+
+1. FREE DIAGNOSTIC is the ENTRY POINT
+   - Always available
+   - 12 questions
+   - No payment required
+   - Stores answers in freeDiagnosticAnswers
+
+2. PAID TIERS are LOCKED until free diagnostic completed
+   - Check: if (!freeDiagnosticCompleted) { alert(); return; }
+   - Both use freeDiagnosticAnswers as input
+   - Different models, different outputs
+
+3. SEPARATE ENDPOINTS
+   - /api/v1/diagnostic/run (free)
+   - /api/v1/diagnostic/snapshot (paid $15)
+   - /api/v1/diagnostic/blueprint (paid $99)
+
+4. SEPARATE FRONTEND SECTIONS
+   - #free-diagnostic
+   - #snapshot-loading, #snapshot-results
+   - #blueprint-loading, #blueprint-results
+
+5. NO MERGING
+   - Each flow has its own functions
+   - Each flow has its own UI
+   - Each flow has its own state
+   - Clear separation throughout
+
+================================================================================
