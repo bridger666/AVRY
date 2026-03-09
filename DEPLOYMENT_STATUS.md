@@ -140,7 +140,7 @@ curl -X POST http://43.156.108.96:3001/diagnostics/free/run \
 PORT=3001
 API_KEY=supersecret-xyz123456789
 CORS_ORIGIN=http://localhost:3000
-OPENROUTER_API_KEY=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
+OPENROUTER_API_KEY=YOUR_OPENROUTER_API_KEY_HERE
 LOG_LEVEL=info
 ```
 
@@ -149,7 +149,7 @@ LOG_LEVEL=info
 PORT=3001
 API_KEY=supersecret-xyz123456789  # Change in production!
 CORS_ORIGIN=*  # Or restrict to your frontend domain
-OPENROUTER_API_KEY=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
+OPENROUTER_API_KEY=YOUR_OPENROUTER_API_KEY_HERE
 LOG_LEVEL=info
 ```
 
