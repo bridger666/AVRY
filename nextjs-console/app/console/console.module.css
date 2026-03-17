@@ -2,16 +2,18 @@
 .consoleWrapper {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  /* FIXED: CONSOLE BG EXCEPTION — keep warm dark, not global #0a0a0a */
+  height: 100%;
+  min-height: 0;
   background: #1e1d1a;
   position: relative;
+  overflow: hidden;
 }
 
 .consoleBody {
   flex: 1;
   display: flex;
-  min-height: 0; /* allow flex children to shrink below content size */
+  min-height: 0;
+  overflow: hidden;
   position: relative;
 }
 
@@ -49,7 +51,7 @@
   flex: 1;
   min-height: 0;
   text-align: center;
-  padding: 32px 20px 16px;
+  padding: 80px 20px 16px;
 }
 
 .emptyStateTitle {
@@ -385,14 +387,11 @@
 
 /* ── History sidebar toggle ──────────────────────────────────── */
 .sidebarToggle {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
   width: 22px;
   height: 48px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-soft);
+  align-self: center;
+  background: #111110;
+  border: 1px solid rgba(255,255,255,0.1);
   border-right: none;
   border-radius: 6px 0 0 6px;
   cursor: pointer;
@@ -401,31 +400,50 @@
   justify-content: center;
   color: var(--text-tertiary);
   transition: color 0.15s, background 0.15s;
-  z-index: 10;
   flex-shrink: 0;
+  z-index: 10;
+  /* Anchor to right edge of consoleBody */
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .sidebarToggle:hover {
   color: var(--text-primary);
-  background: var(--bg-soft);
+  background: #1a1a18;
+}
+
+/* When sidebar is open, shift toggle left by sidebar width */
+.sidebarToggleOpen {
+  right: 340px;
+  transition: right 0.22s ease, color 0.15s, background 0.15s;
 }
 
 /* ── History sidebar ─────────────────────────────────────────── */
 .sidebar {
-  width: 300px;
-  min-width: 300px;
-  background: var(--bg-elevated);
-  border-left: 1px solid var(--border-soft);
+  width: 340px;
+  background: #111110;
+  border-left: 1px solid rgba(255,255,255,0.1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   flex-shrink: 0;
-  animation: sidebarIn 0.2s ease;
+  /* Slide in from right */
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 9;
+  transform: translateX(0);
+  transition: transform 0.22s ease, opacity 0.22s ease;
+  opacity: 1;
 }
 
-@keyframes sidebarIn {
-  from { opacity: 0; transform: translateX(16px); }
-  to   { opacity: 1; transform: translateX(0); }
+.sidebarClosed {
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .sidebarHeader {
@@ -557,12 +575,58 @@
 @media (max-width: 768px) {
   .chatArea { padding: 16px 20px 8px; }
   .inputZone { padding: 8px 20px 16px; }
-  .sidebar {
-    position: absolute;
-    right: 0; top: 0; bottom: 0;
-    z-index: 100;
-    box-shadow: -8px 0 32px rgba(0,0,0,0.4);
-  }
+  .sidebar { width: 300px; }
+  .sidebarToggleOpen { right: 300px; }
   .emptyStateTitle { font-size: 18px; }
   .dragOverlayInner { padding: 36px 40px; font-size: 15px; }
+}
+
+.generateWorkflowBtn {
+  margin-top: 16px;
+  padding: 6px 18px;
+  background: transparent;
+  border: 1px solid #00e59e;
+  border-radius: 20px;
+  color: #00e59e;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.generateWorkflowBtn:hover {
+  border-color: rgba(0, 229, 158, 0.4);
+  color: #00e59e;
+  background: rgba(0, 229, 158, 0.06);
+}
+.generateBtnFloating {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.generateWorkflowBtn {
+  margin-top: 16px;
+  padding: 6px 18px;
+  background: transparent;
+  border: 1px solid #00e59e;
+  border-radius: 20px;
+  color: #00e59e;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.generateWorkflowBtn:hover {
+  border-color: rgba(0, 229, 158, 0.4);
+  color: #00e59e;
+  background: rgba(0, 229, 158, 0.06);
+}
+.generateBtnFloating {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
 }

@@ -22,6 +22,49 @@
   font-weight: 300;
 }
 
+.topbarCenter {
+  display: flex;
+  align-items: center;
+}
+
+.modePills {
+  display: flex;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.modePill {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.modePill:hover {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.modePillActive {
+  background: rgba(0, 229, 158, 0.12);
+  color: #00e59e;
+}
+
+.modePillActive:hover {
+  background: rgba(0, 229, 158, 0.16);
+  color: #00e59e;
+}
+
 .topbarRight {
   display: flex;
   align-items: center;

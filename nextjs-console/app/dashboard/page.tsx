@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useTranslations } from "next-intl"
 import { DashboardData, getPlaceholderData } from "@/types/dashboard"
 import { FreeDiagnosticService } from "@/services/freeDiagnostic"
 import OverviewCard from "@/components/dashboard/OverviewCard"
@@ -16,6 +17,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [freeDiagnosticScore, setFreeDiagnosticScore] = useState<number | null>(null)
   const [freeDiagnosticCompleted, setFreeDiagnosticCompleted] = useState(false)
+  const t = useTranslations("dashboard")
 
   useEffect(() => {
     fetchDashboardData()
@@ -46,7 +48,7 @@ export default function DashboardPage() {
   return (
     <div className={styles.dashboardContainer}>
       <div className={styles.mainContent}>
-        <h1 className={styles.pageTitle}>AI Operating System</h1>
+        <h1 className={styles.pageTitle}>{t('title')}</h1>
         
         {/* FIXED: OVERVIEW CARD — pass score props for progress ring */}
         <OverviewCard
@@ -57,34 +59,34 @@ export default function DashboardPage() {
 
         <div className={styles.lifecycleGrid}>
           <LifecycleCard
-            title="Diagnostics"
+            title={t('diagnosticsCard.title')}
             description={
               freeDiagnosticCompleted
-                ? `Free Diagnostic completed with score ${Math.round(freeDiagnosticScore || 0)}/100. Continue with Deep Diagnostic for comprehensive analysis.`
-                : "Run AI Readiness Diagnostic to understand your business and automation potential."
+                ? t('diagnosticsCard.descriptionCompleted', { score: Math.round(freeDiagnosticScore || 0) })
+                : t('diagnosticsCard.descriptionNotStarted')
             }
             status={freeDiagnosticCompleted ? 'completed' : data.diagnostic.status}
             cta={
               freeDiagnosticCompleted
-                ? 'View Results'
+                ? t('diagnosticsCard.viewResults')
                 : data.diagnostic.status === 'not_started'
-                ? 'Start Diagnostic'
-                : 'Continue Diagnostic'
+                ? t('diagnosticsCard.startDiagnostic')
+                : t('diagnosticsCard.continueDiagnostic')
             }
             href={freeDiagnosticCompleted ? "/diagnostics/free/result" : "/diagnostics"}
           />
           <LifecycleCard
-            title="Blueprint"
-            description="Design your AI System Blueprint: architecture, workflows, and deployment plan."
+            title={t('blueprintCard.title')}
+            description={t('blueprintCard.description')}
             status={data.blueprint.status}
-            cta={data.blueprint.status === 'none' ? 'Generate Blueprint' : 'View Blueprint'}
+            cta={data.blueprint.status === 'none' ? t('blueprintCard.generateBlueprint') : t('blueprintCard.viewBlueprint')}
             href="/blueprint"
           />
           <LifecycleCard
-            title="Workflows"
-            description="Deploy and manage automation workflows generated from your blueprints."
+            title={t('workflowsCard.title')}
+            description={t('workflowsCard.description')}
             status={data.workflows.active > 0 ? 'active' : 'none'}
-            cta="View Workflows"
+            cta={t('workflowsCard.viewWorkflows')}
             href="/workflows"
           />
         </div>

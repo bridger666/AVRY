@@ -1,7 +1,9 @@
 import type { Metadata } from "next"
 import Sidebar from "@/components/shared/Sidebar"
 import ClientShell from "@/components/ClientShell"
+import LocaleWrapper from "@/components/LocaleWrapper"
 import "@/styles/globals.css"
+import "@/styles/workflow-nodes.css"
 
 export const metadata: Metadata = {
   title: "Aivory Console",
@@ -19,13 +21,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <div className="app-layout">
-          <Sidebar />
-          <main className="app-main-content">
-            {children}
-          </main>
-        </div>
-        <ClientShell />
+        <LocaleWrapper>
+          <div className="app-layout">
+            <Sidebar />
+            <main className="app-main-content">
+              {children}
+            </main>
+          </div>
+          <ClientShell />
+        </LocaleWrapper>
       </body>
     </html>
   )

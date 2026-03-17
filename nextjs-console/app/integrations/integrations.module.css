@@ -1,0 +1,490 @@
+.page {
+  min-height: 100vh;
+  background: var(--bg-main, #1e1d1a);
+  color: #e5e5e5;
+  padding: 32px;
+  font-family: var(--font-sans, sans-serif);
+}
+
+.header {
+  margin-bottom: 32px;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #f5f5f5;
+  margin: 0 0 6px;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: #666;
+  margin: 0;
+}
+
+/* ── Section ── */
+.section {
+  margin-bottom: 44px;
+}
+
+.sectionTitle {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #555;
+  margin: 0 0 14px;
+}
+
+.emptyMsg {
+  font-size: 0.875rem;
+  color: #444;
+  padding: 12px 0;
+  margin: 0;
+}
+
+/* ── Connections Table ── */
+.table {
+  border: 1px solid #1e1e1e;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 160px 1fr 130px 110px 160px;
+  padding: 10px 16px;
+  background: #0f0f0f;
+  border-bottom: 1px solid #1e1e1e;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #444;
+  gap: 12px;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 160px 1fr 130px 110px 160px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #141414;
+  align-items: center;
+  gap: 12px;
+  transition: background 0.1s;
+}
+
+.tableRow:last-child {
+  border-bottom: none;
+}
+
+.tableRow:hover {
+  background: #0d0d0d;
+}
+
+.tableAppCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tableAppIcon {
+  font-size: 1.1rem;
+  line-height: 1;
+  color: #ffffff;
+}
+
+/* Brand color icons - preserve original colors */
+.tableAppIcon img[data-brand="slack"],
+.tableAppIcon img[data-brand="airtable"],
+.tableAppIcon img[data-brand="hubspot"],
+.tableAppIcon img[data-brand="jira"],
+.tableAppIcon img[data-brand="salesforce"],
+.tableAppIcon img[data-brand="sendgrid"] {
+  filter: none;
+}
+
+/* Monochrome/dark icons - convert to white */
+.tableAppIcon img[data-brand="github"],
+.tableAppIcon img[data-brand="openai"],
+.tableAppIcon img[data-brand="notion"],
+.tableAppIcon img[data-brand="http"],
+.tableAppIcon img:not([data-brand]) {
+  filter: brightness(0) invert(1);
+}
+
+.tableAppName {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #d0d0d0;
+}
+
+.tableDisplayName {
+  font-size: 0.875rem;
+  color: #aaa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tableLastUsed {
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.tableActions {
+  display: flex;
+  gap: 6px;
+}
+
+.actionBtn {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  border-radius: 5px;
+  border: 1px solid #2a2a2a;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.actionBtn:hover {
+  border-color: #444;
+  color: #ccc;
+}
+
+.actionBtnDanger {
+  border-color: #2a1515;
+  color: #c87070;
+}
+
+.actionBtnDanger:hover {
+  border-color: #4a2020;
+  color: #f87171;
+  background: #1a0a0a;
+}
+
+/* ── Status Badges ── */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.statusBadge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusConnected {
+  background: rgba(0, 229, 158, 0.08);
+  color: #00e59e;
+  border: 1px solid rgba(0, 229, 158, 0.15);
+}
+
+.statusConnected::before {
+  background: #00e59e;
+}
+
+.statusRevoked {
+  background: rgba(248, 113, 113, 0.08);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.15);
+}
+
+.statusRevoked::before {
+  background: #f87171;
+}
+
+.statusReauth {
+  background: rgba(251, 191, 36, 0.08);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.statusReauth::before {
+  background: #fbbf24;
+}
+
+/* ── App Grid ── */
+.appGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.appCard {
+  background: var(--bg-main, #1e1d1a);
+  border: 1px solid #1e1e1e;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s;
+}
+
+.appCard:hover {
+  border-color: #2a2a2a;
+}
+
+.appCardTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.appIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  color: #ffffff;
+}
+
+.appIcon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Brand color icons - preserve original colors */
+.appIcon img[data-brand="slack"],
+.appIcon img[data-brand="airtable"],
+.appIcon img[data-brand="hubspot"],
+.appIcon img[data-brand="jira"],
+.appIcon img[data-brand="salesforce"],
+.appIcon img[data-brand="sendgrid"] {
+  filter: none;
+}
+
+/* Monochrome/dark icons - convert to white */
+.appIcon img[data-brand="github"],
+.appIcon img[data-brand="openai"],
+.appIcon img[data-brand="notion"],
+.appIcon img[data-brand="http"],
+.appIcon img:not([data-brand]) {
+  filter: brightness(0) invert(1);
+}
+
+.appName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #e0e0e0;
+  margin: 0;
+}
+
+.appCategory {
+  font-size: 0.7rem;
+  color: #555;
+  text-transform: capitalize;
+  margin: 0;
+}
+
+.appDesc {
+  font-size: 0.78rem;
+  color: #666;
+  line-height: 1.45;
+  flex: 1;
+  margin: 0;
+}
+
+.connectBtn {
+  margin-top: 4px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid #2dd4bf;
+  background: transparent;
+  color: #2dd4bf;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  align-self: flex-start;
+}
+
+.connectBtn:hover {
+  background: #2dd4bf;
+  color: #0a0a0a;
+}
+
+/* ── Modal ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal {
+  background: #111;
+  border: 1px solid #252525;
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.modalAppIcon {
+  font-size: 1.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+  color: #ffffff;
+}
+
+/* Brand color icons - preserve original colors */
+.modalAppIcon img[data-brand="slack"],
+.modalAppIcon img[data-brand="airtable"],
+.modalAppIcon img[data-brand="hubspot"],
+.modalAppIcon img[data-brand="jira"],
+.modalAppIcon img[data-brand="salesforce"],
+.modalAppIcon img[data-brand="sendgrid"] {
+  filter: none;
+}
+
+/* Monochrome/dark icons - convert to white */
+.modalAppIcon img[data-brand="github"],
+.modalAppIcon img[data-brand="openai"],
+.modalAppIcon img[data-brand="notion"],
+.modalAppIcon img[data-brand="http"],
+.modalAppIcon img:not([data-brand]) {
+  filter: brightness(0) invert(1);
+}
+
+.modalTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f0f0f0;
+  margin: 0 0 3px;
+}
+
+.modalSubtitle {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 0;
+}
+
+.securityNote {
+  font-size: 0.78rem;
+  color: #555;
+  background: #0d0d0d;
+  border: 1px solid #1e1e1e;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 0 0 16px;
+}
+
+.formField {
+  margin-bottom: 14px;
+}
+
+.formLabel {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #888;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.optionalTag {
+  font-weight: 400;
+  color: #555;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.formInput {
+  width: 100%;
+  background: #0d0d0d;
+  border: 1px solid #252525;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.875rem;
+  color: #e5e5e5;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.formInput:focus {
+  border-color: #2dd4bf;
+}
+
+.modalActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.cancelBtn {
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  border-radius: 6px;
+  border: 1px solid #252525;
+  background: transparent;
+  color: #777;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.cancelBtn:hover {
+  border-color: #3a3a3a;
+  color: #bbb;
+}
+
+.saveBtn {
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid #2dd4bf;
+  background: #2dd4bf;
+  color: #0a0a0a;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.saveBtn:hover {
+  opacity: 0.85;
+}
+
+.saveBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.errorMsg {
+  font-size: 0.8rem;
+  color: #f87171;
+  margin: 8px 0 0;
+}

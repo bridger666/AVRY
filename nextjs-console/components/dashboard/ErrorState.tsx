@@ -11,7 +11,7 @@ export default function ErrorState({
 }: ErrorStateProps) {
   return (
     <div className={styles.errorState}>
-      <div className={styles.errorIcon}>⚠️</div>
+      <div className={styles.errorIcon}>!</div>
       <h3 className={styles.title}>Something went wrong</h3>
       <p className={styles.message}>{message}</p>
       {onRetry && (

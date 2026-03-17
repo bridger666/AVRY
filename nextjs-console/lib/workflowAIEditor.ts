@@ -27,7 +27,7 @@ export interface StepEditResponse {
 
 /**
  * Request workflow-level changes from AI
- * Sends current workflow + user instruction to AI endpoint
+ * Sends current workflow + user instruction to AIRA endpoint
  * Returns proposed updated workflow with change summary
  */
 export async function requestWorkflowEdit(
@@ -35,25 +35,28 @@ export async function requestWorkflowEdit(
   userInstruction: string
 ): Promise<AIEditResponse> {
   try {
-    const res = await fetch('/api/workflows/edit-with-ai', {
+    const res = await fetch('/api/workflows/aira-edit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        workflow_id: workflow.workflow_id,
-        current_workflow: workflow,
-        user_instruction: userInstruction,
+        mode: 'EDIT_WORKFLOW',
+        workflow,
+        instruction: userInstruction,
       }),
     })
 
     if (!res.ok) {
-      throw new Error(`AI edit failed: ${res.statusText}`)
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(
+        errorData.errorMessage || `AI edit failed: ${res.statusText}`
+      )
     }
 
     const data = await res.json()
     return {
-      updatedWorkflow: data.updatedWorkflow || data,
+      updatedWorkflow: data.updatedWorkflow || workflow,
       changes: data.changes || [],
-      summary: data.summary || 'Workflow updated',
+      summary: (data.summary && data.summary.join(' ')) || 'Workflow updated',
     }
   } catch (error) {
     console.error('[workflowAIEditor] requestWorkflowEdit error:', error)
@@ -63,34 +66,51 @@ export async function requestWorkflowEdit(
 
 /**
  * Request step-level changes from AI
- * Sends current step + user description to AI endpoint
+ * Sends current step + user description to AIRA endpoint
  * Returns updated step configuration
  */
 export async function requestStepEdit(
   step: SavedWorkflow['steps'][0],
   userDescription: string,
-  stepIndex: number
+  stepIndex: number,
+  workflow?: SavedWorkflow
 ): Promise<StepEditResponse> {
   try {
-    const res = await fetch('/api/workflows/edit-step-with-ai', {
+    // If workflow not provided, create a minimal one for context
+    const workflowContext = workflow || {
+      workflow_id: 'unknown',
+      title: 'Workflow',
+      trigger: 'Manual',
+      steps: [step],
+      integrations: [],
+    }
+
+    const res = await fetch('/api/workflows/aira-edit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        current_step: step,
-        step_index: stepIndex,
-        user_description: userDescription,
+        mode: 'EDIT_STEP',
+        workflow: workflowContext,
+        targetStepId: String(stepIndex + 1),
+        instruction: userDescription,
       }),
     })
 
     if (!res.ok) {
-      throw new Error(`Step AI edit failed: ${res.statusText}`)
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(
+        errorData.errorMessage || `Step AI edit failed: ${res.statusText}`
+      )
     }
 
     const data = await res.json()
+    const updatedSteps = data.updatedWorkflow?.steps || [step]
+    const updatedStep = updatedSteps[stepIndex] || step
+
     return {
-      updatedStep: data.updatedStep || data,
-      changes: data.changes || [],
-      explanation: data.explanation || 'Step updated',
+      updatedStep,
+      changes: data.summary || [],
+      explanation: (data.summary && data.summary.join(' ')) || 'Step updated',
     }
   } catch (error) {
     console.error('[workflowAIEditor] requestStepEdit error:', error)

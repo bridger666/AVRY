@@ -1,3 +1,8 @@
+// =============================================================================
+// CANONICAL WORKFLOW CANVAS — all workflow graphs must use this component.
+// Node types: standardNode (default), appNode (app drops), workflowStep (legacy n8n).
+// Stylesheet: @/styles/workflow-nodes.css — single source of truth for node visuals.
+// =============================================================================
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -5,24 +10,39 @@ import {
   ReactFlow,
   useNodesState,
   useEdgesState,
+  addEdge,
   type Node,
   type Edge,
+  type Connection as RFConnection,
   Background,
   Controls,
   MiniMap,
   ConnectionLineType,
+  MarkerType,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { WorkflowStepNode } from './WorkflowStepNode';
-import { StepInspector } from './StepInspector';
+// workflow-nodes.css is imported globally in app/layout.tsx
+import { StepAiraEditModal } from './StepAiraEditModal';
+import { WorkflowAiraRefineModal } from './WorkflowAiraRefineModal';
+import { AddWithAiraPanel } from './AddWithAiraPanel';
+import { ExplainPathModal } from './ExplainPathModal';
+import AppNode from './AppNode';
+import TriggerNode from './TriggerNode';
+import StandardNode from './StandardNode';
+import { N8NAdaptiveEdge } from './WorkflowEdges';
+import NodeInspectorPanel from './inspector/NodeInspectorPanel';
 import { n8nToReactFlow, reactFlowToN8n } from '@/lib/n8nMapper';
+import { loadCanvasState, fetchCanvasState, useCanvasAutosave } from '@/hooks/useCanvasPersistence';
 import type { WorkflowNodeData } from '@/types/workflow-node';
+import type { SavedWorkflow } from '@/hooks/useWorkflows';
+import type { WorkflowStep, AivoryWorkflowSpec } from '@/types/workflows';
 
 type Props = {
   workflowId: string;
   isActive?: boolean;
   n8nWorkflowId?: string;
   fallbackSteps?: Array<{ step: number; action: string; tool: string; output: string; type?: string }>;
+  onInjectNodes?: (inject: (nodes: Node[], edges: Edge[]) => void) => void;
 };
 
 type SyncState = 'idle' | 'loading' | 'saving' | 'saved' | 'error';
@@ -55,23 +75,17 @@ const pillStyle = (active: boolean): React.CSSProperties => ({
   whiteSpace: 'nowrap' as const,
 });
 
-const iconBtnStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 28,
-  height: 28,
-  background: 'transparent',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 7,
-  color: '#a8a6a2',
-  cursor: 'pointer',
-  flexShrink: 0,
-  transition: 'all 0.15s',
-  fontSize: 12,
-};
+/** Normalize edges loaded from any external source to use canonical n8nAdaptive type + marker. */
+function normalizeEdges(edges: Edge[], nodes?: Node[]): Edge[] {
+  return edges.map((e) => ({
+    ...e,
+    type: 'n8nAdaptive',
+    animated: false,
+    markerEnd: (e.markerEnd as any) || { type: MarkerType.ArrowClosed, width: 12, height: 12, color: '#9ca3af' },
+  }));
+}
 
-export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fallbackSteps }: Props) {
+export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fallbackSteps, onInjectNodes }: Props) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<WorkflowNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [rawWorkflow, setRawWorkflow] = useState<any>(null);
@@ -79,57 +93,248 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isEmpty, setIsEmpty] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'canvas' | 'executions'>('canvas');
   const [executions, setExecutions] = useState<any[]>([]);
   const [execLoading, setExecLoading] = useState(false);
   const [execError, setExecError] = useState<string | null>(null);
-  // Collapse state for the Edit Step inspector panel
-  const [inspectorCollapsed, setInspectorCollapsed] = useState(false);
+  // AIRA modals state
+  const [showStepAiraModal, setShowStepAiraModal] = useState(false);
+  const [stepAiraIndex, setStepAiraIndex] = useState<number | null>(null);
+  const [showWorkflowAiraModal, setShowWorkflowAiraModal] = useState(false);
+  const [currentWorkflow, setCurrentWorkflow] = useState<SavedWorkflow | null>(null);
+  const [airaLoading, setAiraLoading] = useState(false);
+  // Add with AIRA panel state
+  const [showAddWithAiraPanel, setShowAddWithAiraPanel] = useState(false);
+  const [airaSourceStepId, setAiraSourceStepId] = useState<string | null>(null);
+  // Explain path modal state
+  const [showExplainModal, setShowExplainModal] = useState(false);
+  const [explainTargetStep, setExplainTargetStep] = useState<WorkflowStep | null>(null);
+
+  // ── Listen for edit-node events from BaseWorkflowNode edit button ──
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const nodeId = (e as CustomEvent).detail?.nodeId;
+      if (nodeId) { setSelectedNodeId(nodeId); setInspectorOpen(true); }
+    };
+    window.addEventListener('aivory:edit-node', handler);
+    return () => window.removeEventListener('aivory:edit-node', handler);
+  }, []);
+
+  // ── Connect handler ──────────────────────────────────────
+  const onConnect = useCallback(
+    (params: RFConnection) => setEdges((eds) => addEdge({
+      ...params,
+      animated: false,
+      type: 'n8nAdaptive',
+      markerEnd: { type: MarkerType.ArrowClosed, width: 12, height: 12, color: '#9ca3af' },
+    }, eds)),
+    [setEdges]
+  );
+
+  // ── Inject nodes from outside (AIRA generation) ──────────
+  useEffect(() => {
+    if (!onInjectNodes) return;
+    onInjectNodes((newNodes: Node[], newEdges: Edge[]) => {
+      setNodes((nds) => {
+        const offsetY = nds.length > 0 ? (nds.length * 160) : 0;
+        const positioned = newNodes.map((n, i) => ({
+          ...n,
+          position: { x: 0, y: offsetY + i * 160 },
+        })) as Node<WorkflowNodeData>[];
+        return [...nds, ...positioned];
+      });
+      setEdges((eds) => [...eds, ...normalizeEdges(newEdges)]);
+      setIsEmpty(false);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onInjectNodes]);
+
+  // ── Drag and drop support ────────────────────────────────
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+
+      // ── Standard node drop ──────────────────────────────
+      const stdData = event.dataTransfer.getData('application/aivory-standard-node');
+      if (stdData) {
+        try {
+          const nodeDef = JSON.parse(stdData);
+          const reactFlowBounds = (event.target as HTMLElement).getBoundingClientRect();
+          const position = {
+            x: event.clientX - reactFlowBounds.left,
+            y: event.clientY - reactFlowBounds.top,
+          };
+          const newId = `std-${Date.now()}`;
+          const newNode: Node<WorkflowNodeData> = {
+            id: newId,
+            type: 'standardNode',
+            position,
+            data: {
+              label: nodeDef.label,
+              icon: nodeDef.icon,
+              category: nodeDef.category,
+              title: nodeDef.label,
+              onAddStep: () => {
+                setAiraSourceStepId(newId);
+                setShowAddWithAiraPanel(true);
+              },
+            } as any,
+          };
+          setNodes((nds) => [...nds, newNode]);
+        } catch (err) {
+          console.error('[onDrop standard]', err);
+        }
+        return;
+      }
+
+      // ── App node drop ───────────────────────────────────
+      const appData = event.dataTransfer.getData('application/aivory-app');
+      if (!appData) return;
+
+      try {
+        const app = JSON.parse(appData);
+        const reactFlowBounds = (event.target as HTMLElement).getBoundingClientRect();
+        const position = {
+          x: event.clientX - reactFlowBounds.left,
+          y: event.clientY - reactFlowBounds.top,
+        };
+
+        // Extract app name - handle both direct name and nested structure
+        const appName = app.name || app.title || 'App';
+        const appIcon = app.icon || app.iconPath || '';
+        const appId = app.id || `app-${Date.now()}`;
+
+        // Create new app node with workflow builder
+        const newNode: Node<WorkflowNodeData> = {
+          id: `app-${Date.now()}`,
+          type: 'appNode',
+          position,
+          data: {
+            title: appName,
+            category: 'app',
+            appName: appName,
+            appIcon: appIcon,
+            appId: appId,
+            action: undefined,
+            connectionId: undefined,
+            connectionName: undefined,
+            onAddStep: () => {
+              setAiraSourceStepId(`app-${Date.now()}`);
+              setShowAddWithAiraPanel(true);
+            },
+            onExplainPath: () => {
+              const step: WorkflowStep = {
+                id: `app-${Date.now()}`,
+                appId: appId,
+                actionId: '',
+                connectionId: '',
+                inputs: {},
+                position: { x: 0, y: 0 },
+                type: 'action',
+              };
+              setExplainTargetStep(step);
+              setShowExplainModal(true);
+            },
+          } as any,
+        };
+
+        setNodes((nds) => [...nds, newNode]);
+      } catch (err) {
+        console.error('[onDrop]', err);
+      }
+    },
+    [setNodes]
+  );
 
   // ── Fetch workflow ───────────────────────────────────────
+  const applyFallbackSteps = useCallback((steps: NonNullable<Props['fallbackSteps']>) => {
+    if (steps.length > 0) {
+      const iconMap: Record<string, string> = {
+        ingestion: 'http', ai_processing: 'code', decision: 'branch',
+        execution: 'edit', notification: 'respond', human_review: 'manual',
+      };
+      const categoryMap: Record<string, WorkflowNodeData['category']> = {
+        ingestion: 'action', ai_processing: 'ai', decision: 'condition',
+        execution: 'action', notification: 'channel', human_review: 'system',
+      };
+      const rfNodes = steps.map((s, i) => ({
+        id: `step-${i}`,
+        type: 'standardNode' as const,
+        position: { x: 0, y: i * 160 },
+        data: {
+          label: s.action || `Step ${i + 1}`,
+          icon: iconMap[s.type || ''] ?? 'http',
+          category: categoryMap[s.type || ''] ?? 'action',
+          title: s.action || `Step ${i + 1}`,
+          description: s.output || s.tool || '',
+        } as WorkflowNodeData,
+      }));
+      const rfEdges = steps.slice(0, -1).map((_, i) => ({
+        id: `e-${i}-${i + 1}`,
+        source: `step-${i}`,
+        target: `step-${i + 1}`,
+        animated: false,
+        type: 'n8nAdaptive' as const,
+        markerEnd: { type: MarkerType.ArrowClosed, width: 12, height: 12, color: '#9ca3af' },
+      }));
+      setNodes(rfNodes);
+      setEdges(normalizeEdges(rfEdges, rfNodes));
+      setIsEmpty(false);
+    } else {
+      setIsEmpty(true);
+    }
+    setSyncState('idle');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setNodes, setEdges]);
+
   useEffect(() => {
     if (!isActive) {
-      const steps = Array.isArray(fallbackSteps) ? fallbackSteps : [];
-      if (steps.length > 0) {
-        const rfNodes = steps.map((s, i) => {
-          const categoryMap: Record<string, WorkflowNodeData['category']> = {
-            ingestion: 'action', ai_processing: 'ai', decision: 'condition',
-            execution: 'action', notification: 'channel', human_review: 'system',
-          };
-          const iconMap: Record<string, string> = {
-            ingestion: '📥', ai_processing: '🤖', decision: '🔀',
-            execution: '⚙️', notification: '📢', human_review: '👤',
-          };
-          const cat = categoryMap[s.type || ''] ?? 'action';
-          const icon = iconMap[s.type || ''] ?? '⚙️';
-          return {
-            id: `step-${i}`,
-            type: 'workflowStep' as const,
-            position: { x: i * 260, y: 0 },
-            data: {
-              title: s.action || `Step ${i + 1}`,
-              subtitle: s.tool && s.tool !== 'N/A' ? s.tool : undefined,
-              description: s.output || undefined,
-              category: cat,
-              icon,
-            } as WorkflowNodeData,
-          };
-        });
-        const rfEdges = steps.slice(0, -1).map((_, i) => ({
-          id: `e-${i}-${i + 1}`,
-          source: `step-${i}`,
-          target: `step-${i + 1}`,
-          animated: true,
-          type: 'smoothstep' as const,
-        }));
-        setNodes(rfNodes);
-        setEdges(rfEdges);
-        setIsEmpty(false);
-      } else {
-        setIsEmpty(true);
-      }
-      setSyncState('idle');
-      return;
+      // ── Load order: backend → localStorage → fallbackSteps ──
+      let cancelled = false;
+      const loadLocal = () => {
+        const persisted = loadCanvasState(workflowId);
+        if (persisted && persisted.nodes.length > 0) {
+          setNodes(persisted.nodes as Node<WorkflowNodeData>[]);
+          setEdges(normalizeEdges(persisted.edges, persisted.nodes));
+          setIsEmpty(false);
+          setSyncState('idle');
+          return true;
+        }
+        return false;
+      };
+
+      // Optimistic: show localStorage immediately while backend loads
+      loadLocal();
+
+      fetchCanvasState(workflowId).then((remote) => {
+        if (cancelled) return;
+        if (remote && remote.nodes.length > 0) {
+          setNodes(remote.nodes as Node<WorkflowNodeData>[]);
+          setEdges(normalizeEdges(remote.edges, remote.nodes));
+          setIsEmpty(false);
+          setSyncState('idle');
+          return;
+        }
+        // Backend had nothing — fall through to fallbackSteps if localStorage also empty
+        if (!loadLocal()) {
+          const steps = Array.isArray(fallbackSteps) ? fallbackSteps : [];
+          applyFallbackSteps(steps);
+        }
+      }).catch(() => {
+        if (cancelled) return;
+        if (!loadLocal()) {
+          const steps = Array.isArray(fallbackSteps) ? fallbackSteps : [];
+          applyFallbackSteps(steps);
+        }
+      });
+
+      return () => { cancelled = true; };
     }
 
     const fetchId = n8nWorkflowId || workflowId;
@@ -149,7 +354,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
           setNodes([]); setEdges([]); setIsEmpty(true); setSyncState('idle'); return;
         }
         const { nodes: rfNodes, edges: rfEdges } = n8nToReactFlow(wf);
-        setNodes(rfNodes); setEdges(rfEdges); setIsEmpty(false); setSyncState('idle');
+        setNodes(rfNodes); setEdges(normalizeEdges(rfEdges, rfNodes)); setIsEmpty(false); setSyncState('idle');
       } catch (err: any) {
         if (!cancelled) { setErrorMsg(err?.message ?? 'Failed to load workflow'); setSyncState('error'); }
       }
@@ -184,11 +389,20 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
   }, [rawWorkflow, nodes, edges, workflowId]);
 
   const handleInspectorChange = useCallback(
-    (updates: Partial<WorkflowNodeData>) => {
-      if (!selectedNodeId) return;
-      setNodes((nds) => nds.map((n) => n.id === selectedNodeId ? { ...n, data: { ...n.data, ...updates } } : n));
+    (nodeId: string, updates: Partial<WorkflowNodeData>) => {
+      setNodes((nds) => nds.map((n) => n.id === nodeId ? { ...n, data: { ...n.data, ...updates } } : n));
     },
-    [selectedNodeId, setNodes]
+    [setNodes]
+  );
+
+  const handleInspectorDelete = useCallback(
+    (nodeId: string) => {
+      setNodes((nds) => nds.filter((n) => n.id !== nodeId));
+      setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
+      setSelectedNodeId(null);
+      setInspectorOpen(false);
+    },
+    [setNodes, setEdges]
   );
 
   const loadExecutions = useCallback(async () => {
@@ -206,9 +420,27 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
     }
   }, [n8nWorkflowId, workflowId]);
 
-  const nodeTypes = useMemo(() => ({ workflowStep: WorkflowStepNode }), []);
-  const defaultEdgeOptions = useMemo(() => ({ type: 'smoothstep' as const, animated: true }), []);
-  const selectedNodeData = useMemo(() => nodes.find((n) => n.id === selectedNodeId)?.data ?? null, [nodes, selectedNodeId]);
+  const nodeTypes = useMemo(() => ({ appNode: AppNode as any, triggerNode: TriggerNode as any, standardNode: StandardNode as any }), []);
+  const defaultEdgeOptions = useMemo(() => ({
+    type: 'n8nAdaptive' as const,
+    animated: false,
+    markerEnd: { type: MarkerType.ArrowClosed, width: 12, height: 12, color: '#9ca3af' },
+  }), []);
+  const edgeTypes = useMemo(() => ({
+    n8nAdaptive: N8NAdaptiveEdge,
+    // Legacy type fallbacks — all route through N8NAdaptiveEdge
+    curved: N8NAdaptiveEdge,
+    angular: N8NAdaptiveEdge,
+    default: N8NAdaptiveEdge,
+    smoothstep: N8NAdaptiveEdge,
+    straight: N8NAdaptiveEdge,
+    step: N8NAdaptiveEdge,
+    simplebezier: N8NAdaptiveEdge,
+  }), []);
+  const selectedNode = useMemo(() => nodes.find((n) => n.id === selectedNodeId) ?? null, [nodes, selectedNodeId]);
+
+  // ── Auto-save canvas to localStorage for non-n8n workflows ──
+  useCanvasAutosave(workflowId, nodes, edges, !isActive);
 
   const syncLabel =
     syncState === 'loading' ? 'Loading…' :
@@ -255,32 +487,58 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {isActive && (
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={syncState === 'saving' || syncState === 'loading'}
-              style={{
-                borderRadius: 7, background: 'rgba(0,229,158,0.1)', padding: '5px 14px',
-                fontSize: 11, fontWeight: 600, color: '#00e59e',
-                border: '1px solid rgba(0,229,158,0.3)', cursor: 'pointer', fontFamily: 'inherit',
-                opacity: (syncState === 'saving' || syncState === 'loading') ? 0.5 : 1,
-                transition: 'all 0.15s',
-              }}
-            >
-              Save changes
-            </button>
-          )}
-          {/* Collapse inspector toggle */}
-          {activeTab === 'canvas' && (
-            <button
-              type="button"
-              style={iconBtnStyle}
-              onClick={() => setInspectorCollapsed(v => !v)}
-              title={inspectorCollapsed ? 'Show Edit Step panel' : 'Hide Edit Step panel'}
-              aria-label={inspectorCollapsed ? 'Show Edit Step panel' : 'Hide Edit Step panel'}
-            >
-              {inspectorCollapsed ? '›' : '‹'}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  const workflowData: SavedWorkflow = {
+                    workflow_id: workflowId,
+                    title: 'Workflow',
+                    trigger: 'Manual',
+                    steps: nodes.map((n, i) => ({
+                      step: i + 1,
+                      action: n.data?.title || `Step ${i + 1}`,
+                      tool: n.data?.subtitle || '',
+                      output: n.data?.description || '',
+                    })),
+                    integrations: [],
+                    status: 'draft',
+                    source: 'n8n',
+                    company_name: '',
+                    created_at: new Date().toISOString(),
+                    estimated_time: '0',
+                    automation_percentage: '0',
+                  }
+                  setCurrentWorkflow(workflowData)
+                  setShowWorkflowAiraModal(true)
+                }}
+                disabled={airaLoading || isEmpty}
+                style={{
+                  borderRadius: 7, background: 'rgba(0,229,158,0.1)', padding: '5px 14px',
+                  fontSize: 11, fontWeight: 600, color: '#00e59e',
+                  border: '1px solid rgba(0,229,158,0.3)', cursor: airaLoading || isEmpty ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                  opacity: (airaLoading || isEmpty) ? 0.5 : 1,
+                  transition: 'all 0.15s',
+                }}
+                title={isEmpty ? 'Add steps to refine workflow' : 'Refine workflow with AIRA'}
+              >
+                Refine with AIRA
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={syncState === 'saving' || syncState === 'loading'}
+                style={{
+                  borderRadius: 7, background: 'rgba(0,229,158,0.1)', padding: '5px 14px',
+                  fontSize: 11, fontWeight: 600, color: '#00e59e',
+                  border: '1px solid rgba(0,229,158,0.3)', cursor: 'pointer', fontFamily: 'inherit',
+                  opacity: (syncState === 'saving' || syncState === 'loading') ? 0.5 : 1,
+                  transition: 'all 0.15s',
+                }}
+              >
+                Save changes
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -288,9 +546,49 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
       {/* ── Body ── */}
       <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
         {/* Canvas */}
-        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative' }}>
+          {/* ── Inspector toggle button — right edge ── */}
+          <button
+            type="button"
+            onClick={() => setInspectorOpen((prev) => !prev)}
+            title={inspectorOpen ? 'Close panel' : 'Open panel'}
+            aria-label={inspectorOpen ? 'Close inspector panel' : 'Open inspector panel'}
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 10,
+              width: 20,
+              height: 48,
+              background: 'var(--surface-secondary, #1e1d1a)',
+              border: '1px solid var(--border-subtle, rgba(255,255,255,0.07))',
+              borderRight: 'none',
+              borderRadius: '6px 0 0 6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'var(--text-secondary, #a8a6a2)',
+              transition: 'background 0.15s ease, color 0.15s ease',
+              padding: 0,
+              fontFamily: 'inherit',
+              fontSize: 14,
+              lineHeight: 1,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--surface-tertiary, #262520)';
+              e.currentTarget.style.color = 'var(--text-primary, #e8e6e3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--surface-secondary, #1e1d1a)';
+              e.currentTarget.style.color = 'var(--text-secondary, #a8a6a2)';
+            }}
+          >
+            {inspectorOpen ? '›' : '‹'}
+          </button>
           {activeTab === 'canvas' ? (
-            <div style={{ height: '100%', width: '100%' }}>
+            <div style={{ position: 'absolute', inset: 0 }}>
               {syncState === 'loading' ? (
                 <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <span style={{ fontSize: 13, color: '#a8a6a2' }}>Loading workflow…</span>
@@ -320,19 +618,29 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
               ) : (
                 <ReactFlow
                   nodeTypes={nodeTypes}
+                  edgeTypes={edgeTypes}
                   defaultEdgeOptions={defaultEdgeOptions}
                   nodes={nodes}
                   edges={edges}
                   onNodesChange={onNodesChange}
                   onEdgesChange={onEdgesChange}
+                  onConnect={onConnect}
+                  nodesConnectable
+                  deleteKeyCode={['Delete', 'Backspace']}
                   onNodeClick={(_, node) => {
-                    setSelectedNodeId(node.id);
-                    setInspectorCollapsed(false);
+                    // Single click: select only, do NOT open inspector
                   }}
-                  onSelectionChange={(p) => setSelectedNodeId(p.nodes?.[0]?.id ?? null)}
-                  connectionLineType={ConnectionLineType.SmoothStep}
+                  onNodeDoubleClick={(_, node) => {
+                    setSelectedNodeId(node.id);
+                    setInspectorOpen(true);
+                  }}
+                  onPaneClick={() => { setSelectedNodeId(null); setInspectorOpen(false); }}
+                  onDragOver={onDragOver}
+                  onDrop={onDrop}
+                  connectionLineType={ConnectionLineType.Bezier}
                   proOptions={{ hideAttribution: true }}
                   fitView
+                  fitViewOptions={{ maxZoom: 1, padding: 0.2 }}
                 >
                   <Background color="rgba(255,255,255,0.06)" gap={24} size={1} />
                   <Controls />
@@ -388,42 +696,115 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
           )}
         </div>
 
-        {/* ── Edit Step inspector panel ── */}
-        {activeTab === 'canvas' && (
-          <div style={{
-            width: inspectorCollapsed ? 44 : 280,
-            minWidth: inspectorCollapsed ? 44 : 280,
-            borderLeft: '1px solid rgba(255,255,255,0.06)',
-            background: 'rgba(255,255,255,0.015)',
-            flexShrink: 0,
-            transition: 'width 0.2s ease, min-width 0.2s ease',
-            overflow: 'hidden',
-          }}>
-            {inspectorCollapsed ? (
-              // Slim collapsed state — just a re-open button
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 14, gap: 8 }}>
-                <button
-                  type="button"
-                  style={{ ...iconBtnStyle, width: 28, height: 28 }}
-                  onClick={() => setInspectorCollapsed(false)}
-                  title="Show Edit Step panel"
-                  aria-label="Show Edit Step panel"
-                >
-                  ‹
-                </button>
-              </div>
-            ) : (
-              <StepInspector
-                selectedNodeId={selectedNodeId}
-                nodeData={selectedNodeData}
-                onChange={handleInspectorChange}
-                collapsed={false}
-                onToggleCollapse={() => setInspectorCollapsed(true)}
-              />
-            )}
-          </div>
-        )}
       </div>
+
+      {/* ── Node Inspector Panel ── */}
+      {inspectorOpen && (
+        <NodeInspectorPanel
+          selectedNode={selectedNode}
+          onChange={handleInspectorChange}
+          onDelete={handleInspectorDelete}
+          onClose={() => { setSelectedNodeId(null); setInspectorOpen(false); }}
+        />
+      )}
+
+      {/* ── AIRA Modals ── */}
+      {showWorkflowAiraModal && currentWorkflow && (
+        <WorkflowAiraRefineModal
+          workflow={currentWorkflow}
+          onClose={() => setShowWorkflowAiraModal(false)}
+          onApply={(updatedWorkflow) => {
+            // Update nodes and edges based on updated workflow
+            const updatedNodes = updatedWorkflow.steps.map((step, i) => ({
+              id: `step-${i}`,
+              type: 'standardNode' as const,
+              position: { x: 0, y: i * 160 },
+              data: {
+                label: step.action || `Step ${i + 1}`,
+                title: step.action || `Step ${i + 1}`,
+                subtitle: step.tool || undefined,
+                description: step.output || undefined,
+                category: 'action' as const,
+                icon: 'http',
+              } as WorkflowNodeData,
+            }))
+            const updatedEdges = updatedNodes.slice(0, -1).map((_, i) => ({
+              id: `e-${i}-${i + 1}`,
+              source: `step-${i}`,
+              target: `step-${i + 1}`,
+              animated: false,
+              type: 'n8nAdaptive' as const,
+              markerEnd: { type: MarkerType.ArrowClosed, width: 12, height: 12, color: '#9ca3af' },
+            }))
+            setNodes(updatedNodes)
+            setEdges(normalizeEdges(updatedEdges, updatedNodes))
+            setShowWorkflowAiraModal(false)
+          }}
+        />
+      )}
+
+      {/* ── Add with AIRA Panel ── */}
+      {showAddWithAiraPanel && airaSourceStepId && (
+        <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} onClick={() => setShowAddWithAiraPanel(false)} />
+          <div style={{ position: 'relative', zIndex: 1001 }}>
+            <AddWithAiraPanel
+              workflow={rawWorkflow}
+              sourceStep={nodes.find(n => n.id === airaSourceStepId)?.data as any}
+              onApply={(result) => {
+                // Add new steps and edges to canvas
+                const newSteps = result.newSteps.map((step, i) => ({
+                  id: `${airaSourceStepId}-ext-${i}`,
+                  type: 'appNode' as const,
+                  position: { x: 0, y: (i + 1) * 180 },
+                  data: {
+                    title: step.actionId,
+                    category: 'app' as const,
+                    appName: step.appId,
+                    appIcon: '',
+                    appId: step.appId,
+                    action: step.actionId,
+                    connectionId: step.connectionId,
+                    connectionName: step.connectionId,
+                    onAddStep: () => {
+                      setAiraSourceStepId(`${airaSourceStepId}-ext-${i}`);
+                      setShowAddWithAiraPanel(true);
+                    },
+                  } as any,
+                }));
+                const newEdges = result.newEdges.map((edge, i) => ({
+                  id: `e-${edge.from}-${edge.to}`,
+                  source: edge.from,
+                  target: edge.to,
+                  animated: false,
+                  type: 'n8nAdaptive' as const,
+                  markerEnd: { type: MarkerType.ArrowClosed, width: 12, height: 12, color: '#9ca3af' },
+                }));
+                setNodes((nds) => [...nds, ...newSteps]);
+                setEdges((eds) => [...eds, ...normalizeEdges(newEdges, newSteps)]);
+                setShowAddWithAiraPanel(false);
+              }}
+              onCancel={() => setShowAddWithAiraPanel(false)}
+              onManualAdd={() => {
+                // TODO: Open manual step addition UI
+                setShowAddWithAiraPanel(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── Explain Path Modal ── */}
+      {showExplainModal && explainTargetStep && rawWorkflow && (
+        <ExplainPathModal
+          workflow={rawWorkflow as AivoryWorkflowSpec}
+          targetStep={explainTargetStep}
+          onClose={() => {
+            setShowExplainModal(false);
+            setExplainTargetStep(null);
+          }}
+        />
+      )}
     </div>
   );
 }

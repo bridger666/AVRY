@@ -17,6 +17,8 @@ export interface SavedWorkflow {
     tool: string
     output: string
     type?: string
+    appId?: string
+    connectionId?: string
     config?: {
       integration?: string
       url?: string
@@ -96,4 +98,107 @@ export function deleteWorkflow(workflow_id: string): void {
 
 export function getWorkflowCount(): number {
   return loadWorkflows().length
+}
+
+// ── API-backed hooks ─────────────────────────────────────
+// These replace localStorage for the main workflows page.
+// The localStorage helpers above are kept for backward compatibility
+// (Blueprint page still uses saveWorkflow / loadWorkflows).
+
+import { useEffect, useState, useCallback } from 'react'
+import type { AivoryWorkflowSpec } from '@/types/workflow'
+
+/** Fetch all workflows from the API. */
+export function useWorkflowList() {
+  const [workflows, setWorkflows] = useState<AivoryWorkflowSpec[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/workflows')
+      if (!res.ok) throw new Error(`Failed to load workflows: ${res.status}`)
+      const data = await res.json()
+      setWorkflows(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { refresh() }, [refresh])
+
+  return { workflows, loading, error, refresh }
+}
+
+/** Create a new workflow via POST /api/workflows. Returns the created spec. */
+export async function createWorkflow(
+  data: Partial<AivoryWorkflowSpec>
+): Promise<AivoryWorkflowSpec> {
+  const res = await fetch('/api/workflows', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error ?? `Create failed: ${res.status}`)
+  }
+  return res.json()
+}
+
+/** Partially update a workflow via PATCH /api/workflows/:id. */
+export async function patchWorkflow(
+  id: string,
+  patch: Partial<AivoryWorkflowSpec>
+): Promise<AivoryWorkflowSpec> {
+  const res = await fetch(`/api/workflows/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error ?? `Update failed: ${res.status}`)
+  }
+  return res.json()
+}
+
+/** Delete a workflow via DELETE /api/workflows/:id. */
+export async function removeWorkflow(id: string): Promise<void> {
+  const res = await fetch(`/api/workflows/${id}`, { method: 'DELETE' })
+  if (!res.ok && res.status !== 404) {
+    throw new Error(`Delete failed: ${res.status}`)
+  }
+}
+
+/** Activate a workflow via POST /api/workflows/:id/activate. Returns updated spec. */
+export async function activateWorkflow(id: string, spec?: AivoryWorkflowSpec): Promise<AivoryWorkflowSpec> {
+  const res = await fetch(`/api/workflows/${id}/activate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // Send the full spec so the server can recover if the in-memory store was reset
+    body: JSON.stringify(spec ? { spec } : {}),
+  })
+  if (!res.ok) {
+    let payload: Record<string, string> = {}
+    try { payload = await res.json() } catch { /* ignore */ }
+    // Prefer `details` (raw n8n message) over the generic `error` code
+    const message = payload?.details || payload?.error || `Activation failed (${res.status})`
+    throw new Error(message)
+  }
+  return res.json()
+}
+
+/** Deactivate a workflow via POST /api/workflows/:id/deactivate. Returns updated spec. */
+export async function deactivateWorkflow(id: string): Promise<AivoryWorkflowSpec> {
+  const res = await fetch(`/api/workflows/${id}/deactivate`, { method: 'POST' })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error ?? `Deactivation failed: ${res.status}`)
+  }
+  return res.json()
 }

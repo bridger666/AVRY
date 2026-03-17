@@ -1,6 +1,12 @@
 /**
- * Floating AIRA Streaming Proxy
- * Proxies to /aria/stream on the VPS bridge (Zeroclaw-orchestrated).
+ * CANONICAL AIRA ENTRY POINT — do NOT add alternative routes or branch by tab here.
+ * All AIRA chat traffic from every tab (console, roadmap, diagnostic, workflow, blueprint)
+ * flows through this single route.
+ *
+ * Path: AiraFloatingAssistant → POST /api/aira/stream → /bridge/aira → Zeroclaw → OpenRouter
+ *
+ * Tab-specific context (source_tab + pageContext) is forwarded via the `context` field.
+ * Proxies to /bridge/aira on the VPS bridge (Zeroclaw-orchestrated).
  * Keeps /api/console/stream untouched for the main AI Console tab.
  */
 

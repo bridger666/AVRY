@@ -1,20 +1,24 @@
+"use client"
+
 import Link from "next/link"
+import { useTranslations } from "next-intl"
 import styles from "../diagnostics/placeholder.module.css"
 
 export default function LogsPage() {
+  const t = useTranslations("executionLogs")
+  const tCommon = useTranslations("common")
+
   return (
     <div className={styles.placeholderContainer}>
       <div className={styles.content}>
-        <h1 className={styles.title}>Execution Logs</h1>
-        <p className={styles.description}>
-          View detailed execution logs for all workflow runs, diagnostic assessments, and system activities. Monitor performance and troubleshoot issues.
-        </p>
+        <h1 className={styles.title}>{t("title")}</h1>
+        <p className={styles.description}>{t("description")}</p>
         <div className={styles.actions}>
           <Link href="/dashboard" className={styles.primaryButton}>
-            Back to Dashboard
+            {tCommon("backToDashboard")}
           </Link>
           <Link href="/console" className={styles.secondaryButton}>
-            Open Console
+            {tCommon("openConsole")}
           </Link>
         </div>
       </div>

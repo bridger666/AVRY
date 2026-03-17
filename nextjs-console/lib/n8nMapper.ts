@@ -98,7 +98,7 @@ export function n8nToReactFlow(
       id: n8nNode.id,
       data: workflowData,
       position: { x: level * 320, y: indexInLevel * 180 },
-      type: 'workflowStep',
+      type: 'standardNode',
     })
   })
 
@@ -129,8 +129,8 @@ export function n8nToReactFlow(
             source: sourceId,
             target: targetId,
             sourceHandle: handleId,
-            animated: true,
-            type: 'smoothstep',
+            animated: false,
+            type: 'n8nAdaptive',
           })
         })
       })
@@ -239,6 +239,7 @@ function mapN8nNodeToWorkflowData(
   const icon = getCategoryIcon(category);
 
   const data: WorkflowNodeData = {
+    label: stepMeta?.title || n8nNode.name || n8nNode.type,
     title: stepMeta?.title || n8nNode.name || n8nNode.type,
     subtitle: stepMeta?.subtitle,
     description: stepMeta?.description,
@@ -327,14 +328,15 @@ function detectNodeCategory(n8nType: string): WorkflowNodeCategory {
  */
 function getCategoryIcon(category: WorkflowNodeCategory): string {
   const iconMap: Record<WorkflowNodeCategory, string> = {
-    trigger: '⚡',
-    action: '⚙️',
-    ai: '🤖',
-    condition: '🔀',
-    channel: '📢',
-    system: '💻',
+    trigger: 'webhook',
+    action:  'http',
+    ai:      'code',
+    condition: 'branch',
+    channel: 'respond',
+    system:  'code',
+    app:     'http',
   }
-  return iconMap[category] || '⚙️'
+  return iconMap[category] || 'http'
 }
 
 /**
