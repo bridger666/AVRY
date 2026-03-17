@@ -8,11 +8,12 @@ import styles from '@/app/workflows/workflows.module.css'
 interface StepAIEditorProps {
   step: SavedWorkflow['steps'][0]
   stepIndex: number
+  workflow?: SavedWorkflow
   onClose: () => void
   onApply: (updatedStep: SavedWorkflow['steps'][0]) => void
 }
 
-export function StepAIEditor({ step, stepIndex, onClose, onApply }: StepAIEditorProps) {
+export function StepAIEditor({ step, stepIndex, workflow, onClose, onApply }: StepAIEditorProps) {
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [aiResponse, setAiResponse] = useState<StepEditResponse | null>(null)
@@ -25,7 +26,7 @@ export function StepAIEditor({ step, stepIndex, onClose, onApply }: StepAIEditor
     setError('')
 
     try {
-      const response = await requestStepEdit(step, description, stepIndex)
+      const response = await requestStepEdit(step, description, stepIndex, workflow)
       setAiResponse(response)
     } catch (err) {
       setError(

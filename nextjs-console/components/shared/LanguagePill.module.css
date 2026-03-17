@@ -1,0 +1,33 @@
+.pill {
+  display: flex;
+  align-items: center;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+  padding: 2px;
+  margin: 0 0.5rem;
+  gap: 2px;
+}
+
+.segment {
+  flex: 1;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+.segment:hover {
+  color: var(--text-primary);
+}
+
+.segment.active {
+  background: #00e59e;
+  color: #0a0a0a;
+}

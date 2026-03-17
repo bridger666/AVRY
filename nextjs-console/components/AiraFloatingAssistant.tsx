@@ -37,6 +37,9 @@ export default function AiraFloatingAssistant() {
   const [sessionId, setSessionId] = useState("")
   const [prefill, setPrefill] = useState("")
   const [mounted, setMounted] = useState(false)
+  // Context from non-console tab triggers
+  const [activeSourceTab, setActiveSourceTab] = useState<string>("")
+  const [activePageContext, setActivePageContext] = useState<Record<string, unknown>>({})
   const chatAreaRef = useRef<HTMLDivElement>(null)
   const fabRef = useRef<HTMLButtonElement>(null)
   const closeBtnRef = useRef<HTMLButtonElement>(null)
@@ -56,10 +59,16 @@ export default function AiraFloatingAssistant() {
   // Listen for aira:open events from other pages (e.g. Roadmap)
   useEffect(() => {
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ prefill?: string }>).detail
+      const detail = (e as CustomEvent<{ prefill?: string; sourceTab?: string; pageContext?: Record<string, unknown> }>).detail
       setOpen(true)
       if (detail?.prefill) {
         setPrefill(detail.prefill)
+      }
+      if (detail?.sourceTab) {
+        setActiveSourceTab(detail.sourceTab)
+      }
+      if (detail?.pageContext) {
+        setActivePageContext(detail.pageContext)
       }
     }
     window.addEventListener('aira:open', handler)
@@ -121,6 +130,8 @@ export default function AiraFloatingAssistant() {
 
   const handleClose = useCallback(() => {
     setOpen(false)
+    setActiveSourceTab("")
+    setActivePageContext({})
     setTimeout(() => fabRef.current?.focus(), 50)
   }, [])
 
@@ -147,12 +158,6 @@ export default function AiraFloatingAssistant() {
       }
     }
 
-    // Inject page context into first message
-    const contextPrefix =
-      messages.length === 0 && pageContext
-        ? `[Context: user is on the ${pageContext} page] `
-        : ""
-
     const userMsg: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -168,6 +173,14 @@ export default function AiraFloatingAssistant() {
     ])
 
     try {
+      // Single canonical path for ALL tabs: /api/aira/stream → /bridge/aira → Zeroclaw
+      // Tab-specific context (source_tab + pageContext) is passed via the `context` field.
+      const effectiveSourceTab = activeSourceTab || pageContext || "unknown"
+      const contextPrefix =
+        messages.length === 0 && effectiveSourceTab
+          ? `[Context: user is on the ${effectiveSourceTab} page] `
+          : ""
+
       const apiMessages = [
         ...messages,
         { ...userMsg, content: contextPrefix + messageContent },
@@ -180,8 +193,11 @@ export default function AiraFloatingAssistant() {
         session_id: sessionId,
         organization_id: "demo_org",
         messages: apiMessages,
-        // Pass page context so Zeroclaw can route skills appropriately
-        context: { page: pageContext || "unknown" },
+        context: {
+          page: effectiveSourceTab,
+          source_tab: activeSourceTab || pageContext || "unknown",
+          pageContext: activePageContext,
+        },
       } as any)) {
         if (chunk.type === "chunk" && chunk.content) {
           accumulated += chunk.content
@@ -201,8 +217,8 @@ export default function AiraFloatingAssistant() {
                 ? {
                     ...m,
                     content: accumulated
-                      ? `${accumulated}\n\n⚠️ ${err}`
-                      : `⚠️ ${err}`,
+                      ? `${accumulated}\n\nError: ${err}`
+                      : `Error: ${err}`,
                     isStreaming: false,
                   }
                 : m
@@ -240,8 +256,8 @@ export default function AiraFloatingAssistant() {
             ? {
                 ...m,
                 content: m.content
-                  ? `${m.content}\n\n⚠️ ${msg}`
-                  : `⚠️ ${msg}`,
+                  ? `${m.content}\n\nError: ${msg}`
+                  : `Error: ${msg}`,
                 isStreaming: false,
               }
             : m
@@ -283,8 +299,8 @@ export default function AiraFloatingAssistant() {
               aria-hidden="true"
             />
             <span className={styles.panelTitle}>AIRA</span>
-            {pageContext && (
-              <span className={styles.panelContext}>{pageContext}</span>
+            {(activeSourceTab || pageContext) && (
+              <span className={styles.panelContext}>{activeSourceTab || pageContext}</span>
             )}
             <button
               ref={closeBtnRef}
@@ -318,6 +334,7 @@ export default function AiraFloatingAssistant() {
                   role={m.role}
                   content={m.content}
                   isStreaming={m.isStreaming}
+                  compact
                 />
               ))
             )}

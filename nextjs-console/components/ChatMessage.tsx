@@ -9,6 +9,17 @@ interface ChatMessageProps {
   role: 'user' | 'assistant'
   content: string
   isStreaming?: boolean
+  compact?: boolean
+}
+
+/**
+ * Normalizes plain-text LLM output so ReactMarkdown renders proper paragraphs.
+ * Single newlines become double newlines (markdown paragraph breaks).
+ * Already-doubled newlines are preserved.
+ */
+function normalizeMarkdown(text: string): string {
+  // Replace single \n (not already doubled) with \n\n
+  return text.replace(/\n(?!\n)/g, '\n\n')
 }
 
 type ResponseTab = 'summary' | 'json' | 'workflow'
@@ -128,7 +139,7 @@ function InlineTypingIndicator() {
   )
 }
 
-export default function ChatMessage({ role, content, isStreaming = false }: ChatMessageProps) {
+export default function ChatMessage({ role, content, isStreaming = false, compact = false }: ChatMessageProps) {
   const [activeTab, setActiveTab] = useState<ResponseTab>('summary')
   
   // Parse content to detect multiple response types
@@ -157,7 +168,7 @@ export default function ChatMessage({ role, content, isStreaming = false }: Chat
             code: CodeBlock as any,
           }}
         >
-          {content}
+          {normalizeMarkdown(content)}
         </ReactMarkdown>
       )
     }
@@ -177,7 +188,7 @@ export default function ChatMessage({ role, content, isStreaming = false }: Chat
           code: CodeBlock as any,
         }}
       >
-        {tabContent}
+        {normalizeMarkdown(tabContent)}
       </ReactMarkdown>
     )
   }
@@ -194,7 +205,7 @@ export default function ChatMessage({ role, content, isStreaming = false }: Chat
         />
       )}
       
-      <div className={`${styles.chatBubble} ${role === 'user' ? styles.userBubble : styles.aiBubble}`}>
+      <div className={`${styles.chatBubble} ${role === 'user' ? styles.userBubble : styles.aiBubble} ${compact ? styles.compactBubble : ''}`}>
         
         {role === 'assistant' && parsedResponse.hasTabs && (
           <div className={styles.tabsContainer}>
@@ -225,7 +236,7 @@ export default function ChatMessage({ role, content, isStreaming = false }: Chat
           </div>
         )}
         
-        <div className={styles.messageContent}>
+        <div className={`${styles.messageContent} ${compact ? styles.compactContent : ''}`}>
           {role === 'assistant' ? (
             isStreaming && !content ? (
               <InlineTypingIndicator />

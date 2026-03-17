@@ -1,11 +1,66 @@
 'use client'
 
-import { useEffect, useState, useRef, Suspense } from 'react'
+import { useEffect, useState, useRef, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { loadWorkflows, updateWorkflow, deleteWorkflow, SavedWorkflow } from '@/hooks/useWorkflows'
+import { useTranslations } from 'next-intl'
+import {
+  loadWorkflows, updateWorkflow, deleteWorkflow, saveWorkflow, SavedWorkflow,
+  useWorkflowList, createWorkflow, patchWorkflow, removeWorkflow,
+  activateWorkflow, deactivateWorkflow,
+} from '@/hooks/useWorkflows'
 import { WorkflowCanvas as N8nWorkflowCanvas } from '@/components/workflow/WorkflowCanvas'
-import { WorkflowAIEditor } from '@/components/WorkflowAIEditor'
+import { AiraCopilotFloating } from '@/components/workflow/AiraCopilotFloating'
+import { WorkflowGenerationModal } from '@/components/workflow/WorkflowGenerationModal'
+import { useWorkflowCopilot } from '@/hooks/useWorkflowCopilot'
+import { retrieveWorkflowSpec, clearWorkflowSpec } from '@/lib/workflowHandoff'
+import { StandardNodePalette } from '@/components/workflow/StandardNodePalette'
+import { clearCanvasState } from '@/hooks/useCanvasPersistence'
+import type { AivoryWorkflowSpec } from '@/types/workflow'
 import styles from './workflows.module.css'
+
+// ── Adapter: AivoryWorkflowSpec → SavedWorkflow ──────────
+// Lets the canvas/editor work with either shape.
+function specToSaved(spec: AivoryWorkflowSpec): SavedWorkflow {
+  return {
+    workflow_id: spec.id,
+    title: spec.title,
+    status: spec.status,
+    source: spec.source,
+    company_name: spec.company_name,
+    trigger: spec.trigger,
+    steps: spec.steps,
+    integrations: spec.integrations,
+    estimated_time: spec.estimated_time,
+    automation_percentage: spec.automation_percentage,
+    error_handling: spec.error_handling,
+    notes: spec.notes,
+    blueprintId: spec.blueprintId,
+    n8nId: spec.n8nId,
+    n8n_workflow_id: spec.n8n_workflow_id,
+    n8n_url: spec.n8n_url,
+    created_at: spec.createdAt,
+  }
+}
+
+function savedToSpec(wf: SavedWorkflow): Partial<AivoryWorkflowSpec> {
+  return {
+    title: wf.title,
+    status: wf.status,
+    source: wf.source,
+    company_name: wf.company_name,
+    trigger: wf.trigger,
+    steps: wf.steps,
+    integrations: wf.integrations,
+    estimated_time: wf.estimated_time,
+    automation_percentage: wf.automation_percentage,
+    error_handling: wf.error_handling,
+    notes: wf.notes,
+    blueprintId: wf.blueprintId,
+    n8nId: wf.n8nId,
+    n8n_workflow_id: wf.n8n_workflow_id,
+    n8n_url: wf.n8n_url,
+  }
+}
 
 // ── Outline SVG icons ────────────────────────────────────
 // Most icons moved to WorkflowNodes.tsx, keeping only those used in toolbar/modals
@@ -171,6 +226,7 @@ function RightPanel({
   onSave: (updated: SavedWorkflow) => void
   onClose: () => void
 }) {
+  const t = useTranslations("workflow")
   const isTrigger = editTarget.type === 'trigger'
   const step = !isTrigger && editTarget.index !== undefined ? workflow.steps[editTarget.index] : null
 
@@ -191,6 +247,18 @@ function RightPanel({
   const [credName, setCredName] = useState((step?.credentials?.name as string) ?? '')
   const [additionalParams, setAdditionalParams] = useState((step?.config?.additionalFields as string) ?? '')
 
+  // Connection selector state
+  const [connections, setConnections] = useState<Array<{ id: string; displayName: string; appId: string; appName: string; status: string }>>([])
+  const [selectedConnectionId, setSelectedConnectionId] = useState(step?.connectionId ?? '')
+  useEffect(() => {
+    fetch('/api/integrations/connections')
+      .then(r => r.ok ? r.json() : [])
+      .then((all: Array<{ id: string; displayName: string; appId: string; appName: string; status: string }>) =>
+        setConnections(all.filter(c => c.status === 'connected'))
+      )
+      .catch(() => {})
+  }, [])
+
   useEffect(() => {
     if (isTrigger) { 
       setAction(workflow.trigger)
@@ -206,6 +274,7 @@ function RightPanel({
       setApiKey((step.config?.apiKey as string) ?? '')
       setCredName((step.credentials?.name as string) ?? '')
       setAdditionalParams((step.config?.additionalFields as string) ?? '')
+      setSelectedConnectionId(step.connectionId ?? '')
     }
   }, [editTarget, workflow])
 
@@ -226,6 +295,16 @@ function RightPanel({
       updatedStep.config.method = httpMethod
       updatedStep.config.apiKey = apiKey
       updatedStep.credentials.name = credName
+      
+      // Save connection
+      if (selectedConnectionId) {
+        updatedStep.connectionId = selectedConnectionId
+        const conn = connections.find(c => c.id === selectedConnectionId)
+        if (conn) updatedStep.appId = conn.appId
+      } else {
+        delete updatedStep.connectionId
+        delete updatedStep.appId
+      }
       
       // Only save additionalParams if valid JSON
       if (additionalParams.trim()) {
@@ -277,6 +356,7 @@ function RightPanel({
         <StepAIEditor
           step={step}
           stepIndex={editTarget.index}
+          workflow={workflow}
           onClose={() => setShowStepAI(false)}
           onApply={handleStepAIApply}
         />
@@ -288,7 +368,7 @@ function RightPanel({
     <div className={styles.rightPanel}>
       <div className={styles.rightPanelHeader}>
         <span className={styles.rightPanelTitle}>
-          {isTrigger ? 'Edit Trigger' : `Edit Step ${(editTarget.index ?? 0) + 1}`}
+          {isTrigger ? t('editTrigger') : `Edit Step ${(editTarget.index ?? 0) + 1}`}
         </span>
         <button className={styles.rightPanelClose} onClick={onClose} aria-label="Close">
           {Icons.close}
@@ -301,11 +381,11 @@ function RightPanel({
             <button 
               className={styles.fieldAIEditButton} 
               onClick={() => setShowStepAI(true)} 
-              title="Let AIRA help you rewrite and configure this step"
-              aria-label="Edit this step with AIRA"
+              title={t('editWithAiraDesc')}
+              aria-label={t('editWithAiraDesc')}
             >
               {Icons.aivoryAvatar}
-              <span className={styles.fieldAIEditButtonLabel}>Edit with AIRA</span>
+              <span className={styles.fieldAIEditButtonLabel}>{t('editWithAira')}</span>
             </button>
           )}
         </div>
@@ -316,24 +396,44 @@ function RightPanel({
         
         {!isTrigger && (
           <>
-            <label className={styles.fieldLabel}>Tool / Service used</label>
+            <label className={styles.fieldLabel}>{t('toolService')}</label>
             <span className={styles.fieldHelperText}>
               Tulis nama tool atau API yang dipakai. Contoh: 'Salesforce REST API', 'SendGrid v3', 'SharePoint Graph API', atau 'HTTP Custom API'.
             </span>
             <input className={styles.fieldInput} value={tool} onChange={e => setTool(e.target.value)} placeholder="e.g. Google Sheets, OpenAI, Slack" />
             
-            <label className={styles.fieldLabel}>What this produces</label>
+            <label className={styles.fieldLabel}>{t('whatProduces')}</label>
             <span className={styles.fieldHelperText}>
               Tulis output yang dihasilkan langkah ini. Contoh: 'Data klien lengkap dalam format JSON, siap diproses ke langkah berikutnya.'
             </span>
             <input className={styles.fieldInput} value={output} onChange={e => setOutput(e.target.value)} placeholder="e.g. Enriched lead record" />
+
+            {/* Connection Selector */}
+            {connections.length > 0 && (
+              <div className={styles.credField} style={{ marginBottom: 8 }}>
+                <label className={styles.credFieldLabel}>{t('savedConnection')}</label>
+                <span className={styles.credFieldHelper}>
+                  Use a saved connection from your Integrations page, or fill in credentials manually below.
+                </span>
+                <select
+                  className={styles.credSelect}
+                  value={selectedConnectionId}
+                  onChange={e => setSelectedConnectionId(e.target.value)}
+                >
+                  <option value="">-- None (manual credentials) --</option>
+                  {connections.map(c => (
+                    <option key={c.id} value={c.id}>{c.displayName} ({c.appName})</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* API & Credentials Section */}
             <div 
               className={styles.credSectionHeader}
               onClick={() => setShowCredSection(!showCredSection)}
             >
-              <span>API & CREDENTIALS</span>
+              <span>{t('apiCredentials')}</span>
               <span className={`${styles.credSectionArrow} ${showCredSection ? styles.open : ''}`}>›</span>
             </div>
 
@@ -341,7 +441,7 @@ function RightPanel({
               <div>
                 {/* Field 1: Integration */}
                 <div className={styles.credField}>
-                  <label className={styles.credFieldLabel}>Integration</label>
+                  <label className={styles.credFieldLabel}>{t('integration')}</label>
                   <span className={styles.credFieldHelper}>
                     Pilih sistem yang digunakan. Kalau tidak ada di list, pilih 'Custom'.
                   </span>
@@ -350,7 +450,7 @@ function RightPanel({
                     value={integration}
                     onChange={e => setIntegration(e.target.value)}
                   >
-                    <option value="">-- Select Integration --</option>
+                    <option value="">{t('selectIntegration')}</option>
                     <option value="Salesforce">Salesforce</option>
                     <option value="SharePoint">SharePoint</option>
                     <option value="SendGrid">SendGrid</option>
@@ -367,7 +467,7 @@ function RightPanel({
 
                 {/* Field 2: API URL */}
                 <div className={styles.credField}>
-                  <label className={styles.credFieldLabel}>API URL</label>
+                  <label className={styles.credFieldLabel}>{t('apiUrl')}</label>
                   <span className={styles.credFieldHelper}>
                     Masukkan URL lengkap endpoint API yang akan dipanggil. Contoh: https://api.salesforce.com/v54/sobjects/Contact
                   </span>
@@ -383,7 +483,7 @@ function RightPanel({
                 {/* Field 3: HTTP Method (only if URL is not empty) */}
                 {apiUrl && (
                   <div className={styles.credField}>
-                    <label className={styles.credFieldLabel}>HTTP METHOD</label>
+                    <label className={styles.credFieldLabel}>{t('httpMethod')}</label>
                     <span className={styles.credFieldHelper}>
                       Pilih metode request yang dipakai API ini.
                     </span>
@@ -403,7 +503,7 @@ function RightPanel({
 
                 {/* Field 4: API Key */}
                 <div className={styles.credField}>
-                  <label className={styles.credFieldLabel}>API KEY ATAU TOKEN</label>
+                  <label className={styles.credFieldLabel}>{t('apiKeyOrToken')}</label>
                   <span className={styles.credFieldHelper}>
                     Masukkan API key atau Bearer token. Credential ini hanya disimpan di browser kamu — tidak dikirim ke server Aivory.
                   </span>
@@ -426,7 +526,7 @@ function RightPanel({
 
                 {/* Field 5: Credential Name */}
                 <div className={styles.credField}>
-                  <label className={styles.credFieldLabel}>NAMA CREDENTIAL</label>
+                  <label className={styles.credFieldLabel}>{t('credentialName')}</label>
                   <span className={styles.credFieldHelper}>
                     Beri nama supaya AIRA bisa mereferensikannya saat membangun workflow. Contoh: 'Salesforce Production'.
                   </span>
@@ -472,13 +572,10 @@ function RightPanel({
           </>
         )}
       </div>
-      <button className={styles.saveChangesBtn} onClick={handleSave}>Save Changes</button>
+      <button className={styles.saveChangesBtn} onClick={handleSave}>{t('saveChanges')}</button>
     </div>
   )
 }
-
-// ── Edit with AI modal ───────────────────────────────────
-// Replaced with WorkflowAIEditor component (imported above)
 
 // ── Save Workflow modal ──────────────────────────────────
 function SaveWorkflowModal({
@@ -487,14 +584,15 @@ function SaveWorkflowModal({
   onClose: () => void
   onSave: (versionName: string) => void
 }) {
+  const t = useTranslations("workflow")
   const [name, setName] = useState('v1.1')
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.saveModal} onClick={e => e.stopPropagation()}>
         <div className={styles.saveModalHeader}>
           <div className={styles.saveModalTitles}>
-            <p className={styles.saveModalTitle}>Save Workflow Version</p>
-            <p className={styles.saveModalSubtitle}>Give this version a name. It will be saved locally.</p>
+            <p className={styles.saveModalTitle}>{t('saveVersion')}</p>
+            <p className={styles.saveModalSubtitle}>{t('saveVersionSubtitle')}</p>
           </div>
           <button className={styles.rightPanelClose} onClick={onClose} aria-label="Close">{Icons.close}</button>
         </div>
@@ -519,10 +617,20 @@ function SaveWorkflowModal({
 function WorkflowsPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [workflows, setWorkflows] = useState<SavedWorkflow[]>([])
+  const t = useTranslations("workflow")
+
+  // ── API-backed workflow list ─────────────────────────────
+  const { workflows: apiWorkflows, refresh: refreshWorkflows } = useWorkflowList()
+  // Also keep localStorage workflows (Blueprint page still writes there)
+  const [localWorkflows, setLocalWorkflows] = useState<SavedWorkflow[]>([])
+  // Merge: API first, then localStorage entries not already in API
+  const workflows: SavedWorkflow[] = [
+    ...apiWorkflows.map(specToSaved),
+    ...localWorkflows.filter(lw => !apiWorkflows.find(aw => aw.id === lw.workflow_id)),
+  ]
+
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
-  const [showAIModal, setShowAIModal] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [editingTitle, setEditingTitle] = useState(false)
   const [showMore, setShowMore] = useState(false)
@@ -530,26 +638,149 @@ function WorkflowsPageInner() {
   const [activating, setActivating] = useState(false)
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
   const [showActivateDropdown, setShowActivateDropdown] = useState(false)
-  const [isWorkflowListCollapsed, setIsWorkflowListCollapsed] = useState(false)
+  const [isWorkflowListCollapsed, setIsWorkflowListCollapsed] = useState(false) // default expanded
+  const [isIntegrationsCollapsed, setIsIntegrationsCollapsed] = useState(true)
+  const [rightPanelOpen, setRightPanelOpen] = useState(false)
+  const [showGenerationModal, setShowGenerationModal] = useState(false)
   const moreRef = useRef<HTMLDivElement>(null)
   const activateRef = useRef<HTMLDivElement>(null)
+  // Ref to inject nodes directly into the live canvas (used by AIRA generation)
+  const canvasInjectRef = useRef<((nodes: any[], edges: any[]) => void) | null>(null)
+
+  // ── Apps sidebar state ───────────────────────────────────
+  const [apps, setApps] = useState<Array<{ id: string; name: string; description: string; icon: string; iconPath?: string; defaultAction?: string; categories: string[] }>>([])
+  const [appsSearch, setAppsSearch] = useState('')
+  const [appsCategory, setAppsCategory] = useState<string>('All')
+
+  useEffect(() => {
+    fetch('/api/integrations/apps')
+      .then(r => r.ok ? r.json() : [])
+      .then(setApps)
+      .catch(() => {})
+  }, [])
+
+  const filteredApps = apps.filter(app => {
+    const matchesSearch = app.name.toLowerCase().includes(appsSearch.toLowerCase()) || app.description.toLowerCase().includes(appsSearch.toLowerCase())
+    const matchesCategory = appsCategory === 'All' || app.categories.includes(appsCategory)
+    return matchesSearch && matchesCategory
+  })
+
+  const appCategories = ['All', ...Array.from(new Set(apps.flatMap(a => a.categories)))]
+
+  const handleAppDragStart = (e: React.DragEvent, app: typeof apps[0]) => {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('application/aivory-app', JSON.stringify(app))
+  }
 
   const selected = workflows.find(w => w.workflow_id === selectedId) ?? null
 
+  // ── Copilot floating assistant ───────────────────────────
+  const [copilotOpen, setCopilotOpen] = useState(false)
+
+  // ── Onboarding empty state ───────────────────────────────
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return !localStorage.getItem('hasSeenWorkflowOnboarding')
+  })
+
+  // Dismiss onboarding when copilot opens
+  useEffect(() => {
+    if (copilotOpen && showOnboarding) {
+      setShowOnboarding(false)
+      localStorage.setItem('hasSeenWorkflowOnboarding', '1')
+    }
+  }, [copilotOpen, showOnboarding])
+
+  // Hotkey: '/' or Cmd/Ctrl+K → open copilot
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key === 'k')) {
+        e.preventDefault()
+        setCopilotOpen(true)
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [])
+  const { messages, loading: copilotLoading, error: copilotError,
+    lastSuggestion, sendChat, buildWorkflow, clearMessages } = useWorkflowCopilot({ currentSpec: selected })
+  // Load localStorage on mount; auto-select from ?selected param or first item
   useEffect(() => {
     const wfs = loadWorkflows()
-    setWorkflows(wfs)
-    const selected = searchParams?.get('selected')
-    if (selected && wfs.find(w => w.workflow_id === selected)) setSelectedId(selected)
-    else if (wfs.length > 0) setSelectedId(wfs[0].workflow_id)
+    setLocalWorkflows(wfs)
+    
+    // Check if coming from console with handoff spec
+    const fromConsole = searchParams?.get('fromConsole') === 'true'
+    if (fromConsole) {
+      const handoffSpec = retrieveWorkflowSpec()
+      if (handoffSpec) {
+        // Convert WorkflowStep[] to SavedWorkflow steps format
+        const convertedSteps = handoffSpec.steps.map((step, idx) => ({
+          step: idx + 1,
+          action: step.actionId || '',
+          tool: step.appId || '',
+          output: '',
+          type: step.type,
+          appId: step.appId,
+          connectionId: step.connectionId,
+          config: {
+            integration: step.appId,
+          },
+        }))
+        
+        // Create SavedWorkflow from spec
+        const newWorkflow: SavedWorkflow = {
+          workflow_id: `workflow_${Date.now()}`,
+          title: handoffSpec.name || 'New Workflow from Console',
+          status: 'draft',
+          source: 'n8n',
+          company_name: '',
+          trigger: handoffSpec.steps[0]?.actionId || '',
+          steps: convertedSteps,
+          integrations: [],
+          estimated_time: '0',
+          automation_percentage: '0',
+          error_handling: '',
+          notes: handoffSpec.description || '',
+          created_at: new Date().toISOString(),
+        }
+        
+        // Save to localStorage
+        saveWorkflow(newWorkflow)
+        setLocalWorkflows([newWorkflow, ...wfs])
+        setSelectedId(newWorkflow.workflow_id)
+        
+        // Clear handoff storage
+        clearWorkflowSpec()
+        
+        // Remove fromConsole param from URL
+        window.history.replaceState({}, '', '/workflows')
+        return
+      }
+    }
+    
+    const sel = searchParams?.get('selected')
+    if (sel) {
+      setSelectedId(sel)
+    } else if (wfs.length > 0) {
+      setSelectedId(wfs[0].workflow_id)
+    }
   }, [])
 
-  // Re-sync list whenever a new workflow is saved from another page (e.g. Blueprint)
+  // Auto-select first API workflow once loaded (if nothing selected yet)
+  useEffect(() => {
+    if (!selectedId && apiWorkflows.length > 0) {
+      setSelectedId(apiWorkflows[0].id)
+    }
+  }, [apiWorkflows, selectedId])
+
+  // Re-sync localStorage whenever Blueprint page saves a new workflow
   useEffect(() => {
     const sync = () => {
       const wfs = loadWorkflows()
-      setWorkflows(wfs)
-      // If a ?selected param is present and not yet selected, pick it
+      setLocalWorkflows(wfs)
       const sel = searchParams?.get('selected')
       if (sel) setSelectedId(sel)
     }
@@ -571,31 +802,63 @@ function WorkflowsPageInner() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const handleSaveStep = (updated: SavedWorkflow) => {
-    // push current to undo stack before saving
+  const handleSaveStep = async (updated: SavedWorkflow) => {
     if (selected) setUndoStack(prev => [...prev.slice(-9), selected])
-    updateWorkflow(updated.workflow_id, updated)
-    setWorkflows(loadWorkflows())
+    // If this is an API-backed workflow, patch via API
+    if (apiWorkflows.find(aw => aw.id === updated.workflow_id)) {
+      try {
+        await patchWorkflow(updated.workflow_id, savedToSpec(updated))
+        await refreshWorkflows()
+      } catch (err) {
+        console.error('[handleSaveStep]', err)
+      }
+    } else {
+      updateWorkflow(updated.workflow_id, updated)
+      setLocalWorkflows(loadWorkflows())
+    }
     setEditTarget(null)
+    setRightPanelOpen(false)
   }
 
-  const handleStatusChange = (status: SavedWorkflow['status']) => {
+  const handleStatusChange = async (status: SavedWorkflow['status']) => {
     if (!selected) return
-    updateWorkflow(selected.workflow_id, { status })
-    setWorkflows(loadWorkflows())
+    if (apiWorkflows.find(aw => aw.id === selected.workflow_id)) {
+      try {
+        await patchWorkflow(selected.workflow_id, { status })
+        await refreshWorkflows()
+      } catch (err) { console.error('[handleStatusChange]', err) }
+    } else {
+      updateWorkflow(selected.workflow_id, { status })
+      setLocalWorkflows(loadWorkflows())
+    }
   }
 
-  const handleTitleSave = (newTitle: string) => {
+  const handleTitleSave = async (newTitle: string) => {
     if (!selected || !newTitle.trim()) return
-    updateWorkflow(selected.workflow_id, { title: newTitle.trim() })
-    setWorkflows(loadWorkflows())
+    if (apiWorkflows.find(aw => aw.id === selected.workflow_id)) {
+      try {
+        await patchWorkflow(selected.workflow_id, { title: newTitle.trim() })
+        await refreshWorkflows()
+      } catch (err) { console.error('[handleTitleSave]', err) }
+    } else {
+      updateWorkflow(selected.workflow_id, { title: newTitle.trim() })
+      setLocalWorkflows(loadWorkflows())
+    }
     setEditingTitle(false)
   }
 
-  const handleDelete = (id: string) => {
-    deleteWorkflow(id)
-    const remaining = loadWorkflows()
-    setWorkflows(remaining)
+  const handleDelete = async (id: string) => {
+    if (apiWorkflows.find(aw => aw.id === id)) {
+      try {
+        await removeWorkflow(id)
+        await refreshWorkflows()
+      } catch (err) { console.error('[handleDelete]', err) }
+    } else {
+      deleteWorkflow(id)
+      setLocalWorkflows(loadWorkflows())
+    }
+    clearCanvasState(id)
+    const remaining = [...apiWorkflows.map(specToSaved), ...localWorkflows].filter(w => w.workflow_id !== id)
     if (selectedId === id) setSelectedId(remaining[0]?.workflow_id ?? null)
     setShowMore(false)
   }
@@ -623,34 +886,46 @@ function WorkflowsPageInner() {
     setShowMore(false)
   }
 
-  const handleAIApply = (updated: SavedWorkflow) => {
-    if (selected) setUndoStack(prev => [...prev.slice(-9), selected])
-    updateWorkflow(updated.workflow_id, updated)
-    setWorkflows(loadWorkflows())
-    setShowAIModal(false)
-  }
-
-  const handleUndo = () => {
+  const handleUndo = async () => {
     if (!undoStack.length || !selected) return
     const prev = undoStack[undoStack.length - 1]
     setUndoStack(s => s.slice(0, -1))
-    updateWorkflow(selected.workflow_id, prev)
-    setWorkflows(loadWorkflows())
+    if (apiWorkflows.find(aw => aw.id === selected.workflow_id)) {
+      try {
+        await patchWorkflow(selected.workflow_id, savedToSpec(prev))
+        await refreshWorkflows()
+      } catch (err) { console.error('[handleUndo]', err) }
+    } else {
+      updateWorkflow(selected.workflow_id, prev)
+      setLocalWorkflows(loadWorkflows())
+    }
   }
 
-  const handleSaveVersion = (versionName: string) => {
+  const handleSaveVersion = async (versionName: string) => {
     if (!selected) return
-    // Save a snapshot copy with the version name appended to the id
-    const snapshot: SavedWorkflow = {
-      ...selected,
-      workflow_id: `${selected.workflow_id}-${versionName.replace(/\s+/g, '-').toLowerCase()}`,
-      title: `${selected.title} (${versionName})`,
-      created_at: new Date().toISOString(),
-    }
-    const existing = loadWorkflows()
-    if (!existing.find(w => w.workflow_id === snapshot.workflow_id)) {
-      localStorage.setItem('aivory_workflows', JSON.stringify([...existing, snapshot]))
-      setWorkflows(loadWorkflows())
+    // Always create a new API workflow as a snapshot copy
+    try {
+      const snapshot = await createWorkflow({
+        ...savedToSpec(selected),
+        title: `${selected.title} (${versionName})`,
+        status: 'draft',
+      })
+      await refreshWorkflows()
+      setSelectedId(snapshot.id)
+    } catch (err) {
+      console.error('[handleSaveVersion]', err)
+      // Fallback: save to localStorage
+      const snap: SavedWorkflow = {
+        ...selected,
+        workflow_id: `${selected.workflow_id}-${versionName.replace(/\s+/g, '-').toLowerCase()}`,
+        title: `${selected.title} (${versionName})`,
+        created_at: new Date().toISOString(),
+      }
+      const existing = loadWorkflows()
+      if (!existing.find(w => w.workflow_id === snap.workflow_id)) {
+        localStorage.setItem('aivory_workflows', JSON.stringify([...existing, snap]))
+        setLocalWorkflows(loadWorkflows())
+      }
     }
     setShowSaveModal(false)
   }
@@ -664,24 +939,31 @@ function WorkflowsPageInner() {
     if (!selected || activating) return
     setActivating(true)
     try {
-      const res = await fetch('/api/workflows/activate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workflow_id: selected.workflow_id, workflow_data: selected }),
-      })
-      const data = await res.json()
-      if (!res.ok || !data.success) throw new Error(data.error || 'Activation failed')
-
-      // Persist n8n data to localStorage
-      updateWorkflow(selected.workflow_id, {
-        status: 'active',
-        n8n_workflow_id: data.n8n_workflow_id,
-        n8n_url: data.n8n_url,
-      } as Partial<SavedWorkflow>)
-      setWorkflows(loadWorkflows())
-      showToast('Workflow activated ✓', 'success')
+      // API-backed workflows use the new per-ID activate endpoint
+      if (apiWorkflows.find(aw => aw.id === selected.workflow_id)) {
+        const spec = apiWorkflows.find(aw => aw.id === selected.workflow_id)
+        const updated = await activateWorkflow(selected.workflow_id, spec)
+        await refreshWorkflows()
+        showToast('Workflow activated and deployed to n8n ✓', 'success')
+      } else {
+        // Legacy localStorage workflow — use old activate route
+        const res = await fetch('/api/workflows/activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ workflow_id: selected.workflow_id, workflow_data: selected }),
+        })
+        const data = await res.json()
+        if (!res.ok || !data.success) throw new Error(data.error || 'Activation failed')
+        updateWorkflow(selected.workflow_id, {
+          status: 'active',
+          n8n_workflow_id: data.n8n_workflow_id,
+          n8n_url: data.n8n_url,
+        })
+        setLocalWorkflows(loadWorkflows())
+        showToast('Workflow activated ✓', 'success')
+      }
     } catch (err) {
-      showToast('Failed to activate workflow.', 'error')
+      showToast(err instanceof Error ? err.message : 'Failed to activate workflow.', 'error')
       console.error('[activate]', err)
     } finally {
       setActivating(false)
@@ -692,32 +974,194 @@ function WorkflowsPageInner() {
     if (!selected || activating) return
     setActivating(true)
     try {
-      // Update status to draft in localStorage
-      updateWorkflow(selected.workflow_id, { status: 'draft' })
-      setWorkflows(loadWorkflows())
-      showToast('Workflow deactivated', 'success')
+      if (apiWorkflows.find(aw => aw.id === selected.workflow_id)) {
+        await deactivateWorkflow(selected.workflow_id)
+        await refreshWorkflows()
+        showToast('Workflow deactivated', 'success')
+      } else {
+        updateWorkflow(selected.workflow_id, { status: 'draft' })
+        setLocalWorkflows(loadWorkflows())
+        showToast('Workflow deactivated', 'success')
+      }
     } catch (err) {
-      showToast('Failed to deactivate workflow.', 'error')
+      showToast(err instanceof Error ? err.message : 'Failed to deactivate workflow.', 'error')
       console.error('[deactivate]', err)
     } finally {
       setActivating(false)
     }
   }
 
+  // ── Copilot apply suggestion ────────────────────────────
+  const handleCopilotApply = async (suggestion: import('@/hooks/useWorkflowCopilot').CopilotSuggestion) => {
+    const updates: Partial<SavedWorkflow> = {
+      trigger: suggestion.trigger,
+      steps: suggestion.steps,
+    }
+    if (suggestion.estimate_hours) {
+      updates.estimated_time = `~${suggestion.estimate_hours}h estimated`
+    }
+    if (suggestion.automation_score) {
+      updates.automation_percentage = `${Math.round((suggestion.automation_score ?? 0) * 100)}% automated`
+    }
+
+    // No workflow selected — create a new one from the suggestion
+    if (!selected) {
+      const newWorkflow: SavedWorkflow = {
+        workflow_id: `workflow_${Date.now()}`,
+        title: suggestion.trigger || 'New Workflow',
+        status: 'draft',
+        source: 'n8n',
+        company_name: '',
+        trigger: suggestion.trigger,
+        steps: suggestion.steps,
+        integrations: [],
+        estimated_time: updates.estimated_time ?? '0',
+        automation_percentage: updates.automation_percentage ?? '0',
+        error_handling: '',
+        notes: '',
+        created_at: new Date().toISOString(),
+      }
+      try {
+        const created = await createWorkflow(savedToSpec(newWorkflow))
+        await refreshWorkflows()
+        setSelectedId(created.id)
+      } catch {
+        saveWorkflow(newWorkflow)
+        setLocalWorkflows(loadWorkflows())
+        setSelectedId(newWorkflow.workflow_id)
+      }
+      setCopilotOpen(false)
+      showToast('Workflow created from AIRA suggestion ✓', 'success')
+      return
+    }
+
+    setUndoStack(prev => [...prev.slice(-9), selected])
+    if (apiWorkflows.find(aw => aw.id === selected.workflow_id)) {
+      try {
+        await patchWorkflow(selected.workflow_id, savedToSpec({ ...selected, ...updates }))
+        await refreshWorkflows()
+      } catch (err) { console.error('[copilot apply]', err) }
+    } else {
+      updateWorkflow(selected.workflow_id, updates)
+      setLocalWorkflows(loadWorkflows())
+    }
+    showToast('AIRA suggestion applied ✓', 'success')
+  }
+
+  // ── Generation apply handler ─────────────────────────────
+  const handleGenerationApply = async (nodes: any[], edges: any[]) => {
+    // If the canvas inject function is available, push nodes directly into the live graph
+    if (canvasInjectRef.current) {
+      canvasInjectRef.current(nodes, edges)
+      showToast('Generated workflow applied to canvas ✓', 'success')
+      setShowGenerationModal(false)
+      return
+    }
+
+    // Fallback: convert nodes to steps format and save to workflow record
+    const newSteps: SavedWorkflow['steps'] = nodes.map((node, i) => ({
+      step: i + 1,
+      action: node.data?.label || node.data?.title || `Step ${i + 1}`,
+      tool: node.data?.appId || '',
+      output: node.data?.actionId || '',
+      connectionId: node.data?.connectionId,
+      appId: node.data?.appId,
+      config: node.data?.inputs || {},
+    }))
+
+    // No workflow selected — create a new one from the generated nodes
+    if (!selected) {
+      const firstNode = nodes[0]
+      const newWorkflow: SavedWorkflow = {
+        workflow_id: `workflow_${Date.now()}`,
+        title: firstNode?.data?.title || 'Generated Workflow',
+        status: 'draft',
+        source: 'n8n',
+        company_name: '',
+        trigger: firstNode?.data?.title || '',
+        steps: newSteps,
+        integrations: [],
+        estimated_time: '0',
+        automation_percentage: '0',
+        error_handling: '',
+        notes: '',
+        created_at: new Date().toISOString(),
+      }
+      try {
+        const created = await createWorkflow(savedToSpec(newWorkflow))
+        await refreshWorkflows()
+        setSelectedId(created.id)
+      } catch {
+        saveWorkflow(newWorkflow)
+        setLocalWorkflows(loadWorkflows())
+        setSelectedId(newWorkflow.workflow_id)
+      }
+      showToast('Generated workflow applied ✓', 'success')
+      setShowGenerationModal(false)
+      return
+    }
+
+    setUndoStack(prev => [...prev.slice(-9), selected])
+
+    const updates: Partial<SavedWorkflow> = {
+      steps: newSteps,
+    }
+
+    if (apiWorkflows.find(aw => aw.id === selected.workflow_id)) {
+      try {
+        await patchWorkflow(selected.workflow_id, savedToSpec({ ...selected, ...updates }))
+        await refreshWorkflows()
+      } catch (err) { console.error('[generation apply]', err) }
+    } else {
+      updateWorkflow(selected.workflow_id, updates)
+      setLocalWorkflows(loadWorkflows())
+    }
+    showToast('Generated workflow applied ✓', 'success')
+    setShowGenerationModal(false)
+  }
+
   // ── Empty state ──────────────────────────────────────────
   if (workflows.length === 0) {
     return (
-      <div className={styles.emptyPage}>
-        <div className={styles.emptyContent}>
-          <div className={styles.emptyIconWrap}>{Icons.workflow}</div>
-          <h2 className={styles.emptyTitle}>No workflows yet</h2>
-          <p className={styles.emptyText}>
-            Generate workflows from the Blueprint tab — they'll appear here automatically.
+      <div className={styles.onboardingOverlay}>
+        <div className={styles.onboardingContent}>
+          <div className={styles.onboardingAvatarWrap}>
+            <img src="/Aivory_Avatar.svg" alt="AIRA" width={28} height={28} />
+          </div>
+          <h2 className={styles.onboardingTitle}>{t('onboardingTitle')}</h2>
+          <p className={styles.onboardingSubtitle}>
+            {t('onboardingSubtitle')}
           </p>
-          <button className={styles.emptyCTA} onClick={() => router.push('/blueprint')}>
-            Go to Blueprint →
+          <button
+            className={styles.onboardingCTA}
+            onClick={() => setCopilotOpen(true)}
+          >
+            <img src="/Aivory_Avatar.svg" alt="" width={16} height={16} aria-hidden="true" />
+            {t('askAiraCopilot')}
           </button>
+          <p className={styles.onboardingHotkey}>
+            Press <kbd>/</kbd> or <kbd>⌘K</kbd> anytime to open AIRA Copilot
+          </p>
+          <p className={styles.onboardingSecondary}>
+            {t('alreadyHaveBlueprint')}{' '}
+            <button className={styles.onboardingSecondaryLink} onClick={() => router.push('/blueprint')}>
+              {t('goToBlueprint')}
+            </button>
+          </p>
         </div>
+
+        {/* Copilot panel renders over the overlay */}
+        <AiraCopilotFloating
+          isOpen={copilotOpen}
+          onOpenChange={setCopilotOpen}
+          messages={messages}
+          loading={copilotLoading}
+          error={copilotError}
+          lastSuggestion={lastSuggestion}
+          onSendChat={sendChat}
+          onBuildWorkflow={buildWorkflow}
+          onApplySuggestion={handleCopilotApply}
+        />
       </div>
     )
   }
@@ -727,51 +1171,181 @@ function WorkflowsPageInner() {
 
       {/* ── Left sidebar ── */}
       <aside className={`${styles.workflowList} ${isWorkflowListCollapsed ? styles.workflowListCollapsed : ''}`}>
-        <div className={styles.workflowListHeader}>
-          {!isWorkflowListCollapsed && (
-            <>
-              <span className={styles.workflowListTitle}>Workflows</span>
-              <span className={styles.workflowListCount}>{workflows.length}</span>
-            </>
-          )}
-          <button
-            className={styles.workflowListCollapseBtn}
-            onClick={() => setIsWorkflowListCollapsed(v => !v)}
-            title={isWorkflowListCollapsed ? 'Expand workflow list' : 'Collapse workflow list'}
-            aria-label={isWorkflowListCollapsed ? 'Expand workflow list' : 'Collapse workflow list'}
-            style={{ marginLeft: isWorkflowListCollapsed ? 'auto' : undefined, marginRight: isWorkflowListCollapsed ? 'auto' : undefined }}
-          >
-            {isWorkflowListCollapsed ? '›' : '‹'}
-          </button>
-        </div>
-        {!isWorkflowListCollapsed && workflows.map(wf => (
-          <div
-            key={wf.workflow_id}
-            className={`${styles.workflowListItem} ${selectedId === wf.workflow_id ? styles.workflowListItemActive : ''}`}
-            onClick={() => { setSelectedId(wf.workflow_id); setEditTarget(null) }}
-          >
-            <div className={styles.wliTop}>
-              <span className={styles.wliTitle}>{wf.title}</span>
-              <div className={styles.wliBadges}>
-                <ModeBadge wf={wf} />
-                <button
-                  className={styles.deleteBtn}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (confirm(`Delete workflow "${wf.title}"? This cannot be undone.`)) {
-                      handleDelete(wf.workflow_id)
-                    }
-                  }}
-                  title="Delete workflow"
-                  aria-label="Delete workflow"
-                >
-                  {Icons.trash}
-                </button>
-              </div>
-            </div>
-            <span className={styles.wliMeta}>{wf.company_name} · {new Date(wf.created_at).toLocaleDateString()}</span>
+        {isWorkflowListCollapsed ? (
+          /* ── Icon strip (collapsed) ── */
+          <div className={styles.sidebarIconStrip}>
+            {/* Toggle / expand */}
+            <button
+              className={styles.workflowListCollapseBtn}
+              onClick={() => setIsWorkflowListCollapsed(false)}
+              aria-label="Expand workflow list"
+              aria-expanded={false}
+              style={{ marginBottom: 4 }}
+            >
+              ›
+            </button>
+            {/* Workflows icon with badge */}
+            <button
+              className={`${styles.sidebarIconBtn} ${styles.sidebarIconBtnActive}`}
+              onClick={() => setIsWorkflowListCollapsed(false)}
+              title={`Workflows (${workflows.length})`}
+              aria-label={`Workflows (${workflows.length})`}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/>
+                <path d="M9 6h3a3 3 0 0 1 3 3v6"/><path d="M18 15V9"/>
+              </svg>
+              {workflows.length > 0 && (
+                <span className={styles.sidebarIconBadge}>{workflows.length}</span>
+              )}
+            </button>
+            {/* Apps icon with badge */}
+            <button
+              className={styles.sidebarIconBtn}
+              onClick={() => setIsWorkflowListCollapsed(false)}
+              title="Apps"
+              aria-label={`Apps (${apps.length})`}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="1" y="1" width="6" height="6" rx="1"/>
+                <rect x="9" y="1" width="6" height="6" rx="1"/>
+                <rect x="1" y="9" width="6" height="6" rx="1"/>
+                <rect x="9" y="9" width="6" height="6" rx="1"/>
+              </svg>
+              {apps.length > 0 && (
+                <span className={styles.sidebarIconBadge}>{apps.length}</span>
+              )}
+            </button>
+            <div className={styles.sidebarIconDivider} />
+            {/* Nav icons */}
+            <a className={styles.sidebarIconBtn} href="/console" title="Console" aria-label="Console">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+              </svg>
+            </a>
+            <a className={styles.sidebarIconBtn} href="/dashboard" title="Dashboard" aria-label="Dashboard">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+              </svg>
+            </a>
+            <a className={styles.sidebarIconBtn} href="/diagnostics" title="Diagnostics" aria-label="Diagnostics">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+              </svg>
+            </a>
+            <a className={styles.sidebarIconBtn} href="/blueprint" title="Blueprint" aria-label="Blueprint">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+            </a>
+            <a className={styles.sidebarIconBtn} href="/roadmap" title="Roadmap" aria-label="Roadmap">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+            </a>
           </div>
-        ))}
+        ) : (
+          /* ── Expanded sidebar ── */
+          <>
+            <div className={styles.workflowListHeader}>
+              <span className={styles.workflowListTitle}>{t('title')}</span>
+              <span className={styles.workflowListCount}>{workflows.length}</span>
+              <button
+                className={styles.workflowListCollapseBtn}
+                onClick={() => setIsWorkflowListCollapsed(true)}
+                aria-label="Collapse workflow list"
+                aria-expanded={true}
+              >
+                ‹
+              </button>
+            </div>
+            {workflows.map(wf => (
+              <div
+                key={wf.workflow_id}
+                className={`${styles.workflowListItem} ${selectedId === wf.workflow_id ? styles.workflowListItemActive : ''}`}
+                onClick={() => { setSelectedId(wf.workflow_id); setEditTarget(null) }}
+              >
+                <div className={styles.wliTop}>
+                  <span className={styles.wliTitle}>{wf.title}</span>
+                  <div className={styles.wliBadges}>
+                    <ModeBadge wf={wf} />
+                    <button
+                      className={styles.deleteBtn}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (confirm(`Delete workflow "${wf.title}"? This cannot be undone.`)) {
+                          handleDelete(wf.workflow_id)
+                        }
+                      }}
+                      title="Delete workflow"
+                      aria-label="Delete workflow"
+                    >
+                      {Icons.trash}
+                    </button>
+                  </div>
+                </div>
+                <span className={styles.wliMeta}>{wf.company_name} · {new Date(wf.created_at).toLocaleDateString()}</span>
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* ── Apps Section ── */}
+        {!isWorkflowListCollapsed && (
+          <div className={styles.appsSection}>
+            <div className={styles.appsSectionHeader}>
+              <span className={styles.appsSectionTitle}>{t('apps')}</span>
+            </div>
+            <div className={styles.appsSearchWrap}>
+              <input
+                className={styles.appsSearch}
+                placeholder={t('searchApps')}
+                value={appsSearch}
+                onChange={e => setAppsSearch(e.target.value)}
+              />
+            </div>
+            <div className={styles.appsCategoryPills}>
+              {appCategories.map(cat => (
+                <button
+                  key={cat}
+                  className={`${styles.appsCategoryPill} ${appsCategory === cat ? styles.appsCategoryPillActive : ''}`}
+                  onClick={() => setAppsCategory(cat)}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            <div className={styles.appsListWrap}>
+              {filteredApps.map(app => (
+                <div
+                  key={app.id}
+                  className={styles.appItem}
+                  draggable
+                  onDragStart={e => handleAppDragStart(e, app)}
+                  title={`Drag ${app.name} to canvas`}
+                >
+                  {app.iconPath ? (
+                    <img src={app.iconPath} alt="" className={styles.appItemIcon} data-brand={app.id.toLowerCase()} />
+                  ) : (
+                    <span className={styles.appItemIcon}>{app.icon}</span>
+                  )}
+                  <span className={styles.appItemName}>{app.name}</span>
+                </div>
+              ))}
+              {filteredApps.length === 0 && (
+                <p className={styles.appsEmpty}>{t('noAppsFound')}</p>
+              )}
+            </div>
+
+            {/* Standard Nodes palette — drag to canvas */}
+            <StandardNodePalette />
+          </div>
+        )}
       </aside>
 
       {/* ── Main canvas ── */}
@@ -812,7 +1386,7 @@ function WorkflowsPageInner() {
                   whiteSpace: 'nowrap',
                   flexShrink: 0,
                 }}>
-                  Preview Mode
+                  {t('previewMode')}
                 </span>
               )}
             </div>
@@ -824,21 +1398,24 @@ function WorkflowsPageInner() {
                 onChange={e => handleStatusChange(e.target.value as SavedWorkflow['status'])}
                 aria-label="Change status"
               >
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="archived">Archived</option>
+                <option value="draft">{t('draft')}</option>
+                <option value="active">{t('active')}</option>
+                <option value="archived">{t('archived')}</option>
               </select>
-
-              {/* Edit with AIRA */}
-              <button className={styles.aiBtn} onClick={() => setShowAIModal(true)}>
-                {Icons.sparkle}
-                Edit with AIRA
-              </button>
 
               {/* Save Workflow */}
               <button className={styles.saveBtn} onClick={() => setShowSaveModal(true)}>
                 {Icons.save}
-                Save
+                {t('save')}
+              </button>
+
+              {/* Generate workflow */}
+              <button
+                className={styles.generateBtn}
+                onClick={() => setShowGenerationModal(true)}
+                title={t('generateFromNL')}
+              >
+                {t('generate')}
               </button>
 
               {/* Undo */}
@@ -846,11 +1423,11 @@ function WorkflowsPageInner() {
                 className={styles.undoBtn}
                 onClick={handleUndo}
                 disabled={!undoStack.length}
-                title="Undo last change"
+                title={t('undoLastChange')}
                 style={!undoStack.length ? { opacity: 0.35, cursor: 'not-allowed' } : undefined}
               >
                 {Icons.undo}
-                Undo
+                {t('undo')}
               </button>
 
               {/* More dropdown */}
@@ -865,13 +1442,13 @@ function WorkflowsPageInner() {
                 {showMore && (
                   <div className={styles.moreDropdown}>
                     <button className={styles.moreDropdownItem} onClick={handleExport}>
-                      {Icons.download} Export JSON
+                      {Icons.download} {t('exportJson')}
                     </button>
                     <button
                       className={`${styles.moreDropdownItem} ${styles.moreDropdownItemDanger}`}
                       onClick={() => handleDelete(selected.workflow_id)}
                     >
-                      {Icons.trash} Delete Workflow
+                      {Icons.trash} {t('deleteWorkflow')}
                     </button>
                   </div>
                 )}
@@ -889,7 +1466,7 @@ function WorkflowsPageInner() {
                       aria-label="Workflow options"
                     >
                       {Icons.play}
-                      {activating ? 'Processing…' : 'Deactivate'}
+                      {activating ? t('processing') : t('deactivate')}
                     </button>
                     {showActivateDropdown && (
                       <div className={styles.activateDropdownMenu}>
@@ -898,21 +1475,33 @@ function WorkflowsPageInner() {
                           onClick={() => { handleDeactivate(); setShowActivateDropdown(false) }}
                         >
                           {Icons.stop}
-                          Deactivate Workflow
+                          {t('deactivateWorkflow')}
                         </button>
+                        {selected.n8n_url && (
+                          <a
+                            className={styles.activateDropdownItem}
+                            href={selected.n8n_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => setShowActivateDropdown(false)}
+                          >
+                            {Icons.play}
+                            {t('viewInN8n')}
+                          </a>
+                        )}
                       </div>
                     )}
                   </>
                 ) : (
-                  // Preview workflow — Activate is disabled
+                  // Preview workflow — Activate button
                   <button
                     className={styles.activateDropdownBtn}
-                    disabled
-                    title="Deploy this workflow to n8n to activate it"
-                    style={{ opacity: 0.4, cursor: 'not-allowed' }}
+                    onClick={handleActivate}
+                    disabled={activating}
+                    title={t('deployToN8n')}
                   >
                     {Icons.play}
-                    Activate
+                    {activating ? t('activating') : t('activate')}
                   </button>
                 )}
               </div>
@@ -928,19 +1517,33 @@ function WorkflowsPageInner() {
 
           {/* Canvas flow — fills remaining space */}
           <div className={styles.canvasBody}>
+            {/* ── AIRA Copilot — floating pill/panel ── */}
+            <AiraCopilotFloating
+              isOpen={copilotOpen}
+              onOpenChange={setCopilotOpen}
+              messages={messages}
+              loading={copilotLoading}
+              error={copilotError}
+              currentWorkflowName={selected?.title}
+              lastSuggestion={lastSuggestion}
+              onSendChat={sendChat}
+              onBuildWorkflow={buildWorkflow}
+              onApplySuggestion={handleCopilotApply}
+            />
             <N8nWorkflowCanvas
               key={`${selected.workflow_id}-${selected.n8n_workflow_id ?? 'preview'}`}
               workflowId={selected.workflow_id}
               isActive={isActiveWorkflow(selected)}
               n8nWorkflowId={selected.n8n_workflow_id}
               fallbackSteps={selected.steps}
+              onInjectNodes={(fn) => { canvasInjectRef.current = fn }}
             />
 
             {/* Meta footer — absolutely positioned overlay */}
             <div className={styles.canvasMeta}>
               {selected.integrations.length > 0 && (
                 <div className={styles.canvasIntegrations}>
-                  <span className={styles.canvasMetaLabel}>Integrations</span>
+                  <span className={styles.canvasMetaLabel}>{t('integrations')}</span>
                   {selected.integrations.slice(0, 2).map((int, i) => (
                     <span key={i} className={styles.integrationTag}>{int}</span>
                   ))}
@@ -970,31 +1573,80 @@ function WorkflowsPageInner() {
               className={styles.canvasUndoBtn}
               onClick={handleUndo}
               aria-disabled={!undoStack.length}
-              title={undoStack.length ? 'Undo last change' : 'Nothing to undo'}
+              title={undoStack.length ? t('undoLastChange') : t('nothingToUndo')}
             >
               {Icons.undo}
-              Undo last change
+              {t('undoLastChange')}
             </button>
           </div>
+
+          {/* ── Integrations collapsible bar ── */}
+          {selected.integrations.length > 0 && (
+            <div className={`${styles.integrationsBar} ${isIntegrationsCollapsed ? styles.integrationsBarCollapsed : styles.integrationsBarExpanded}`}>
+              <div
+                className={styles.integrationsBarStrip}
+                onClick={() => setIsIntegrationsCollapsed(v => !v)}
+                role="button"
+                tabIndex={0}
+                aria-expanded={!isIntegrationsCollapsed}
+                aria-label="Toggle integrations"
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setIsIntegrationsCollapsed(v => !v) }}
+              >
+                <span className={styles.integrationsBarLabel}>{t('integrations')}</span>
+                <div className={styles.integrationsBarIcons}>
+                  {selected.integrations.slice(0, 4).map((int, i) => (
+                    <span key={i} className={styles.integrationsBarIcon} title={int}>
+                      {int.slice(0, 2).toUpperCase()}
+                    </span>
+                  ))}
+                </div>
+                {selected.integrations.length > 4 && (
+                  <span className={styles.integrationsBarBadge}>+{selected.integrations.length - 4}</span>
+                )}
+                <svg
+                  className={`${styles.integrationsBarChevron} ${!isIntegrationsCollapsed ? styles.integrationsBarChevronOpen : ''}`}
+                  width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+                >
+                  <polyline points="18 15 12 9 6 15"/>
+                </svg>
+              </div>
+              {!isIntegrationsCollapsed && (
+                <div className={styles.integrationsBarContent}>
+                  {selected.integrations.map((int, i) => (
+                    <span key={i} className={styles.integrationTag}>{int}</span>
+                  ))}
+                  {selected.estimated_time && (
+                    <span className={styles.integrationTag}>{Icons.clock} {selected.estimated_time.replace(/minutes per client/g, 'min/client').replace(/minutes/g, 'min')}</span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
+      {/* ── Right edge indicator — shown when step selected but panel closed ── */}
+      {selected && editTarget && !rightPanelOpen && (
+        <button
+          className={styles.rightEdgeIndicator}
+          onClick={() => setRightPanelOpen(true)}
+          title="Edit step details"
+          aria-label="Open step editor"
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
+      )}
+
       {/* ── Right panel ── */}
-      {selected && editTarget && (
+      {selected && editTarget && rightPanelOpen && (
         <RightPanel
           workflow={selected}
           editTarget={editTarget}
           onSave={handleSaveStep}
-          onClose={() => setEditTarget(null)}
-        />
-      )}
-
-      {/* ── Edit with AI modal ── */}
-      {showAIModal && selected && (
-        <WorkflowAIEditor
-          workflow={selected}
-          onClose={() => setShowAIModal(false)}
-          onApply={handleAIApply}
+          onClose={() => { setEditTarget(null); setRightPanelOpen(false) }}
         />
       )}
 
@@ -1003,6 +1655,16 @@ function WorkflowsPageInner() {
         <SaveWorkflowModal
           onClose={() => setShowSaveModal(false)}
           onSave={handleSaveVersion}
+        />
+      )}
+
+      {/* ── Workflow Generation modal ── */}
+      {selected && (
+        <WorkflowGenerationModal
+          isOpen={showGenerationModal}
+          onClose={() => setShowGenerationModal(false)}
+          onApply={handleGenerationApply}
+          availableApps={apps}
         />
       )}
     </div>

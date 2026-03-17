@@ -4,17 +4,19 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { getWorkflowCount } from "@/hooks/useWorkflows"
+import LanguagePill from "./LanguagePill"
 import styles from "./Sidebar.module.css"
 
 export default function Sidebar() {
   const pathname = usePathname()
   const [workflowCount, setWorkflowCount] = useState(0)
+  const t = useTranslations("nav")
 
   useEffect(() => {
     const update = () => setWorkflowCount(getWorkflowCount())
     update()
-    // Re-check when storage changes (cross-tab or same-tab via custom event)
     window.addEventListener('storage', update)
     window.addEventListener('aivory_workflows_updated', update)
     return () => {
@@ -24,15 +26,15 @@ export default function Sidebar() {
   }, [])
 
   const navItems = [
-    { label: "Console", href: "/console" },
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Diagnostics", href: "/diagnostics" },
-    { label: "Blueprint", href: "/blueprint" },
-    { label: "Roadmap", href: "/roadmap" },
-    { label: "Workflows", href: "/workflows", badge: workflowCount > 0 ? workflowCount : null },
-    { label: "Execution Logs", href: "/logs" },
-    { label: "Integrations", href: "/integrations" },
-    { label: "Settings", href: "/settings" },
+    { key: "console", href: "/console" },
+    { key: "dashboard", href: "/dashboard" },
+    { key: "diagnostics", href: "/diagnostics" },
+    { key: "blueprint", href: "/blueprint" },
+    { key: "roadmap", href: "/roadmap" },
+    { key: "workflows", href: "/workflows", badge: workflowCount > 0 ? workflowCount : null },
+    { key: "executionLogs", href: "/logs" },
+    { key: "integrations", href: "/integrations" },
+    { key: "settings", href: "/settings" },
   ]
 
   return (
@@ -56,7 +58,7 @@ export default function Sidebar() {
             href={item.href}
             className={`${styles.navItem} ${pathname === item.href || pathname.startsWith(item.href + '/') ? styles.active : ''}`}
           >
-            <span>{item.label}</span>
+            <span>{t(item.key)}</span>
             {'badge' in item && item.badge !== null && (
               <span className={styles.navBadge}>{item.badge}</span>
             )}
@@ -65,8 +67,9 @@ export default function Sidebar() {
       </nav>
 
       <div className={styles.sidebarFooter}>
+        <LanguagePill />
         <a href="/" className={styles.navItem}>
-          <span>Home</span>
+          <span>{t("home")}</span>
         </a>
       </div>
     </aside>

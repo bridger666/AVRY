@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { FreeDiagnosticService } from '@/services/freeDiagnostic'
 import styles from './diagnostics.module.css'
 
 export default function DiagnosticsPage() {
   const [freeDiagnosticCompleted, setFreeDiagnosticCompleted] = useState(false)
   const [freeDiagnosticScore, setFreeDiagnosticScore] = useState<number | null>(null)
+  const t = useTranslations('diagnostics')
 
   useEffect(() => {
     const result = FreeDiagnosticService.getResult()
@@ -21,7 +23,7 @@ export default function DiagnosticsPage() {
     <div className={styles.pageContainer}>
       <div className={styles.pageContent}>
         <header className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>AI Readiness Diagnostics</h1>
+          <h1 className={styles.pageTitle}>{t('title')}</h1>
           <p className={styles.pageDescription}>
             Choose the diagnostic that fits your needs: quick assessment or comprehensive deep dive.
           </p>
@@ -30,7 +32,7 @@ export default function DiagnosticsPage() {
         {/* Free Diagnostic Section */}
         <div className={styles.diagnosticSection}>
           <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Free Diagnostic</h2>
+            <h2 className={styles.sectionTitle}>{t('freeDiagnostic')}</h2>
             <p className={styles.sectionDescription}>
               12 quick questions to check your AI readiness and get a scoring card.
             </p>
@@ -38,7 +40,7 @@ export default function DiagnosticsPage() {
 
           {!freeDiagnosticCompleted ? (
             <Link href="/diagnostics/free" className={styles.diagnosticCta}>
-              Start Free Diagnostic
+              {t('startFree')}
             </Link>
           ) : (
             <div className={styles.completedState}>
@@ -48,7 +50,7 @@ export default function DiagnosticsPage() {
               </div>
               <div className={styles.completedActions}>
                 <Link href="/diagnostics/free/result" className={styles.diagnosticCta}>
-                  View Results
+                  {t('viewResults')}
                 </Link>
                 <button
                   className={styles.retakeButton}
@@ -68,7 +70,7 @@ export default function DiagnosticsPage() {
         {/* Deep Diagnostic Section */}
         <div className={styles.diagnosticSection}>
           <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Deep Diagnostic</h2>
+            <h2 className={styles.sectionTitle}>{t('deepDiagnostic')}</h2>
             <p className={styles.sectionDescription}>
               Multi-phase deep dive to prepare your AI System Blueprint.
             </p>
@@ -79,7 +81,7 @@ export default function DiagnosticsPage() {
               The Deep Diagnostic provides comprehensive analysis across business context, operations, data readiness, and strategic goals.
             </p>
             <Link href="/diagnostics/deep" className={styles.diagnosticCta}>
-              Start Deep Diagnostic
+              {t('startDeep')}
             </Link>
           </div>
         </div>

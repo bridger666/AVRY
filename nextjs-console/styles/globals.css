@@ -16,6 +16,11 @@
   --accent: #00e59e;
   --accent-dim: rgba(0, 229, 158, 0.12);
 
+  /* ── Surface / panel tokens ── */
+  --surface-secondary: #1e1d1a;
+  --surface-tertiary: #262520;
+  --border-subtle: rgba(255,255,255,0.07);
+
   /* ── Global card design system (Dashboard baseline) ── */
   --card-bg: rgba(255,255,255,0.03);
   --card-border: rgba(255,255,255,0.05);
@@ -63,6 +68,32 @@ body {
   width: 100%;
 }
 
+/* ── Global scrollbar — warm grey, matches AI Console ── */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.13);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+
+/* Keep .chat-area consistent (inherits from above, explicit for clarity) */
 .chat-area::-webkit-scrollbar {
   width: 8px;
 }
@@ -527,21 +558,6 @@ textarea::placeholder {
   background: transparent !important;
 }
 
-/* Strip default node wrapper styles */
-.react-flow__node-default,
-.react-flow__node-input,
-.react-flow__node-output,
-.react-flow__node-workflowStep,
-.react-flow__node-triggerNode,
-.react-flow__node-stepNode {
-  padding: 0 !important;
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  width: auto !important;
-}
-
 .react-flow__node.selected > div,
 .react-flow__node:focus > div {
   outline: none !important;
@@ -552,6 +568,8 @@ textarea::placeholder {
 .react-flow__attribution {
   display: none !important;
 }
+/* NOTE: Node wrapper stripping (.react-flow__node-standardNode etc.) and
+   all node card styles live in styles/workflow-nodes.css, imported by WorkflowCanvas.tsx */
 
 /* ── Typing bounce animation (used by inline indicator in ChatMessage) ── */
 @keyframes typingBounce {

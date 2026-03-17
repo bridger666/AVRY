@@ -60,7 +60,7 @@ export function WorkflowAIEditor({ workflow, onClose, onApply }: WorkflowAIEdito
       <div className={styles.aiModal} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className={styles.aiModalHeader}>
-          <span className={styles.aiModalTitle}>✨ Edit Workflow with AI</span>
+          <span className={styles.aiModalTitle}>Edit Workflow with AI</span>
           <button className={styles.rightPanelClose} onClick={onClose} aria-label="Close">
             ✕
           </button>

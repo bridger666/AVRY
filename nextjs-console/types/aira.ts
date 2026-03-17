@@ -50,6 +50,6 @@ export interface AiraWorkflowEditResponse {
 
 export interface AiraErrorResponse {
   status: 'error'
-  errorCode: 'INVALID_REQUEST' | 'TIMEOUT' | 'LLM_ERROR' | 'VALIDATION_ERROR'
+  errorCode: 'INVALID_REQUEST' | 'TIMEOUT' | 'LLM_ERROR' | 'VALIDATION_ERROR' | 'UNSUPPORTED'
   errorMessage: string
 }

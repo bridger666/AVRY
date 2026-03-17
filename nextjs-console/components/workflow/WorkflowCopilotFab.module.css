@@ -1,0 +1,48 @@
+/* ── WorkflowCopilotFab ─────────────────────────────────── */
+
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 10px 12px;
+  border-radius: 24px;
+  border: 1px solid rgba(0,229,158,0.3);
+  background: #1e1d1a;
+  color: #e8e6e3;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,229,158,0.08);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+  user-select: none;
+}
+
+.fab:hover {
+  background: #252420;
+  border-color: rgba(0,229,158,0.5);
+  box-shadow: 0 6px 28px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,229,158,0.15);
+  transform: translateY(-1px);
+}
+
+.fab:active {
+  transform: translateY(0);
+}
+
+.fabOpen {
+  background: rgba(0,229,158,0.08);
+  border-color: rgba(0,229,158,0.4);
+  color: #00e59e;
+}
+
+.fabOpen:hover {
+  background: rgba(0,229,158,0.12);
+}
+
+.fabLabel {
+  white-space: nowrap;
+}

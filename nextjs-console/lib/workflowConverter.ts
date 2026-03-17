@@ -36,7 +36,7 @@ interface AivoryWorkflow {
 interface N8nNode {
   name: string
   type: string
-  typeVersion: number | string
+  typeVersion: number   // must be an integer — n8n rejects floats
   position: [number, number]
   parameters: Record<string, any>
   id?: string
@@ -47,14 +47,16 @@ interface N8nWorkflow {
   nodes: N8nNode[]
   connections: Record<string, any>
   settings: Record<string, any>
-  description?: string
 }
 
 /**
- * Generate a UUID-like ID for n8n nodes
+ * Generate a UUID v4-like ID for n8n nodes (n8n requires UUID format)
  */
 function generateNodeId(): string {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
+  })
 }
 
 /**
@@ -96,7 +98,7 @@ function buildN8nNode(step: WorkflowStep, index: number, type: StepType): N8nNod
       return {
         ...baseNode,
         type: 'n8n-nodes-base.httpRequest',
-        typeVersion: 4.2,
+        typeVersion: 4,
         parameters: {
           method: 'POST',
           url: '', // User fills this
@@ -120,7 +122,7 @@ function buildN8nNode(step: WorkflowStep, index: number, type: StepType): N8nNod
       return {
         ...baseNode,
         type: 'n8n-nodes-base.emailSend',
-        typeVersion: 2.1,
+        typeVersion: 2,
         parameters: {
           fromEmail: '',
           toEmail: '',
@@ -135,7 +137,7 @@ function buildN8nNode(step: WorkflowStep, index: number, type: StepType): N8nNod
       return {
         ...baseNode,
         type: 'n8n-nodes-base.slack',
-        typeVersion: 2.3,
+        typeVersion: 2,
         parameters: {
           operation: 'message',
           channel: '',
@@ -148,7 +150,7 @@ function buildN8nNode(step: WorkflowStep, index: number, type: StepType): N8nNod
       return {
         ...baseNode,
         type: 'n8n-nodes-base.httpRequest',
-        typeVersion: 4.2,
+        typeVersion: 4,
         parameters: {
           method: 'POST',
           url: 'https://openrouter.ai/api/v1/chat/completions',
@@ -195,7 +197,7 @@ function buildN8nNode(step: WorkflowStep, index: number, type: StepType): N8nNod
       return {
         ...baseNode,
         type: 'n8n-nodes-base.wait',
-        typeVersion: 1.1,
+        typeVersion: 1,
         parameters: {
           resume: 'timeInterval',
           unit: 'hours',
@@ -207,7 +209,7 @@ function buildN8nNode(step: WorkflowStep, index: number, type: StepType): N8nNod
       return {
         ...baseNode,
         type: 'n8n-nodes-base.scheduleTrigger',
-        typeVersion: 1.2,
+        typeVersion: 1,
         parameters: {
           rule: {
             interval: [{ field: 'hours', triggerAtHour: 9 }],
@@ -219,7 +221,7 @@ function buildN8nNode(step: WorkflowStep, index: number, type: StepType): N8nNod
       return {
         ...baseNode,
         type: 'n8n-nodes-base.postgres',
-        typeVersion: 2.4,
+        typeVersion: 2,
         parameters: {
           operation: 'executeQuery',
           query: '', // User fills this
@@ -231,7 +233,7 @@ function buildN8nNode(step: WorkflowStep, index: number, type: StepType): N8nNod
       return {
         ...baseNode,
         type: 'n8n-nodes-base.webhook',
-        typeVersion: 1.1,
+        typeVersion: 1,
         parameters: {
           path: step.tool.toLowerCase().replace(/\s+/g, '-'),
           responseMode: 'responseNode',
@@ -244,7 +246,7 @@ function buildN8nNode(step: WorkflowStep, index: number, type: StepType): N8nNod
       return {
         ...baseNode,
         type: 'n8n-nodes-base.set',
-        typeVersion: 3.4,
+        typeVersion: 3,
         parameters: {
           assignments: {
             assignments: [
@@ -260,30 +262,34 @@ function buildN8nNode(step: WorkflowStep, index: number, type: StepType): N8nNod
 }
 
 /**
- * Build trigger node based on workflow trigger type
+ * Build trigger node based on workflow trigger type.
+ * Always returns a valid trigger — falls back to Manual Trigger so n8n never
+ * rejects the workflow for missing a trigger node.
  */
 function buildTriggerNode(trigger?: string): N8nNode {
   const text = (trigger || '').toLowerCase()
 
   if (text.includes('webhook') || text.includes('api call') || text.includes('request')) {
     return {
+      id: generateNodeId(),
       name: 'Webhook Trigger',
       type: 'n8n-nodes-base.webhook',
-      typeVersion: 1.1,
+      typeVersion: 1,
       position: [250, 300],
       parameters: {
         path: 'aivory-workflow',
-        responseMode: 'responseNode',
-        method: 'POST',
+        responseMode: 'lastNode',
+        httpMethod: 'POST',
       },
     }
   }
 
   if (text.includes('schedule') || text.includes('daily') || text.includes('cron')) {
     return {
+      id: generateNodeId(),
       name: 'Schedule Trigger',
       type: 'n8n-nodes-base.scheduleTrigger',
-      typeVersion: 1.2,
+      typeVersion: 1,
       position: [250, 300],
       parameters: {
         rule: {
@@ -295,9 +301,10 @@ function buildTriggerNode(trigger?: string): N8nNode {
 
   if (text.includes('email') || text.includes('inbox')) {
     return {
+      id: generateNodeId(),
       name: 'Email Trigger',
       type: 'n8n-nodes-base.emailReadImap',
-      typeVersion: 2.1,
+      typeVersion: 2,
       position: [250, 300],
       parameters: {
         operation: 'getEmails',
@@ -307,9 +314,10 @@ function buildTriggerNode(trigger?: string): N8nNode {
     }
   }
 
-  // Default: manual trigger
+  // Default: Manual Trigger — always valid, no credentials required
   return {
-    name: 'Trigger',
+    id: generateNodeId(),
+    name: 'Manual Trigger',
     type: 'n8n-nodes-base.manualTrigger',
     typeVersion: 1,
     position: [250, 300],
@@ -341,26 +349,14 @@ export function convertToN8nWorkflow(workflow: AivoryWorkflow): N8nWorkflow {
     }
   })
 
-  // 3. Build description with metadata
-  const stepsNeedingAuth = nodes
-    .filter((n) => ['http_request', 'email', 'slack', 'postgres'].includes(n.type.split('.')[1]))
-    .map((n) => n.name)
-
-  const description = [
-    `Generated by Aivory`,
-    workflow.company_name ? `Company: ${workflow.company_name}` : null,
-    workflow.diagnostic_score ? `Diagnostic Score: ${workflow.diagnostic_score}` : null,
-    workflow.created_at ? `Generated: ${new Date(workflow.created_at).toLocaleDateString()}` : null,
-    stepsNeedingAuth.length > 0 ? `Steps requiring credential setup: ${stepsNeedingAuth.join(', ')}` : null,
-  ]
-    .filter(Boolean)
-    .join(' | ')
-
+  // 3. Return the workflow payload
+  // NOTE: do NOT include `active` — n8n treats it as read-only on POST/PUT
+  // and returns 400 "request/body/active is read-only".
+  // Activation is done separately via POST /workflows/:id/activate.
   return {
     name: workflow.title,
     nodes,
     connections,
     settings: { executionOrder: 'v1' },
-    description,
   }
 }

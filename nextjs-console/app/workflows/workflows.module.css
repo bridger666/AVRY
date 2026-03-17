@@ -82,12 +82,83 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  transition: width 0.2s ease, min-width 0.2s ease;
+  overflow-x: hidden;
+  transition: width 0.22s ease, min-width 0.22s ease;
+  flex-shrink: 0;
 }
 .workflowListCollapsed {
-  width: 44px;
-  min-width: 44px;
+  width: 52px;
+  min-width: 52px;
   overflow: hidden;
+}
+/* Icon strip shown when collapsed */
+.sidebarIconStrip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  gap: 2px;
+  flex: 1;
+}
+.sidebarIconBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #a8a6a2;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.sidebarIconBtn:hover { background: rgba(255,255,255,0.06); color: #e8e6e1; }
+.sidebarIconBtnActive { background: rgba(0,229,158,0.08) !important; color: #00e59e !important; }
+.sidebarIconBadge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: #00e59e;
+  color: #1a1a1a;
+  font-size: 8px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+/* Tooltip for icon strip */
+.sidebarIconBtn[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #2a2927;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #e8e6e3;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 200;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.sidebarIconDivider {
+  width: 24px;
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin: 4px 0;
 }
 .workflowListHeader {
   display: flex;
@@ -96,6 +167,7 @@
   padding: 14px 10px;
   border-bottom: 1px solid rgba(255,255,255,0.06);
   min-height: 52px;
+  flex-shrink: 0;
 }
 .workflowListTitle {
   font-size: 11px;
@@ -388,6 +460,26 @@
   white-space: nowrap;
 }
 .undoBtn:hover { background: rgba(255,255,255,0.05); border-color: rgba(0,229,158,0.3); color: #00e59e; }
+
+/* Generate — teal outline */
+.generateBtn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 14px;
+  background: transparent;
+  border: 1px solid rgba(0,229,158,0.3);
+  border-radius: 7px;
+  color: #00e59e;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.generateBtn:hover { background: rgba(0,229,158,0.1); border-color: rgba(0,229,158,0.5); }
 
 /* Save — teal outline */
 .saveBtn {
@@ -723,6 +815,77 @@
 }
 .canvasStatIcon { color: #6a6a6a; }
 
+/* ── Integrations collapsible bottom bar ────────────────── */
+.integrationsBar {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.015);
+  overflow: hidden;
+  transition: max-height 0.22s ease;
+}
+.integrationsBarCollapsed {
+  max-height: 36px;
+}
+.integrationsBarExpanded {
+  max-height: 120px;
+}
+.integrationsBarStrip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  height: 36px;
+  cursor: pointer;
+  user-select: none;
+}
+.integrationsBarStrip:hover { background: rgba(255,255,255,0.02); }
+.integrationsBarLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: #6a6a6a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-right: 4px;
+}
+.integrationsBarIcons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+.integrationsBarIcon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: #a8a6a2;
+  font-weight: 700;
+}
+.integrationsBarBadge {
+  font-size: 10px;
+  color: #6a6a6a;
+  white-space: nowrap;
+}
+.integrationsBarChevron {
+  color: #6a6a6a;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.integrationsBarChevronOpen {
+  transform: rotate(180deg);
+}
+.integrationsBarContent {
+  padding: 8px 16px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 /* ── Secondary canvas undo button ───────────────────────── */
 .canvasUndoBtn {
   position: absolute;
@@ -753,6 +916,34 @@
 .canvasUndoBtn[aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
 
 /* ── Right panel ────────────────────────────────────────── */
+/* Edge indicator — shown when a step is selected but panel is closed */
+.rightEdgeIndicator {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  padding: 12px 0;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  cursor: pointer;
+  gap: 6px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.rightEdgeIndicator:hover {
+  background: rgba(0,229,158,0.08);
+  border-color: rgba(0,229,158,0.25);
+}
+.rightEdgeIndicator svg { color: #a8a6a2; }
+.rightEdgeIndicator:hover svg { color: #00e59e; }
+
 .rightPanel {
   width: 300px;
   min-width: 300px;
@@ -762,6 +953,13 @@
   flex-direction: column;
   padding: 0;
   overflow-y: auto;
+  /* Slide in from right */
+  animation: slideInRight 0.2s ease-out;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(20px); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
 }
 .rightPanelHeader {
   display: flex;
@@ -1493,4 +1691,427 @@
   background: rgba(192,80,74,0.15);
   color: #c0504a;
   border: 1px solid rgba(192,80,74,0.3);
+}
+
+/* ── AIRA Copilot Bar ───────────────────────────────────── */
+.copilotBar {
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.025);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease;
+}
+
+.copilotBarCollapsed {
+  /* collapsed state handled by inner row */
+}
+
+.copilotCollapsedRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+  cursor: pointer;
+  user-select: none;
+}
+.copilotCollapsedRow:hover { background: rgba(255,255,255,0.02); }
+
+.copilotCollapsedLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a8a6a2;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  flex: 1;
+}
+
+.copilotExpandedBody {
+  padding: 14px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.copilotHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.copilotLabel {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #00e59e;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.copilotCollapseBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 5px;
+  color: #a8a6a2;
+  font-size: 11px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.copilotCollapseBtn:hover { background: rgba(255,255,255,0.04); color: #e8e6e1; }
+
+.copilotInputRow {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.copilotTextarea {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 9px;
+  color: #d4d2ce;
+  font-size: 13px;
+  padding: 10px 13px;
+  outline: none;
+  font-family: inherit;
+  resize: none;
+  line-height: 1.6;
+  max-height: 96px; /* ~4 lines */
+  overflow-y: auto;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+.copilotTextarea:focus { border-color: rgba(0,229,158,0.4); }
+.copilotTextarea:disabled { opacity: 0.5; cursor: not-allowed; }
+.copilotTextarea::placeholder { color: #6a6a6a; }
+
+.copilotGenerateBtn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 18px;
+  background: #00e59e;
+  border: none;
+  border-radius: 9px;
+  color: #1a1a1a;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.copilotGenerateBtn:hover:not(:disabled) { background: #00f5b0; }
+.copilotGenerateBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.copilotError {
+  font-size: 12px;
+  color: #ff8070;
+  margin: 0;
+  padding: 6px 10px;
+  background: rgba(255,100,80,0.07);
+  border: 1px solid rgba(255,100,80,0.15);
+  border-radius: 6px;
+}
+
+.copilotSuccess {
+  font-size: 12px;
+  color: #00e59e;
+  margin: 0;
+  padding: 6px 10px;
+  background: rgba(0,229,158,0.07);
+  border: 1px solid rgba(0,229,158,0.15);
+  border-radius: 6px;
+  animation: fadeInDown 0.2s ease;
+}
+
+
+/* ── Workflow Onboarding Empty State ────────────────────── */
+.onboardingOverlay {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100vh;
+  background-color: var(--bg-main, #1e1d1a);
+  background-image: radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px);
+  background-size: 24px 24px;
+  overflow: hidden;
+}
+
+.onboardingContent {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 520px;
+  padding: 48px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.onboardingAvatarWrap {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0,229,158,0.2);
+  border-radius: 16px;
+  background: rgba(0,229,158,0.06);
+}
+
+.onboardingTitle {
+  font-size: 22px;
+  font-weight: 300;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  color: #e8e6e1;
+  margin: 0 0 12px;
+  letter-spacing: -0.4px;
+  line-height: 1.3;
+}
+
+.onboardingSubtitle {
+  font-size: 14px;
+  color: #a8a6a2;
+  line-height: 1.7;
+  margin: 0 0 32px;
+  max-width: 400px;
+}
+
+.onboardingCTA {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 52px;
+  padding: 0 28px;
+  background: rgba(0, 229, 158, 0.08);
+  border: 1.5px solid rgba(0, 229, 158, 0.35);
+  border-radius: 14px;
+  color: #00e59e;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+  white-space: nowrap;
+  box-shadow: none;
+  margin-bottom: 16px;
+  letter-spacing: 0.1px;
+}
+.onboardingCTA:hover {
+  background: rgba(0, 229, 158, 0.14);
+  border-color: rgba(0, 229, 158, 0.6);
+  box-shadow: 0 4px 20px rgba(0, 229, 158, 0.1);
+}
+
+.onboardingHotkey {
+  font-size: 11px;
+  color: #6a6a6a;
+  margin: 0;
+}
+
+.onboardingHotkey kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 10px;
+  color: #a8a6a2;
+}
+
+.onboardingSecondary {
+  margin-top: 24px;
+  font-size: 12px;
+  color: #6a6a6a;
+}
+
+.onboardingSecondaryLink {
+  background: none;
+  border: none;
+  color: #a8a6a2;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-family: inherit;
+  transition: color 0.15s;
+  padding: 0;
+}
+.onboardingSecondaryLink:hover { color: #e8e6e1; }
+
+/* ── Apps Section in Sidebar ────────────────────────────── */
+.appsSection {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.appsSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+.appsSectionTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a8a6a2;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.appsSearchWrap {
+  padding: 0 16px;
+}
+
+.appsSearch {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 7px;
+  color: #d4d2ce;
+  font-size: 12px;
+  padding: 7px 10px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.appsSearch:focus {
+  border-color: rgba(0,229,158,0.4);
+}
+
+.appsSearch::placeholder {
+  color: #6a6a6a;
+}
+
+.appsCategoryPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 16px;
+}
+
+.appsCategoryPill {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 5px;
+  color: #a8a6a2;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.appsCategoryPill:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.14);
+  color: #e8e6e1;
+}
+
+.appsCategoryPillActive {
+  background: rgba(0,229,158,0.1) !important;
+  border-color: rgba(0,229,158,0.3) !important;
+  color: #00e59e !important;
+}
+
+.appsListWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.appItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 7px;
+  cursor: grab;
+  transition: all 0.15s;
+}
+
+.appItem:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(0,229,158,0.2);
+}
+
+.appItem:active {
+  cursor: grabbing;
+}
+
+.appItemIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Brand color icons - preserve original colors */
+.appItemIcon img[data-brand="slack"],
+.appItemIcon img[data-brand="airtable"],
+.appItemIcon img[data-brand="hubspot"],
+.appItemIcon img[data-brand="jira"],
+.appItemIcon img[data-brand="salesforce"],
+.appItemIcon img[data-brand="sendgrid"] {
+  filter: none;
+}
+
+/* Monochrome/dark icons - convert to white */
+.appItemIcon img[data-brand="github"],
+.appItemIcon img[data-brand="openai"],
+.appItemIcon img[data-brand="notion"],
+.appItemIcon img[data-brand="http"],
+.appItemIcon img:not([data-brand]) {
+  filter: brightness(0) invert(1);
+}
+
+.appItemName {
+  font-size: 12px;
+  font-weight: 500;
+  color: #d4d2ce;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.appsEmpty {
+  font-size: 11px;
+  color: #6a6a6a;
+  text-align: center;
+  padding: 12px;
+  margin: 0;
 }

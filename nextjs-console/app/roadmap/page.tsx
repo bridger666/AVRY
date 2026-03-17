@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { loadRoadmap, saveRoadmap } from '@/hooks/useRoadmap';
 import type { AiryRoadmap, AiryRoadmapPhase, AiryRoadmapKpi, AiryRoadmapMilestone } from '@/types/roadmap';
 
@@ -27,8 +28,14 @@ const T = {
 };
 
 // ─── AIRA trigger ─────────────────────────────────────────────
-const openAira = (msg: string) =>
-  window.dispatchEvent(new CustomEvent('aira:open', { detail: { prefill: msg } }));
+const openAira = (msg: string, pageContext?: Record<string, unknown>) =>
+  window.dispatchEvent(new CustomEvent('aira:open', {
+    detail: {
+      prefill: msg,
+      sourceTab: 'roadmap',
+      pageContext: pageContext ?? {},
+    }
+  }));
 
 // ─── SVG icons ────────────────────────────────────────────────
 const IconGear = () => (
@@ -197,6 +204,7 @@ function PhaseSection({ phase, index, open, phaseRef, onToggle, onWorkflow }: {
   phaseRef: React.RefObject<HTMLDivElement>;
   onToggle: () => void; onWorkflow: (id: string) => void;
 }) {
+  const t = useTranslations("roadmap");
   const storageKey = `aivory_roadmap_checked_${phase.id}`;
   const [checked, setChecked] = useState<Record<string, boolean>>(() => {
     try { return JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch { return {}; }
@@ -256,7 +264,7 @@ function PhaseSection({ phase, index, open, phaseRef, onToggle, onWorkflow }: {
               fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
               background: T.greenDim, color: T.green, border: `1px solid ${T.borderGreen}`,
               textTransform: 'uppercase', letterSpacing: '0.3px',
-            }}>Complete</span>
+            }}>{t("complete")}</span>
           )}
           {!complete && total > 0 && (
             <span style={{ fontSize: 11, color: T.textMuted, fontVariantNumeric: 'tabular-nums' }}>
@@ -288,7 +296,7 @@ function PhaseSection({ phase, index, open, phaseRef, onToggle, onWorkflow }: {
           {phase.milestones.length > 0 && (
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>
-                Milestones
+                {t("milestones")}
               </div>
               <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
                 {phase.milestones.map(m => (
@@ -302,7 +310,7 @@ function PhaseSection({ phase, index, open, phaseRef, onToggle, onWorkflow }: {
           {phase.kpis.length > 0 && (
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>
-                KPI Targets
+                {t("kpiTargets")}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
                 {phase.kpis.map(k => <KpiCard key={k.id} kpi={k} />)}
@@ -312,11 +320,16 @@ function PhaseSection({ phase, index, open, phaseRef, onToggle, onWorkflow }: {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', paddingTop: 4, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
             <BtnComplete active={complete} onClick={() => setComplete(v => !v)}>
-              {complete ? 'Marked complete' : 'Mark phase as complete'}
+              {complete ? t("markedComplete") : t("markComplete")}
             </BtnComplete>
             <BtnAira onClick={() => openAira(
-              `Help me work on "${phase.name}" of my AI Roadmap.\nMilestones:\n${phase.milestones.map(m => `- ${m.title}`).join('\n')}`
-            )}>Ask AIRA for help</BtnAira>
+              `Help me work on "${phase.name}" of my AI Roadmap.\nMilestones:\n${phase.milestones.map(m => `- ${m.title}`).join('\n')}`,
+              {
+                roadmapTitle: phase.name,
+                currentPhase: phase.name,
+                milestones: phase.milestones.map(m => m.title),
+              }
+            )}>{t("askAiraHelp")}</BtnAira>
           </div>
         </div>
       )}
@@ -402,6 +415,7 @@ function EmptyState({ generating, error, onGenerate, router }: {
   generating: boolean; error: string | null;
   onGenerate: () => void; router: ReturnType<typeof useRouter>;
 }) {
+  const t = useTranslations("roadmap");
   return (
     <div style={{
       background: T.card, border: `1px solid ${T.border}`, borderRadius: 20,
@@ -426,10 +440,10 @@ function EmptyState({ generating, error, onGenerate, router }: {
       </svg>
 
       <h2 style={{ fontSize: '1.375rem', fontWeight: 300, color: T.text, margin: 0, letterSpacing: '-0.2px', lineHeight: 1.3 }}>
-        No roadmap generated yet
+        {t("noRoadmap")}
       </h2>
       <p style={{ fontSize: '0.9375rem', color: T.textSub, lineHeight: 1.7, maxWidth: 480, margin: 0 }}>
-        Generate your personalized AI implementation roadmap — see exactly what to build, when, and how to measure success.
+        {t("noRoadmapDesc")}
       </p>
 
       {error && (
@@ -441,7 +455,7 @@ function EmptyState({ generating, error, onGenerate, router }: {
       )}
 
       <BtnPrimary onClick={onGenerate} disabled={generating} loading={generating}>
-        {generating ? 'Generating Roadmap…' : 'Generate AI Roadmap'}
+        {generating ? t("generatingRoadmap") : t("generateRoadmap")}
       </BtnPrimary>
 
       <div style={{
@@ -451,10 +465,10 @@ function EmptyState({ generating, error, onGenerate, router }: {
         maxWidth: 480, width: '100%',
       }}>
         <span style={{ fontSize: '0.8125rem', color: T.textMuted, lineHeight: 1.5 }}>
-          Pro tip: For the most accurate roadmap, complete Diagnostic and Blueprint first.
+          {t("proTip")}
         </span>
         <div style={{ display: 'flex', gap: 8 }}>
-          {[['Start Diagnostic', '/diagnostics'], ['View Blueprints', '/blueprint']].map(([label, path]) => (
+          {[[t("startDiagnostic"), '/diagnostics'], [t("viewBlueprints"), '/blueprint']].map(([label, path]) => (
             <button key={path} onClick={() => router.push(path)}
               style={{
                 fontSize: 12, fontWeight: 500, padding: '6px 14px', borderRadius: 7,
@@ -474,6 +488,7 @@ function EmptyState({ generating, error, onGenerate, router }: {
 // ─── Main page ────────────────────────────────────────────────
 export default function RoadmapPage() {
   const router = useRouter();
+  const t = useTranslations("roadmap");
   const [roadmap, setRoadmap] = useState<AiryRoadmap | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -543,10 +558,10 @@ export default function RoadmapPage() {
         <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', paddingBottom: 24, borderBottom: `1px solid ${T.border}` }}>
           <div>
             <h1 style={{ fontSize: '1.625rem', fontWeight: 300, color: T.text, margin: '0 0 5px', letterSpacing: '-0.3px', lineHeight: 1.3 }}>
-              AI Roadmap
+              {t("pageTitle")}
             </h1>
             <p style={{ fontSize: '0.9rem', color: T.textSub, margin: 0 }}>
-              Phased plan based on your Diagnostic and Blueprints
+              {t("subtitle")}
             </p>
           </div>
           {roadmap && (
@@ -556,13 +571,13 @@ export default function RoadmapPage() {
                   fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 20,
                   background: T.greenDim, color: T.green, border: `1px solid ${T.borderGreen}`,
                   letterSpacing: '0.6px', textTransform: 'uppercase',
-                }}>One-Time Service</span>
+                }}>{t("oneTimeService")}</span>
                 <span style={{ fontSize: 12, color: T.textMuted }}>
-                  Updated {new Date(roadmap.createdAt).toLocaleDateString()}
+                  {t("updated", { date: new Date(roadmap.createdAt).toLocaleDateString() })}
                 </span>
               </div>
               <BtnGhost onClick={handleGenerate} disabled={generating}>
-                {generating ? 'Regenerating…' : 'Regenerate Roadmap'}
+                {generating ? t("regenerating") : t("regenerateRoadmap")}
               </BtnGhost>
             </div>
           )}
@@ -608,16 +623,21 @@ export default function RoadmapPage() {
               boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
             }}>
               <span style={{ fontSize: 13, color: T.textMuted, flex: 1, minWidth: 180 }}>
-                Use this roadmap to plan execution with Workflows and AIRA.
+                {t("bottomHint")}
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <BtnGhost onClick={handleGenerate} disabled={generating}>
-                  {generating ? 'Regenerating…' : 'Regenerate'}
+                  {generating ? t("regenerating") : t("regenerate")}
                 </BtnGhost>
-                <BtnGhost disabled title="Coming soon">Export PDF</BtnGhost>
+                <BtnGhost disabled title={t("comingSoon")}>{t("exportPdf")}</BtnGhost>
                 <BtnAira onClick={() => openAira(
-                  `Review and refine my AI Roadmap based on these phases and KPIs.\n${roadmap.phases.map((p, i) => `Phase ${i + 1}: ${p.name} (${p.timeframe})`).join('\n')}`
-                )}>Ask AIRA to refine roadmap</BtnAira>
+                  `Review and refine my AI Roadmap based on these phases and KPIs.\n${roadmap.phases.map((p, i) => `Phase ${i + 1}: ${p.name} (${p.timeframe})`).join('\n')}`,
+                  {
+                    roadmapTitle: roadmap.title ?? 'AI Roadmap',
+                    currentPhase: roadmap.phases[activeIdx]?.name ?? '',
+                    milestones: roadmap.phases.flatMap(p => p.milestones.map(m => m.title)),
+                  }
+                )}>{t("askAiraRefine")}</BtnAira>
               </div>
             </div>
           </>
