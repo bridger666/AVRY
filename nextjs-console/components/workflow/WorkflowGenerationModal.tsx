@@ -16,6 +16,7 @@ export interface WorkflowGenerationModalProps {
   onClose: () => void
   onApply: (nodes: any[], edges: any[]) => void
   availableApps?: any[]
+  initialPrompt?: string
 }
 
 /**
@@ -28,6 +29,7 @@ export const WorkflowGenerationModal: React.FC<WorkflowGenerationModalProps> = (
   onClose,
   onApply,
   availableApps = [],
+  initialPrompt,
 }) => {
   const handleApply = useCallback(
     (nodes: any[], edges: any[]) => {
@@ -46,6 +48,7 @@ export const WorkflowGenerationModal: React.FC<WorkflowGenerationModalProps> = (
           onApply={handleApply}
           onCancel={onClose}
           availableApps={availableApps}
+          initialPrompt={initialPrompt}
         />
       </div>
     </div>

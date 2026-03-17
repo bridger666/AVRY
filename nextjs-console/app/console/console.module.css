@@ -581,52 +581,48 @@
   .dragOverlayInner { padding: 36px 40px; font-size: 15px; }
 }
 
-.generateWorkflowBtn {
-  margin-top: 16px;
-  padding: 6px 18px;
-  background: transparent;
-  border: 1px solid #00e59e;
-  border-radius: 20px;
-  color: #00e59e;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  font-family: inherit;
-  white-space: nowrap;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
-}
-.generateWorkflowBtn:hover {
-  border-color: rgba(0, 229, 158, 0.4);
-  color: #00e59e;
-  background: rgba(0, 229, 158, 0.06);
-}
-.generateBtnFloating {
+/* ── Workflow CTA hint (premium dark pill) ────────────────────── */
+.workflowCta {
   display: flex;
-  justify-content: center;
-  padding: 8px 0;
+  align-items: center;
+  gap: 14px;
+  margin: 6px 0 2px;
+  padding: 10px 20px;
+  background: #1c1c1c;
+  border: 1px solid #2a2a2a;
+  border-radius: 9999px;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
-.generateWorkflowBtn {
-  margin-top: 16px;
-  padding: 6px 18px;
-  background: transparent;
-  border: 1px solid #00e59e;
-  border-radius: 20px;
-  color: #00e59e;
+.workflowCtaIcon {
+  color: #22c55e;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.workflowCtaText {
+  flex: 1;
+  min-width: 0;
+  color: #e5e5e5;
+}
+
+.workflowCtaBtn {
+  flex-shrink: 0;
+  padding: 6px 16px;
+  background: #22c55e;
+  border: none;
+  border-radius: 9999px;
+  color: #020617;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   font-family: inherit;
   white-space: nowrap;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  transition: background 0.15s, box-shadow 0.15s;
 }
-.generateWorkflowBtn:hover {
-  border-color: rgba(0, 229, 158, 0.4);
-  color: #00e59e;
-  background: rgba(0, 229, 158, 0.06);
-}
-.generateBtnFloating {
-  display: flex;
-  justify-content: center;
-  padding: 8px 0;
+
+.workflowCtaBtn:hover {
+  background: #34d399;
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.5);
 }

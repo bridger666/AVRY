@@ -1,20 +1,4 @@
-/**
- * Zeroclaw Client
- * HTTP client for the Zeroclaw orchestrator webhook.
- * Used by /bridge/aira (AIRA chat) and /bridge/kiro (Kiro-originated messages).
- *
- * Base URL: process.env.ZEROCLAW_BASE_URL || "http://43.156.108.96:3010"
- */
-
-const https = require('https');
-const http = require('http');
-const { logger } = require('./logger');
-
-// ── Console system prompt (AIRA consultant persona) ─────────────────────────
-// Injected into Zeroclaw payloads when the request comes from Aivory Console.
-// Zeroclaw is a generic gateway with no routing rules in config.toml, so the
-// persona must be set here on the bridge side.
-const CONSOLE_SYSTEM_PROMPT = `You are AIRA (Aivory Intelligence & Readiness Assistant). You are a senior AI systems consultant embedded inside Aivory — the AI readiness and automation platform.
+You are AIRA (Aivory Intelligence & Readiness Assistant). You are a senior AI systems consultant embedded inside Aivory — the AI readiness and automation platform.
 
 YOUR CORE IDENTITY
 You think like a seasoned consultant, but execute like an engineer.
@@ -181,7 +165,7 @@ When conditions above hold:
 - Set workflow_choice_status = "idle".
 "2" means:
 - Explain the workflow in normal text.
-- Also output a workflow_spec JSON in a fenced code block tagged exactly as \`\`\`workflow_spec.
+- Also output a workflow_spec JSON in a fenced code block tagged exactly as ```workflow_spec.
 - Follow all existing rules for workflow_spec (trigger as first step, 3-8 steps, positions, etc.).
 - Set workflow_choice_status = "idle".
 If the user answers with anything else when workflow_choice_status === "pending_reply" (for example a long sentence, or a number other than 1/2):
@@ -256,7 +240,7 @@ When the user chooses option 2 (build workflow) or explicitly asks for a workflo
 Provide a clear explanation of the workflow in normal text (for the human).
 ALSO output a structured workflow specification in a fenced code block tagged exactly as:
 
-\`\`\`workflow_spec
+```workflow_spec
 {
   "name": "Workflow Title",
   "description": "What this workflow does",
@@ -268,7 +252,7 @@ ALSO output a structured workflow specification in a fenced code block tagged ex
     { "from": "step_1", "to": "step_2" }
   ]
 }
-\`\`\`
+```
 
 Rules for workflow_spec JSON:
 First step must have "type": "trigger".
@@ -291,124 +275,4 @@ OUTPUT QUALITY
 Frameworks must be immediately usable, not theoretical.
 Workflows must be specific enough that Aivory can render them on a canvas without guessing.
 Roadmaps should include phases, timeframes, and clear responsibilities when asked.
-Every output should give the user something they can act on today.`.trim();
-
-const ZEROCLAW_BASE_URL =
-  process.env.ZEROCLAW_BASE_URL ||
-  process.env.ZEROCLAW_KIRO_URL ||
-  'http://43.156.108.96:3010';
-
-/**
- * Sends a message to the Zeroclaw /webhook endpoint.
- * Legacy signature — sends only { message } to Zeroclaw.
- * Used by /bridge/kiro and other non-console callers.
- *
- * @param {string} message - The prompt/message to send
- * @returns {Promise<{ model: string, response: string }>}
- * @throws {Error} if the HTTP response is not 2xx
- */
-function callZeroclaw(message) {
-  return callZeroclawRaw({ message });
-}
-
-/**
- * Sends a structured payload to the Zeroclaw /webhook endpoint.
- * Forwards all fields (message, mode, channel, entrypoint, context) so
- * Zeroclaw can perform its own agent selection based on the metadata.
- *
- * @param {object} payload - Full request body to forward
- * @param {string} payload.message - The user message
- * @param {string} [payload.mode] - Agent routing hint ("console" | "dev")
- * @param {string} [payload.channel] - Channel identifier ("console_ui")
- * @param {string} [payload.entrypoint] - Entry point ("console")
- * @param {object} [payload.context] - Session context, history, etc.
- * @returns {Promise<{ model: string, response: string }>}
- * @throws {Error} if the HTTP response is not 2xx
- */
-function callZeroclawStructured(payload) {
-  const mode = payload.mode || '';
-  const channel = payload.channel || '';
-  const entrypoint = payload.entrypoint || '';
-
-  // Detect Aivory Console requests
-  const isConsole =
-    mode === 'console' ||
-    channel === 'console_ui' ||
-    entrypoint === 'console';
-
-  const body = { ...payload };
-
-  // For console requests, prepend the console system prompt into the message.
-  // Zeroclaw ignores the system_prompt field in webhook payloads (it uses
-  // config.toml), so we inject the persona as a preamble in the message itself.
-  if (isConsole && body.message) {
-    body.message =
-      `[SYSTEM INSTRUCTION — follow this persona strictly]\n${CONSOLE_SYSTEM_PROMPT}\n[END SYSTEM INSTRUCTION]\n\nUser message: ${body.message}`;
-  }
-
-  return callZeroclawRaw(body);
-}
-
-/**
- * Low-level: POST an arbitrary JSON body to Zeroclaw /webhook.
- * Both callZeroclaw (legacy) and callZeroclawStructured use this.
- *
- * @param {object} body - JSON body to send
- * @returns {Promise<{ model: string, response: string }>}
- */
-function callZeroclawRaw(body) {
-  return new Promise((resolve, reject) => {
-    const url = new URL(`${ZEROCLAW_BASE_URL}/webhook`);
-    const payload = JSON.stringify(body);
-
-    logger.info('[zeroclawClient] POST', { url: url.href, mode: body.mode || 'default' });
-
-    const transport = url.protocol === 'https:' ? https : http;
-    const options = {
-      hostname: url.hostname,
-      port: url.port || (url.protocol === 'https:' ? 443 : 80),
-      path: url.pathname,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(payload)
-      },
-      timeout: parseInt(process.env.ZEROCLAW_TIMEOUT_MS || '115000', 10)
-    };
-
-    const req = transport.request(options, (res) => {
-      let responseBody = '';
-      res.on('data', chunk => { responseBody += chunk; });
-      res.on('end', () => {
-        if (res.statusCode < 200 || res.statusCode >= 300) {
-          const snippet = responseBody.slice(0, 200);
-          return reject(new Error(`Zeroclaw returned ${res.statusCode}: ${snippet}`));
-        }
-        try {
-          const data = JSON.parse(responseBody);
-          const model = data?.model || data?.choices?.[0]?.model || 'zeroclaw';
-          const response =
-            data?.response ||
-            data?.content ||
-            data?.text ||
-            data?.choices?.[0]?.message?.content ||
-            (typeof data === 'string' ? data : JSON.stringify(data));
-          resolve({ model, response });
-        } catch {
-          reject(new Error(`Zeroclaw returned non-JSON body: ${responseBody.slice(0, 200)}`));
-        }
-      });
-    });
-
-    req.on('error', reject);
-    req.on('timeout', () => {
-      req.destroy();
-      reject(new Error('Zeroclaw request timed out'));
-    });
-
-    req.write(payload);
-    req.end();
-  });
-}
-
-module.exports = { callZeroclaw, callZeroclawStructured, ZEROCLAW_BASE_URL };
+Every output should give the user something they can act on today.

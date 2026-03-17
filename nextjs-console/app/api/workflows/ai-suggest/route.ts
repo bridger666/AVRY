@@ -366,24 +366,42 @@ export async function POST(request: NextRequest) {
 
     const edges: AivoryWorkflowEdge[] = parsed.edges || []
 
-    // Validate generated spec
-    const validationError = validateGeneratedSpec(
+    // Collect app availability and connection status warnings separately instead of throwing error
+    const unavailableAppWarnings: string[] = [];
+    const inactiveConnectionWarnings: string[] = [];
+    
+    for (const step of spec.steps) {
+      if (!availableAppIds.includes(step.appId)) {
+        unavailableAppWarnings.push(`App ${step.appId} is not available. Please connect it first.`);
+      }
+      
+      const isActive = connectionStatus[step.connectionId];
+      if (isActive === undefined || !isActive) {
+        inactiveConnectionWarnings.push(`Connection ${step.connectionId} is not active. Please reconnect.`);
+      }
+    }
+
+    // Check for other validation errors (trigger, cycles) but not app availability or connection status
+    const otherValidationError = validateGeneratedSpec(
       spec,
       edges,
-      availableAppIds,
-      connectionStatus
+      [], // Pass empty array to skip app availability validation
+      {}  // Pass empty object to skip connection status validation
     )
 
-    if (validationError) {
-      console.log('[ai-suggest] Validation error:', validationError)
+    if (otherValidationError) {
+      console.log('[ai-suggest] Validation error:', otherValidationError)
       return Response.json(
         {
-          error: validationError.reason,
-          details: { field: validationError.field },
+          error: otherValidationError.reason,
+          details: { field: otherValidationError.field },
         },
         { status: 400 }
       )
     }
+    
+    // Combine all warnings
+    const allWarnings = [...unavailableAppWarnings, ...inactiveConnectionWarnings];
 
     // Success response
     const result: WorkflowGenerationResult = {
@@ -395,7 +413,7 @@ export async function POST(request: NextRequest) {
           'Workflow assumes all connected apps are available',
           'Steps are positioned sequentially on the canvas',
         ],
-        warnings: [],
+        warnings: allWarnings,
       },
     }
 

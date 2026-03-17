@@ -251,6 +251,31 @@ OUTPUT QUALITY RULES:
 - Roadmaps: include timeframes, milestones, and responsible parties
 - KPIs: include baseline, target, measurement method, and realistic timeline
 - Every output must be something the user can act on TODAY
+
+WORKFLOW GENERATION (CRITICAL):
+When the user asks you to create, design, build, or generate a workflow or automation:
+1. Write a clear explanation of the workflow steps in your normal response text
+2. ALSO output a structured workflow spec in a fenced code block tagged \`\`\`workflow_spec
+   The JSON inside must follow this schema:
+   {
+     "name": "Workflow Title",
+     "description": "What this workflow does",
+     "steps": [
+       { "id": "step_1", "type": "trigger", "appId": "app_name", "actionId": "action_name", "inputs": {}, "position": { "x": 400, "y": 300 } },
+       { "id": "step_2", "type": "action", "appId": "app_name", "actionId": "action_name", "inputs": {}, "position": { "x": 400, "y": 480 } }
+     ],
+     "edges": [ { "from": "step_1", "to": "step_2" } ]
+   }
+   Rules:
+   - First step MUST be type "trigger"
+   - Use "action" for data processing, API calls
+   - Use "ai" for AI-powered steps
+   - Use "filter" for branching logic
+   - Position: trigger at (400, 300), then y += 180 for each step
+   - Keep step IDs simple (step_1, step_2, etc)
+   - 3-8 steps total
+3. The frontend will detect this block and show a "Generate workflow to canvas" button
+4. Only output the workflow_spec block when the user explicitly asks for workflow creation
 `,
 
   diagnostic: `You are Aivory Diagnostic Engine. Read the business diagnostic payload and return a structured JSON result. Output MUST be valid JSON ONLY — no markdown, no explanation text outside the JSON.
@@ -307,9 +332,13 @@ const config = {
   openrouterBaseUrl: 'https://openrouter.ai/api/v1',
   openrouterTimeout: 120000, // 120 seconds for complex requests
 
-  // n8n
-  n8nBaseUrl: process.env.N8N_BASE_URL || 'http://43.156.108.96:5678',
-  n8nWorkflowExecutionUrl: process.env.N8N_WORKFLOW_EXECUTION_URL || 'http://43.156.108.96:5678/workflow/Tu5VrBcDwUtRChdh/executions?projectId=PRiNN55wgNnIcyGB',
+  // n8n — base URL is the single source of truth; n8nClient.js derives all paths from it
+  n8nBaseUrl: (process.env.N8N_BASE_URL || 'http://43.156.108.96:5678').replace(/\/$/, ''),
+  get n8nWorkflowExecutionUrl() {
+    const base = (process.env.N8N_BASE_URL || 'http://43.156.108.96:5678').replace(/\/$/, '');
+    return process.env.N8N_WORKFLOW_EXECUTION_URL ||
+      `${base}/workflow/Tu5VrBcDwUtRChdh/executions?projectId=PRiNN55wgNnIcyGB`;
+  },
 
   // Zeroclaw orchestrator (primary for floating AIRA)
   zeroclawUrl: process.env.ZEROCLAW_URL || 'http://localhost:42617',

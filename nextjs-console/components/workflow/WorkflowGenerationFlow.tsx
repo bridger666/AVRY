@@ -10,7 +10,7 @@
 
 'use client'
 
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import { WorkflowGenerationPanel } from './WorkflowGenerationPanel'
 import { useWorkflowGeneration } from '@/hooks/useWorkflowGeneration'
 import { stepsToNodes, edgesToReactFlowEdges } from './WorkflowNodeComponent'
@@ -20,6 +20,7 @@ export interface WorkflowGenerationFlowProps {
   onApply: (nodes: any[], edges: any[]) => void
   onCancel: () => void
   availableApps?: any[]
+  initialPrompt?: string
 }
 
 /**
@@ -31,10 +32,24 @@ export const WorkflowGenerationFlow: React.FC<WorkflowGenerationFlowProps> = ({
   onApply,
   onCancel,
   availableApps = [],
+  initialPrompt,
 }) => {
   const { spec, edges, loading, error, notes, generateWorkflow, clearGeneration } =
     useWorkflowGeneration()
   const [showPreview, setShowPreview] = useState(false)
+
+  // Set initial prompt if provided
+  useEffect(() => {
+    if (initialPrompt && initialPrompt.trim()) {
+      // Note: We can't directly set the prompt to the internal state of WorkflowGenerationPanel
+      // So we handle this by triggering the generation automatically when the component mounts
+      const initializeWithPrompt = async () => {
+        await generateWorkflow(initialPrompt, availableApps, true)
+        setShowPreview(true)
+      }
+      initializeWithPrompt()
+    }
+  }, []) // Only run once when mounted
 
   const handleGenerate = useCallback(
     async (intent: string) => {
@@ -66,6 +81,7 @@ export const WorkflowGenerationFlow: React.FC<WorkflowGenerationFlowProps> = ({
           error={error}
           onClear={clearGeneration}
           availableApps={availableApps}
+          initialPrompt={initialPrompt}
         />
       ) : (
         <div className={styles.preview}>

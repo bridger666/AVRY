@@ -6,9 +6,11 @@
 const axios = require('axios');
 const { logger } = require('./logger');
 
-// Gateway configuration
+const { N8N_WEBHOOK_BASE } = require('./n8nClient');
+
+// Gateway configuration — uses the same n8n base as the rest of the Bridge
 const GATEWAY_CONFIG = {
-  url: 'http://43.156.108.96:5678/webhook/755fcac8-dc36-49e3-9553-67e62bac82e8',
+  url: `${N8N_WEBHOOK_BASE}/webhook/755fcac8-dc36-49e3-9553-67e62bac82e8`,
   timeout: 60000 // 60 seconds
 };
 

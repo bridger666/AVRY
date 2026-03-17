@@ -1,0 +1,7 @@
+{
+  "specType": "feature",
+  "workflowType": "requirements-first",
+  "featureName": "workflow-builder-upgrade",
+  "displayName": "Workflow Builder Upgrade: Drag-to-Create Nodes & Node Connections",
+  "createdAt": "2026-03-11T00:00:00Z"
+}

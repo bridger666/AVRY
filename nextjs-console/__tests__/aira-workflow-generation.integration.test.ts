@@ -243,8 +243,8 @@ describe('AIRA Workflow Generation - Integration Tests', () => {
       // Retrieve
       const retrieved = retrieveWorkflowSpec()
       expect(retrieved).not.toBeNull()
-      expect(retrieved?.name).toBe(mockWorkflowSpec.name)
-      expect(JSON.stringify(retrieved)).toBe(JSON.stringify(mockWorkflowSpec))
+      expect(retrieved?.spec.name).toBe(mockWorkflowSpec.name)
+      expect(JSON.stringify(retrieved?.spec)).toBe(JSON.stringify(mockWorkflowSpec))
     })
 
     it('should check if workflow spec is available', () => {

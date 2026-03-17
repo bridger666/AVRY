@@ -43,7 +43,9 @@ export async function POST(request: NextRequest) {
       title: n8nPayload.name,
       nodeCount: n8nPayload.nodes.length,
       nodeTypes: n8nPayload.nodes.map((n) => n.type.split('.')[1]).join(', '),
+      triggerPath: n8nPayload.nodes[0]?.parameters?.path || 'none',
     })
+    console.log('[activate] n8n payload:', JSON.stringify(n8nPayload, null, 2).slice(0, 2000))
 
     // 1. Create workflow in n8n
     const createRes = await fetch(`${n8nUrl}/api/v1/workflows`, {
@@ -69,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Activate the workflow
     const activateRes = await fetch(`${n8nUrl}/api/v1/workflows/${n8nWorkflowId}/activate`, {
-      method: 'PATCH',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-N8N-API-KEY': n8nApiKey,

@@ -7,12 +7,20 @@
 
 import { AivoryWorkflowSpec } from '@/types/workflows'
 import { parseWorkflowSpec, serializeWorkflowSpec } from './workflowSerializer'
+import type { Node, Edge } from '@xyflow/react'
 
 const HANDOFF_KEY = 'pendingWorkflowSpec'
 const HANDOFF_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
+export interface HandoffEdge {
+  from: string
+  to: string
+  label?: string
+}
+
 export interface HandoffData {
   spec: AivoryWorkflowSpec
+  edges: HandoffEdge[]
   timestamp: number
 }
 
@@ -29,10 +37,11 @@ export interface HandoffData {
  *   window.location.href = '/workflows?fromConsole=true'
  * }
  */
-export function storeWorkflowSpec(spec: AivoryWorkflowSpec): boolean {
+export function storeWorkflowSpec(spec: AivoryWorkflowSpec, edges?: HandoffEdge[]): boolean {
   try {
     const handoffData: HandoffData = {
       spec,
+      edges: edges || [],
       timestamp: Date.now(),
     }
     localStorage.setItem(HANDOFF_KEY, JSON.stringify(handoffData))
@@ -58,7 +67,7 @@ export function storeWorkflowSpec(spec: AivoryWorkflowSpec): boolean {
  *   showMessage('Workflow session expired')
  * }
  */
-export function retrieveWorkflowSpec(): AivoryWorkflowSpec | null {
+export function retrieveWorkflowSpec(): HandoffData | null {
   try {
     const stored = localStorage.getItem(HANDOFF_KEY)
     if (!stored) {
@@ -75,7 +84,12 @@ export function retrieveWorkflowSpec(): AivoryWorkflowSpec | null {
       return null
     }
 
-    return handoffData.spec
+    // Ensure edges array exists for backward compatibility
+    if (!handoffData.edges) {
+      handoffData.edges = []
+    }
+
+    return handoffData
   } catch (err) {
     console.error('[retrieveWorkflowSpec] Failed to retrieve spec:', err)
     return null
@@ -167,4 +181,77 @@ export function getWorkflowSpecTTL(): number {
 
   const remaining = HANDOFF_TTL_MS - age
   return Math.max(0, remaining)
+}
+
+
+/**
+ * A workflow step in the console shape, used during handoff conversion.
+ */
+export interface ConsoleWorkflowStep {
+  id: string
+  type: string
+  appId: string
+  actionId: string
+  connectionId?: string
+  inputs?: Record<string, unknown>
+  position?: { x: number; y: number }
+}
+
+/**
+ * Convert console workflow steps and edges into React Flow nodes and edges.
+ *
+ * - Each step becomes a React Flow node with type 'standardNode'.
+ * - Uses step.position when present, otherwise defaults to { x: 400, y: 300 + index * 180 }.
+ * - Maps step data fields (appId, actionId, connectionId, inputs, type) into node.data.
+ * - Sets node.data.label and node.data.title from actionId or appId.
+ * - Sets node.data.icon based on step type (trigger→'webhook', ai→'code', default→'http').
+ * - Sets node.data.category based on step type (trigger→'trigger', ai→'transform', default→'utility').
+ * - Edges referencing non-existent step IDs are filtered out.
+ *
+ * @param steps - Console workflow steps to convert
+ * @param edges - Edges describing connections between steps
+ * @returns React Flow nodes and edges ready for the canvas
+ */
+export function convertHandoffToNodes(
+  steps: ConsoleWorkflowStep[],
+  edges: Array<{ from: string; to: string; label?: string }>
+): { nodes: Node[]; edges: Edge[] } {
+  // Step 1: Map console steps to React Flow nodes
+  const nodes: Node[] = steps.map((step, index) => ({
+    id: step.id,
+    type: 'standardNode',
+    position: step.position ?? { x: 400, y: 300 + index * 180 },
+    data: {
+      label: step.actionId || step.appId || `Step ${index + 1}`,
+      title: step.actionId || step.appId || `Step ${index + 1}`,
+      icon: step.type === 'trigger' ? 'webhook'
+        : step.type === 'ai' ? 'code'
+        : 'http',
+      category: step.type === 'trigger' ? 'trigger'
+        : step.type === 'ai' ? 'transform'
+        : 'utility',
+      appId: step.appId,
+      actionId: step.actionId,
+      connectionId: step.connectionId,
+      inputs: step.inputs,
+      type: step.type,
+    },
+  }))
+
+  // Step 2: Build a set of valid node IDs for edge filtering
+  const nodeIds = new Set(nodes.map(n => n.id))
+
+  // Step 3: Map edges to React Flow edges, filtering out dangling references
+  const rfEdges: Edge[] = (edges || [])
+    .filter(edge => nodeIds.has(edge.from) && nodeIds.has(edge.to))
+    .map((edge, index) => ({
+      id: `edge-${edge.from}-${edge.to}`,
+      source: edge.from,
+      target: edge.to,
+      label: edge.label,
+      type: 'smoothstep',
+      animated: false,
+    }))
+
+  return { nodes, edges: rfEdges }
 }
