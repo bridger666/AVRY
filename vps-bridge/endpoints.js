@@ -96,8 +96,12 @@ async function handleConsoleStream(req, res, next) {
 // ============================================================================
 
 /**
- * POST /aria/stream
- * Streams AIRA responses for the floating assistant tab.
+ * POST /aria/stream  ← CANONICAL AIRA ENTRY POINT
+ * This is the single canonical path for ALL AIRA chat traffic from every tab
+ * (console, roadmap, diagnostic, workflow, blueprint).
+ * Path: AiraFloatingAssistant → /api/aira/stream → /bridge/aira → Zeroclaw → OpenRouter
+ *
+ * Tab-specific context (source_tab + pageContext) is passed via the `context` field.
  * Primary path: Zeroclaw /webhook → streams back to client.
  * Fallback path: OpenRouter direct (if Zeroclaw unreachable).
  *
@@ -846,28 +850,17 @@ async function handleWorkflowSynthesis(req, res, next) {
 // ============================================================================
 
 /**
- * POST /bridge/aira
- * Single entry point for all AIRA chat traffic from Aivory frontend/backend.
- * Builds a rich prompt from message + context, calls ZeroClaw, and returns
- * a normalised response.
+ * POST /bridge/aira  ← CANONICAL AIRA BRIDGE HANDLER
+ * General AIRA entry point for all Aivory clients.
+ * Called by /api/aira/stream (Next.js) — do NOT add alternative bridge routes.
+ * Builds a rich prompt from message + context, routes through ZeroClaw.
  *
- * Request body:
- * {
- *   message: string,    // required
- *   context?: object    // optional — user/workspace/page state
- * }
- *
- * Returns:
- * {
- *   mode: "zeroclaw",
- *   model: string,
- *   raw_agent_response: string,
- *   tool_calls: []
- * }
+ * Request body: { message: string, context?: object }
+ * Returns: { mode: "zeroclaw", model, raw_agent_response, tool_calls }
  */
 async function handleBridgeAira(req, res, next) {
   try {
-    const { message, context } = req.body;
+    const { message, context, mode, channel, entrypoint } = req.body;
 
     if (!message || typeof message !== 'string') {
       const error = new Error('Missing or invalid field: message (expected string)');
@@ -877,17 +870,25 @@ async function handleBridgeAira(req, res, next) {
       return next(error);
     }
 
-    // Build a richer prompt that gives ZeroClaw full context
-    const prompt = `You are AIRA, the central AI orchestrator for the Aivory platform.
-
-User message:
-${message}
-
-Context (JSON):
-${JSON.stringify(context ?? {}, null, 2)}`;
-
-    const { callZeroclaw } = require('./zeroclawClient');
-    const result = await callZeroclaw(prompt);
+    // ── Forward structured payload to Zeroclaw ───────────────────────────
+    // Zeroclaw is the sole orchestrator for ALL AIRA traffic.
+    // We forward mode/channel/entrypoint so Zeroclaw can select the
+    // correct agent:
+    //   mode === "console" | channel === "console_ui" → console agent
+    //   mode === "dev"                                → dev/identity agent
+    //   (no mode)                                     → Zeroclaw default
+    //
+    // DO NOT bypass Zeroclaw to OpenRouter for console or any other path.
+    // Agent selection is Zeroclaw's responsibility.
+    // ─────────────────────────────────────────────────────────────────────
+    const { callZeroclawStructured } = require('./zeroclawClient');
+    const result = await callZeroclawStructured({
+      message,
+      mode: mode || undefined,
+      channel: channel || context?.channel || undefined,
+      entrypoint: entrypoint || undefined,
+      context: context || undefined,
+    });
 
     res.json({
       mode: 'zeroclaw',
@@ -1021,5 +1022,5 @@ module.exports = {
   handleWorkflowSynthesis,
   handleBridgeAira,
   handleBridgeKiro,
-  handleHealthCheck
+  handleHealthCheck,
 };

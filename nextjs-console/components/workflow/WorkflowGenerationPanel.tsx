@@ -7,7 +7,7 @@
 
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import styles from './WorkflowGenerationPanel.module.css'
 
 export interface WorkflowGenerationPanelProps {
@@ -16,6 +16,7 @@ export interface WorkflowGenerationPanelProps {
   error?: string | null
   onClear?: () => void
   availableApps?: any[]
+  initialPrompt?: string
 }
 
 /**
@@ -30,10 +31,19 @@ export const WorkflowGenerationPanel: React.FC<WorkflowGenerationPanelProps> = (
   error = null,
   onClear,
   availableApps = [],
+  initialPrompt,
 }) => {
   const [intent, setIntent] = useState('')
   const [useConnections, setUseConnections] = useState(true)
   const [charCount, setCharCount] = useState(0)
+
+  // Set the initial prompt if provided
+  useEffect(() => {
+    if (initialPrompt && initialPrompt.trim() && !intent) {
+      setIntent(initialPrompt)
+      setCharCount(initialPrompt.length)
+    }
+  }, [initialPrompt]);
 
   const handleIntentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value

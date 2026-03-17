@@ -12,7 +12,7 @@ import { WorkflowCanvas as N8nWorkflowCanvas } from '@/components/workflow/Workf
 import { AiraCopilotFloating } from '@/components/workflow/AiraCopilotFloating'
 import { WorkflowGenerationModal } from '@/components/workflow/WorkflowGenerationModal'
 import { useWorkflowCopilot } from '@/hooks/useWorkflowCopilot'
-import { retrieveWorkflowSpec, clearWorkflowSpec } from '@/lib/workflowHandoff'
+import { retrieveWorkflowSpec, clearWorkflowSpec, convertHandoffToNodes } from '@/lib/workflowHandoff'
 import { StandardNodePalette } from '@/components/workflow/StandardNodePalette'
 import { clearCanvasState } from '@/hooks/useCanvasPersistence'
 import type { AivoryWorkflowSpec } from '@/types/workflow'
@@ -642,10 +642,13 @@ function WorkflowsPageInner() {
   const [isIntegrationsCollapsed, setIsIntegrationsCollapsed] = useState(true)
   const [rightPanelOpen, setRightPanelOpen] = useState(false)
   const [showGenerationModal, setShowGenerationModal] = useState(false)
+  const [generationPrompt, setGenerationPrompt] = useState<string | null>(null)
   const moreRef = useRef<HTMLDivElement>(null)
   const activateRef = useRef<HTMLDivElement>(null)
   // Ref to inject nodes directly into the live canvas (used by AIRA generation)
   const canvasInjectRef = useRef<((nodes: any[], edges: any[]) => void) | null>(null)
+  // Pending handoff nodes/edges to inject once the canvas mounts
+  const pendingHandoffRef = useRef<{ nodes: any[]; edges: any[] } | null>(null)
 
   // ── Apps sidebar state ───────────────────────────────────
   const [apps, setApps] = useState<Array<{ id: string; name: string; description: string; icon: string; iconPath?: string; defaultAction?: string; categories: string[] }>>([])
@@ -714,23 +717,16 @@ function WorkflowsPageInner() {
     // Check if coming from console with handoff spec
     const fromConsole = searchParams?.get('fromConsole') === 'true'
     if (fromConsole) {
-      const handoffSpec = retrieveWorkflowSpec()
-      if (handoffSpec) {
-        // Convert WorkflowStep[] to SavedWorkflow steps format
-        const convertedSteps = handoffSpec.steps.map((step, idx) => ({
-          step: idx + 1,
-          action: step.actionId || '',
-          tool: step.appId || '',
-          output: '',
-          type: step.type,
-          appId: step.appId,
-          connectionId: step.connectionId,
-          config: {
-            integration: step.appId,
-          },
-        }))
-        
-        // Create SavedWorkflow from spec
+      const handoff = retrieveWorkflowSpec()
+      if (handoff) {
+        const handoffSpec = handoff.spec
+        // Convert console steps + edges to React Flow nodes/edges
+        const { nodes: rfNodes, edges: rfEdges } = convertHandoffToNodes(
+          handoffSpec.steps as any,
+          handoff.edges || []
+        )
+
+        // Create a minimal SavedWorkflow so the workflow appears in the list
         const newWorkflow: SavedWorkflow = {
           workflow_id: `workflow_${Date.now()}`,
           title: handoffSpec.name || 'New Workflow from Console',
@@ -738,7 +734,7 @@ function WorkflowsPageInner() {
           source: 'n8n',
           company_name: '',
           trigger: handoffSpec.steps[0]?.actionId || '',
-          steps: convertedSteps,
+          steps: [],
           integrations: [],
           estimated_time: '0',
           automation_percentage: '0',
@@ -746,19 +742,31 @@ function WorkflowsPageInner() {
           notes: handoffSpec.description || '',
           created_at: new Date().toISOString(),
         }
-        
-        // Save to localStorage
+
+        // Save to localStorage and select it (causes canvas to render)
         saveWorkflow(newWorkflow)
         setLocalWorkflows([newWorkflow, ...wfs])
         setSelectedId(newWorkflow.workflow_id)
-        
-        // Clear handoff storage
+
+        // Store converted nodes/edges for injection once canvas mounts
+        pendingHandoffRef.current = { nodes: rfNodes, edges: rfEdges }
+
+        // Clear handoff storage and URL param
         clearWorkflowSpec()
-        
-        // Remove fromConsole param from URL
         window.history.replaceState({}, '', '/workflows')
         return
       }
+    }
+    
+    // Check for generate query param
+    const generateParam = searchParams?.get('generate')
+    if (generateParam) {
+      setGenerationPrompt(decodeURIComponent(generateParam))
+      setShowGenerationModal(true)
+      // Remove generate param from URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete('generate')
+      window.history.replaceState({}, '', url.toString())
     }
     
     const sel = searchParams?.get('selected')
@@ -992,73 +1000,93 @@ function WorkflowsPageInner() {
   }
 
   // ── Copilot apply suggestion ────────────────────────────
+  // ALWAYS creates a NEW workflow — never appends to existing canvas
   const handleCopilotApply = async (suggestion: import('@/hooks/useWorkflowCopilot').CopilotSuggestion) => {
-    const updates: Partial<SavedWorkflow> = {
+    // Build React Flow nodes + edges from the copilot suggestion steps
+    const iconMap: Record<string, string> = {
+      trigger: 'webhook', action: 'http', condition: 'branch', channel: 'respond',
+    }
+    const categoryMap: Record<string, string> = {
+      trigger: 'trigger', action: 'action', condition: 'condition', channel: 'channel',
+    }
+    const allSteps = [
+      { step: 0, action: suggestion.trigger, tool: '', output: '', type: 'trigger' },
+      ...suggestion.steps,
+    ]
+    const rfNodes = allSteps.map((s, i) => ({
+      id: `copilot-${Date.now()}-${i}`,
+      type: 'standardNode' as const,
+      position: { x: 400, y: 100 + i * 180 },
+      data: {
+        label: s.action || `Step ${i + 1}`,
+        icon: iconMap[s.type || ''] ?? 'http',
+        category: categoryMap[s.type || ''] ?? 'action',
+        title: s.action || `Step ${i + 1}`,
+        description: s.output || s.tool || '',
+      },
+    }))
+    const rfEdges = allSteps.slice(0, -1).map((_, i) => ({
+      id: `copilot-e-${Date.now()}-${i}`,
+      source: rfNodes[i].id,
+      target: rfNodes[i + 1].id,
+      type: 'smoothstep' as const,
+      animated: false,
+    }))
+
+    console.log('[AIRA Copilot] Creating NEW workflow → nodes:', rfNodes.length, 'edges:', rfEdges.length)
+
+    // Generate a meaningful title from the suggestion trigger text
+    const title = suggestion.trigger
+      ? `${suggestion.trigger} (AI)`
+      : `AIRA Workflow ${new Date().toLocaleTimeString()}`
+
+    const newWorkflow: SavedWorkflow = {
+      workflow_id: `workflow_${Date.now()}`,
+      title,
+      status: 'draft',
+      source: 'n8n',
+      company_name: '',
       trigger: suggestion.trigger,
       steps: suggestion.steps,
-    }
-    if (suggestion.estimate_hours) {
-      updates.estimated_time = `~${suggestion.estimate_hours}h estimated`
-    }
-    if (suggestion.automation_score) {
-      updates.automation_percentage = `${Math.round((suggestion.automation_score ?? 0) * 100)}% automated`
-    }
-
-    // No workflow selected — create a new one from the suggestion
-    if (!selected) {
-      const newWorkflow: SavedWorkflow = {
-        workflow_id: `workflow_${Date.now()}`,
-        title: suggestion.trigger || 'New Workflow',
-        status: 'draft',
-        source: 'n8n',
-        company_name: '',
-        trigger: suggestion.trigger,
-        steps: suggestion.steps,
-        integrations: [],
-        estimated_time: updates.estimated_time ?? '0',
-        automation_percentage: updates.automation_percentage ?? '0',
-        error_handling: '',
-        notes: '',
-        created_at: new Date().toISOString(),
-      }
-      try {
-        const created = await createWorkflow(savedToSpec(newWorkflow))
-        await refreshWorkflows()
-        setSelectedId(created.id)
-      } catch {
-        saveWorkflow(newWorkflow)
-        setLocalWorkflows(loadWorkflows())
-        setSelectedId(newWorkflow.workflow_id)
-      }
-      setCopilotOpen(false)
-      showToast('Workflow created from AIRA suggestion ✓', 'success')
-      return
+      integrations: [],
+      estimated_time: suggestion.estimate_hours ? `~${suggestion.estimate_hours}h estimated` : '0',
+      automation_percentage: suggestion.automation_score ? `${Math.round((suggestion.automation_score ?? 0) * 100)}% automated` : '0',
+      error_handling: '',
+      notes: '',
+      created_at: new Date().toISOString(),
     }
 
-    setUndoStack(prev => [...prev.slice(-9), selected])
-    if (apiWorkflows.find(aw => aw.id === selected.workflow_id)) {
-      try {
-        await patchWorkflow(selected.workflow_id, savedToSpec({ ...selected, ...updates }))
-        await refreshWorkflows()
-      } catch (err) { console.error('[copilot apply]', err) }
-    } else {
-      updateWorkflow(selected.workflow_id, updates)
+    let workflowId = newWorkflow.workflow_id
+    try {
+      const created = await createWorkflow(savedToSpec(newWorkflow))
+      await refreshWorkflows()
+      workflowId = created.id
+      setSelectedId(created.id)
+    } catch {
+      saveWorkflow(newWorkflow)
       setLocalWorkflows(loadWorkflows())
+      setSelectedId(newWorkflow.workflow_id)
     }
-    showToast('AIRA suggestion applied ✓', 'success')
+
+    // Store pending nodes for injection once the NEW canvas mounts
+    pendingHandoffRef.current = { nodes: rfNodes, edges: rfEdges }
+    // Persist to backend canvas for the new workflow
+    fetch(`/api/workflows/${workflowId}/canvas`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nodes: rfNodes, edges: rfEdges }),
+    }).catch(() => {})
+
+    setCopilotOpen(false)
+    showToast('New workflow created from AIRA suggestion ✓', 'success')
   }
 
   // ── Generation apply handler ─────────────────────────────
+  // ALWAYS creates a NEW workflow — never appends to existing canvas
   const handleGenerationApply = async (nodes: any[], edges: any[]) => {
-    // If the canvas inject function is available, push nodes directly into the live graph
-    if (canvasInjectRef.current) {
-      canvasInjectRef.current(nodes, edges)
-      showToast('Generated workflow applied to canvas ✓', 'success')
-      setShowGenerationModal(false)
-      return
-    }
+    console.log('[Generation] Creating NEW workflow → nodes:', nodes.length, 'edges:', edges.length)
 
-    // Fallback: convert nodes to steps format and save to workflow record
+    // Convert nodes to steps format for the workflow record
     const newSteps: SavedWorkflow['steps'] = nodes.map((node, i) => ({
       step: i + 1,
       action: node.data?.label || node.data?.title || `Step ${i + 1}`,
@@ -1069,54 +1097,48 @@ function WorkflowsPageInner() {
       config: node.data?.inputs || {},
     }))
 
-    // No workflow selected — create a new one from the generated nodes
-    if (!selected) {
-      const firstNode = nodes[0]
-      const newWorkflow: SavedWorkflow = {
-        workflow_id: `workflow_${Date.now()}`,
-        title: firstNode?.data?.title || 'Generated Workflow',
-        status: 'draft',
-        source: 'n8n',
-        company_name: '',
-        trigger: firstNode?.data?.title || '',
-        steps: newSteps,
-        integrations: [],
-        estimated_time: '0',
-        automation_percentage: '0',
-        error_handling: '',
-        notes: '',
-        created_at: new Date().toISOString(),
-      }
-      try {
-        const created = await createWorkflow(savedToSpec(newWorkflow))
-        await refreshWorkflows()
-        setSelectedId(created.id)
-      } catch {
-        saveWorkflow(newWorkflow)
-        setLocalWorkflows(loadWorkflows())
-        setSelectedId(newWorkflow.workflow_id)
-      }
-      showToast('Generated workflow applied ✓', 'success')
-      setShowGenerationModal(false)
-      return
-    }
+    // Generate a meaningful title from the first node
+    const firstNode = nodes[0]
+    const title = firstNode?.data?.title || firstNode?.data?.label || `Generated Workflow ${new Date().toLocaleTimeString()}`
 
-    setUndoStack(prev => [...prev.slice(-9), selected])
-
-    const updates: Partial<SavedWorkflow> = {
+    const newWorkflow: SavedWorkflow = {
+      workflow_id: `workflow_${Date.now()}`,
+      title: `${title} (AI)`,
+      status: 'draft',
+      source: 'n8n',
+      company_name: '',
+      trigger: firstNode?.data?.title || '',
       steps: newSteps,
+      integrations: [],
+      estimated_time: '0',
+      automation_percentage: '0',
+      error_handling: '',
+      notes: '',
+      created_at: new Date().toISOString(),
     }
 
-    if (apiWorkflows.find(aw => aw.id === selected.workflow_id)) {
-      try {
-        await patchWorkflow(selected.workflow_id, savedToSpec({ ...selected, ...updates }))
-        await refreshWorkflows()
-      } catch (err) { console.error('[generation apply]', err) }
-    } else {
-      updateWorkflow(selected.workflow_id, updates)
+    let workflowId = newWorkflow.workflow_id
+    try {
+      const created = await createWorkflow(savedToSpec(newWorkflow))
+      await refreshWorkflows()
+      workflowId = created.id
+      setSelectedId(created.id)
+    } catch {
+      saveWorkflow(newWorkflow)
       setLocalWorkflows(loadWorkflows())
+      setSelectedId(newWorkflow.workflow_id)
     }
-    showToast('Generated workflow applied ✓', 'success')
+
+    // Store pending nodes for injection once the NEW canvas mounts
+    pendingHandoffRef.current = { nodes, edges }
+    // Persist to backend canvas for the new workflow
+    fetch(`/api/workflows/${workflowId}/canvas`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nodes, edges }),
+    }).catch(() => {})
+
+    showToast('New workflow generated ✓', 'success')
     setShowGenerationModal(false)
   }
 
@@ -1536,7 +1558,15 @@ function WorkflowsPageInner() {
               isActive={isActiveWorkflow(selected)}
               n8nWorkflowId={selected.n8n_workflow_id}
               fallbackSteps={selected.steps}
-              onInjectNodes={(fn) => { canvasInjectRef.current = fn }}
+              onInjectNodes={(fn) => {
+                canvasInjectRef.current = fn
+                // If there are pending handoff nodes, inject them now
+                if (pendingHandoffRef.current) {
+                  const { nodes: pNodes, edges: pEdges } = pendingHandoffRef.current
+                  pendingHandoffRef.current = null
+                  fn(pNodes, pEdges)
+                }
+              }}
             />
 
             {/* Meta footer — absolutely positioned overlay */}
@@ -1659,14 +1689,13 @@ function WorkflowsPageInner() {
       )}
 
       {/* ── Workflow Generation modal ── */}
-      {selected && (
-        <WorkflowGenerationModal
-          isOpen={showGenerationModal}
-          onClose={() => setShowGenerationModal(false)}
-          onApply={handleGenerationApply}
-          availableApps={apps}
-        />
-      )}
+      <WorkflowGenerationModal
+        isOpen={showGenerationModal}
+        onClose={() => setShowGenerationModal(false)}
+        onApply={handleGenerationApply}
+        availableApps={apps}
+        initialPrompt={generationPrompt || undefined}
+      />
     </div>
   )
 }

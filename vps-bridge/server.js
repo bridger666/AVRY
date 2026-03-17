@@ -32,7 +32,7 @@ const {
   handleWorkflowSynthesis,
   handleBridgeAira,
   handleBridgeKiro,
-  handleHealthCheck
+  handleHealthCheck,
 } = require('./endpoints');
 
 // ============================================================================

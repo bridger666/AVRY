@@ -12,14 +12,7 @@
   justify-content: flex-start;
 }
 
-.aiAvatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
+/* ── User bubble (unchanged) ── */
 .chatBubble {
   max-width: 720px;
   padding: 16px 22px;
@@ -36,13 +29,55 @@
   border-right: none;
 }
 
-.chatBubble.aiBubble {
-  background: var(--bg-elevated);
-  border-top-left-radius: 4px;
-  border-left: 3px solid #00e59e;
+/* ── AIRA flat content block (transparent, blends with console bg) ── */
+.airaCard {
+  width: 100%;
+  max-width: 720px;
+  padding: 16px 18px;
+  background: transparent;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  word-break: break-word;
 }
 
-.messageContent {
+.airaCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.airaCardAvatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.airaCardBody {
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+/* Compact variant for floating AIRA panel */
+.airaCardCompact {
+  padding: 10px 14px;
+}
+
+.airaCardCompact .airaCardHeader {
+  margin-bottom: 6px;
+}
+
+.airaCardCompact .airaCardBody {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.messageContent,
+.airaCardBody {
   color: var(--text-primary);
   word-wrap: break-word;
   line-height: 1.7;
@@ -117,21 +152,26 @@
 }
 
 /* Markdown content styling */
-.messageContent p {
+.messageContent p,
+.airaCardBody p {
   margin: 0 0 14px 0;
 }
 
-.messageContent p:last-child {
+.messageContent p:last-child,
+.airaCardBody p:last-child {
   margin-bottom: 0;
 }
 
 .messageContent ul,
-.messageContent ol {
+.messageContent ol,
+.airaCardBody ul,
+.airaCardBody ol {
   margin: 8px 0 14px 0;
   padding-left: 24px;
 }
 
-.messageContent li {
+.messageContent li,
+.airaCardBody li {
   margin: 6px 0;
   line-height: 1.65;
 }
@@ -141,29 +181,38 @@
 .messageContent h3,
 .messageContent h4,
 .messageContent h5,
-.messageContent h6 {
+.messageContent h6,
+.airaCardBody h1,
+.airaCardBody h2,
+.airaCardBody h3,
+.airaCardBody h4,
+.airaCardBody h5,
+.airaCardBody h6 {
   margin: 10px 0 4px 0;
   font-weight: 600;
   color: var(--text-primary);
 }
 
-.messageContent h1 { font-size: 1.5em; }
-.messageContent h2 { font-size: 1.3em; }
-.messageContent h3 { font-size: 1.1em; }
+.messageContent h1, .airaCardBody h1 { font-size: 1.5em; }
+.messageContent h2, .airaCardBody h2 { font-size: 1.3em; }
+.messageContent h3, .airaCardBody h3 { font-size: 1.1em; }
 
-.messageContent blockquote {
+.messageContent blockquote,
+.airaCardBody blockquote {
   margin: 12px 0;
   padding-left: 16px;
   border-left: 3px solid rgba(255, 255, 255, 0.2);
   color: var(--text-secondary);
 }
 
-.messageContent a {
+.messageContent a,
+.airaCardBody a {
   color: #60a5fa;
   text-decoration: none;
 }
 
-.messageContent a:hover {
+.messageContent a:hover,
+.airaCardBody a:hover {
   text-decoration: underline;
 }
 
@@ -174,9 +223,12 @@
     font-size: 14px;
   }
 
-  .aiAvatar {
-    width: 24px;
-    height: 24px;
+  .airaCard {
+    padding: 12px 0;
+  }
+
+  .airaCardBody {
+    font-size: 13px;
   }
 
   .codeBlockWrapper {
@@ -249,12 +301,7 @@
   }
 }
 
-/* Compact variant — used in floating AIRA panel */
-.compactBubble {
-  font-size: 13px;
-  line-height: 1.6;
-  padding: 12px 16px;
-}
+/* Compact variant — used in floating AIRA panel (card layout) */
 
 .compactContent {
   font-size: 13px;

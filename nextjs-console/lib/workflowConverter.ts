@@ -67,7 +67,9 @@ function detectStepType(action: string, tool: string): StepType {
 
   if (text.includes('salesforce') || text.includes('crm')) return 'http_request'
   if (text.includes('sharepoint') || text.includes('document')) return 'http_request'
-  if (text.includes('email') || text.includes('send') || text.includes('notification')) return 'email'
+  // Email/notification/send → use generic httpRequest to avoid n8n SMTP credential errors.
+  // Will be upgraded to emailSend once SMTP credentials are configured in n8n.
+  if (text.includes('email') || text.includes('send') || text.includes('notification')) return 'http_request'
   if (text.includes('sap') || text.includes('erp')) return 'http_request'
   if (text.includes('slack')) return 'slack'
   if (text.includes('webhook') || text.includes('trigger')) return 'webhook'
@@ -101,7 +103,7 @@ function buildN8nNode(step: WorkflowStep, index: number, type: StepType): N8nNod
         typeVersion: 4,
         parameters: {
           method: 'POST',
-          url: '', // User fills this
+          url: 'https://example.com/aivory-placeholder',
           authentication: 'none',
           sendBody: true,
           specifyBody: 'json',
@@ -119,30 +121,52 @@ function buildN8nNode(step: WorkflowStep, index: number, type: StepType): N8nNod
       }
 
     case 'email':
+      // Use generic httpRequest instead of emailSend to avoid SMTP credential errors.
+      // Placeholder URL — replace with actual email API when ready.
       return {
         ...baseNode,
-        type: 'n8n-nodes-base.emailSend',
-        typeVersion: 2,
+        type: 'n8n-nodes-base.httpRequest',
+        typeVersion: 4,
         parameters: {
-          fromEmail: '',
-          toEmail: '',
-          subject: `[Aivory] ${step.action}`,
-          emailType: 'text',
-          message: step.output || step.action,
+          method: 'POST',
+          url: 'https://example.com/api/send-email',
+          authentication: 'none',
+          sendBody: true,
+          specifyBody: 'json',
+          jsonBody: JSON.stringify(
+            {
+              to: '={{$json["email"] || "test@example.com"}}',
+              subject: `[Aivory] ${step.action}`,
+              body: step.output || step.action,
+            },
+            null,
+            2
+          ),
           options: {},
         },
       }
 
     case 'slack':
+      // Use generic httpRequest instead of native Slack node to avoid OAuth credential errors.
       return {
         ...baseNode,
-        type: 'n8n-nodes-base.slack',
-        typeVersion: 2,
+        type: 'n8n-nodes-base.httpRequest',
+        typeVersion: 4,
         parameters: {
-          operation: 'message',
-          channel: '',
-          text: step.action,
-          otherOptions: {},
+          method: 'POST',
+          url: 'https://example.com/api/slack-message',
+          authentication: 'none',
+          sendBody: true,
+          specifyBody: 'json',
+          jsonBody: JSON.stringify(
+            {
+              channel: '',
+              text: step.action,
+            },
+            null,
+            2
+          ),
+          options: {},
         },
       }
 
@@ -154,8 +178,14 @@ function buildN8nNode(step: WorkflowStep, index: number, type: StepType): N8nNod
         parameters: {
           method: 'POST',
           url: 'https://openrouter.ai/api/v1/chat/completions',
-          authentication: 'genericCredentialType',
-          genericAuthType: 'httpHeaderAuth',
+          authentication: 'none',
+          sendHeaders: true,
+          headerParameters: {
+            parameters: [
+              { name: 'Authorization', value: 'Bearer {{$env.OPENROUTER_API_KEY}}' },
+              { name: 'Content-Type', value: 'application/json' },
+            ],
+          },
           sendBody: true,
           specifyBody: 'json',
           jsonBody: JSON.stringify(
@@ -218,13 +248,25 @@ function buildN8nNode(step: WorkflowStep, index: number, type: StepType): N8nNod
       }
 
     case 'postgres':
+      // Use generic httpRequest instead of native Postgres node to avoid credential errors.
       return {
         ...baseNode,
-        type: 'n8n-nodes-base.postgres',
-        typeVersion: 2,
+        type: 'n8n-nodes-base.httpRequest',
+        typeVersion: 4,
         parameters: {
-          operation: 'executeQuery',
-          query: '', // User fills this
+          method: 'POST',
+          url: 'https://example.com/api/database-query',
+          authentication: 'none',
+          sendBody: true,
+          specifyBody: 'json',
+          jsonBody: JSON.stringify(
+            {
+              query: step.action,
+              tool: step.tool || 'database',
+            },
+            null,
+            2
+          ),
           options: {},
         },
       }
@@ -263,65 +305,22 @@ function buildN8nNode(step: WorkflowStep, index: number, type: StepType): N8nNod
 
 /**
  * Build trigger node based on workflow trigger type.
- * Always returns a valid trigger — falls back to Manual Trigger so n8n never
- * rejects the workflow for missing a trigger node.
+ * Always uses the Aivory webhook V2 trigger so workflows are accessible
+ * via the shared webhook endpoint.
  */
 function buildTriggerNode(trigger?: string): N8nNode {
-  const text = (trigger || '').toLowerCase()
-
-  if (text.includes('webhook') || text.includes('api call') || text.includes('request')) {
-    return {
-      id: generateNodeId(),
-      name: 'Webhook Trigger',
-      type: 'n8n-nodes-base.webhook',
-      typeVersion: 1,
-      position: [250, 300],
-      parameters: {
-        path: 'aivory-workflow',
-        responseMode: 'lastNode',
-        httpMethod: 'POST',
-      },
-    }
-  }
-
-  if (text.includes('schedule') || text.includes('daily') || text.includes('cron')) {
-    return {
-      id: generateNodeId(),
-      name: 'Schedule Trigger',
-      type: 'n8n-nodes-base.scheduleTrigger',
-      typeVersion: 1,
-      position: [250, 300],
-      parameters: {
-        rule: {
-          interval: [{ field: 'hours', triggerAtHour: 9 }],
-        },
-      },
-    }
-  }
-
-  if (text.includes('email') || text.includes('inbox')) {
-    return {
-      id: generateNodeId(),
-      name: 'Email Trigger',
-      type: 'n8n-nodes-base.emailReadImap',
-      typeVersion: 2,
-      position: [250, 300],
-      parameters: {
-        operation: 'getEmails',
-        mailbox: 'INBOX',
-        options: {},
-      },
-    }
-  }
-
-  // Default: Manual Trigger — always valid, no credentials required
+  // Always use the Aivory webhook V2 trigger
   return {
     id: generateNodeId(),
-    name: 'Manual Trigger',
-    type: 'n8n-nodes-base.manualTrigger',
+    name: 'Webhook Trigger',
+    type: 'n8n-nodes-base.webhook',
     typeVersion: 1,
     position: [250, 300],
-    parameters: {},
+    parameters: {
+      path: '0f137ee4-ef4a-43f1-96d9-e9ea3488805b',
+      responseMode: 'lastNode',
+      httpMethod: 'POST',
+    },
   }
 }
 

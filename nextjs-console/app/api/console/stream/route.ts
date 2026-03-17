@@ -95,6 +95,11 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           // Extract the last user message as the primary prompt
           message: messages.filter(m => m.role === 'user').at(-1)?.content ?? '',
+          // Top-level routing fields — forwarded to Zeroclaw for agent selection
+          // Zeroclaw reads mode/channel/entrypoint to pick console agent vs dev agent
+          mode: 'console',
+          channel: 'console_ui',
+          entrypoint: 'console',
           context: {
             session_id,
             organization_id,
@@ -137,15 +142,39 @@ export async function POST(request: NextRequest) {
     const text = bridgeData.raw_agent_response ?? ''
     const enc = new TextEncoder()
 
+    // ── Detect workflow_spec in AIRA response ──────────────────────────
+    // If AIRA's response contains a ```workflow_spec JSON block, extract it
+    // and emit it as a separate SSE event so the frontend can show the
+    // "Generate workflow to canvas" button.
+    let workflowSpec: Record<string, unknown> | null = null
+    let displayText = text
+
+    const specMatch = text.match(/```workflow_spec\s*\n?([\s\S]*?)\n?```/)
+    if (specMatch) {
+      try {
+        workflowSpec = JSON.parse(specMatch[1])
+        // Remove the spec block from the display text
+        displayText = text.replace(/```workflow_spec\s*\n?[\s\S]*?\n?```/, '').trim()
+      } catch {
+        // Invalid JSON in spec block — ignore, show full text
+      }
+    }
+
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
 
     ;(async () => {
       try {
-        // Emit the full response as a single chunk (ZeroClaw is non-streaming)
+        // Emit the text response as a single chunk (ZeroClaw is non-streaming)
         await writer.write(enc.encode(
-          `data: ${JSON.stringify({ type: 'chunk', content: text })}\n\n`
+          `data: ${JSON.stringify({ type: 'chunk', content: displayText })}\n\n`
         ))
+        // If a workflow_spec was detected, emit it as a separate event
+        if (workflowSpec) {
+          await writer.write(enc.encode(
+            `data: ${JSON.stringify({ type: 'workflow_spec', workflow: workflowSpec })}\n\n`
+          ))
+        }
         await writer.write(enc.encode(
           `data: ${JSON.stringify({ type: 'done' })}\n\n`
         ))

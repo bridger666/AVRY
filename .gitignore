@@ -12,10 +12,23 @@ ENV/
 # Markdown docs — never push to public repo
 *.md
 
-# Environment — never commit secrets
+# Environment & secrets — never commit
 .env
 .env.*
+.env.local
+.env.development*
+.env.production*
+.envrc
 !.env.example
+*.key
+*.pem
+*.p8
+*.p12
+*.crt
+*.cert
+secrets.*
+credentials.*
+config/local.*
 
 # IDE
 .vscode/
@@ -41,3 +54,8 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+
+# Node / Next.js
+node_modules/
+.next/
+coverage/

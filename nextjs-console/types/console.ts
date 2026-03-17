@@ -23,14 +23,42 @@ export interface ConsoleStreamRequest {
 }
 
 /**
- * Represents a chunk of data in the streaming response
+ * Represents a chunk of data in the streaming response.
+ * 
+ * Event types:
+ * - "chunk": text content token from the AI response
+ * - "done": stream completed successfully
+ * - "error": an error occurred
+ * - "workflow_spec": AIRA detected a workflow intent and produced a structured
+ *   workflow specification that can be sent to the Workflow canvas
  */
 export interface StreamChunk {
-  type: 'chunk' | 'done' | 'error'
+  type: 'chunk' | 'done' | 'error' | 'workflow_spec'
   content?: string
   error?: string
   /** Set on synthetic 'done' events — true if at least one content chunk was received */
   receivedContent?: boolean
+  /** Structured workflow spec payload — present when type === 'workflow_spec' */
+  workflow?: WorkflowSpec
+}
+
+/**
+ * Workflow specification produced by AIRA when user requests workflow generation.
+ * Compatible with Aivory Workflow Spec used by the Workflow Tab / canvas.
+ */
+export interface WorkflowSpec {
+  name: string
+  description: string
+  steps: Array<{
+    id: string
+    type: string
+    appId: string
+    actionId: string
+    connectionId?: string
+    inputs?: Record<string, unknown>
+    position?: { x: number; y: number }
+  }>
+  edges?: Array<{ from: string; to: string }>
 }
 
 /**

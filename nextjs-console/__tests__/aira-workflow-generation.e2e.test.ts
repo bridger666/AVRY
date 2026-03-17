@@ -240,10 +240,10 @@ describe('AIRA Workflow Generation - E2E Tests', () => {
       // Step 4: Workflow Tab retrieves spec from localStorage
       const retrieved = retrieveWorkflowSpec()
       expect(retrieved).not.toBeNull()
-      expect(retrieved?.name).toBe(consoleSpec.name)
+      expect(retrieved?.spec.name).toBe(consoleSpec.name)
 
       // Step 5: Workflow Tab renders workflow
-      const canvasNodes = retrieved!.steps.map((step) => ({
+      const canvasNodes = retrieved!.spec.steps.map((step) => ({
         id: step.id,
         type: step.type,
         position: step.position,
@@ -281,17 +281,17 @@ describe('AIRA Workflow Generation - E2E Tests', () => {
 
       // Retrieve and verify
       const retrieved = retrieveWorkflowSpec()
-      expect(JSON.stringify(retrieved)).toBe(JSON.stringify(mockGeneratedSpec))
+      expect(JSON.stringify(retrieved?.spec)).toBe(JSON.stringify(mockGeneratedSpec))
 
       // Verify all properties preserved
-      expect(retrieved?.name).toBe(mockGeneratedSpec.name)
-      expect(retrieved?.description).toBe(mockGeneratedSpec.description)
-      expect(retrieved?.source).toBe(mockGeneratedSpec.source)
-      expect(retrieved?.intent).toBe(mockGeneratedSpec.intent)
-      expect(retrieved?.steps).toHaveLength(mockGeneratedSpec.steps.length)
+      expect(retrieved?.spec.name).toBe(mockGeneratedSpec.name)
+      expect(retrieved?.spec.description).toBe(mockGeneratedSpec.description)
+      expect(retrieved?.spec.source).toBe(mockGeneratedSpec.source)
+      expect(retrieved?.spec.intent).toBe(mockGeneratedSpec.intent)
+      expect(retrieved?.spec.steps).toHaveLength(mockGeneratedSpec.steps.length)
 
       // Verify step details
-      retrieved?.steps.forEach((step, index) => {
+      retrieved?.spec.steps.forEach((step, index) => {
         const original = mockGeneratedSpec.steps[index]
         expect(step.id).toBe(original.id)
         expect(step.type).toBe(original.type)

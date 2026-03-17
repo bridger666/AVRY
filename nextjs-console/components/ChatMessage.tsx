@@ -195,59 +195,64 @@ export default function ChatMessage({ role, content, isStreaming = false, compac
   
   return (
     <div className={`${styles.chatMessageRow} ${role === 'user' ? styles.user : styles.ai}`}>
-      {role === 'assistant' && (
-        <Image 
-          src="/Aivory_Avatar.svg" 
-          alt="Aivory" 
-          width={28} 
-          height={28}
-          className={styles.aiAvatar}
-        />
-      )}
-      
-      <div className={`${styles.chatBubble} ${role === 'user' ? styles.userBubble : styles.aiBubble} ${compact ? styles.compactBubble : ''}`}>
-        
-        {role === 'assistant' && parsedResponse.hasTabs && (
-          <div className={styles.tabsContainer}>
-            {parsedResponse.summary && (
-              <button
-                className={`${styles.tab} ${activeTab === 'summary' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('summary')}
-              >
-                Summary
-              </button>
-            )}
-            {parsedResponse.json && (
-              <button
-                className={`${styles.tab} ${activeTab === 'json' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('json')}
-              >
-                JSON
-              </button>
-            )}
-            {parsedResponse.workflow && (
-              <button
-                className={`${styles.tab} ${activeTab === 'workflow' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('workflow')}
-              >
-                Workflow
-              </button>
-            )}
+      {role === 'user' ? (
+        /* ── User: keep original bubble layout ── */
+        <div className={`${styles.chatBubble} ${styles.userBubble} ${compact ? styles.compactBubble : ''}`}>
+          <div className={`${styles.messageContent} ${compact ? styles.compactContent : ''}`}>
+            {content}
           </div>
-        )}
-        
-        <div className={`${styles.messageContent} ${compact ? styles.compactContent : ''}`}>
-          {role === 'assistant' ? (
-            isStreaming && !content ? (
+        </div>
+      ) : (
+        /* ── Assistant: flat card layout ── */
+        <div className={`${styles.airaCard} ${compact ? styles.airaCardCompact : ''}`}>
+          <div className={styles.airaCardHeader}>
+            <Image
+              src="/Aivory_Avatar.svg"
+              alt="Aivory"
+              width={22}
+              height={22}
+              className={styles.airaCardAvatar}
+            />
+          </div>
+
+          {parsedResponse.hasTabs && (
+            <div className={styles.tabsContainer}>
+              {parsedResponse.summary && (
+                <button
+                  className={`${styles.tab} ${activeTab === 'summary' ? styles.activeTab : ''}`}
+                  onClick={() => setActiveTab('summary')}
+                >
+                  Summary
+                </button>
+              )}
+              {parsedResponse.json && (
+                <button
+                  className={`${styles.tab} ${activeTab === 'json' ? styles.activeTab : ''}`}
+                  onClick={() => setActiveTab('json')}
+                >
+                  JSON
+                </button>
+              )}
+              {parsedResponse.workflow && (
+                <button
+                  className={`${styles.tab} ${activeTab === 'workflow' ? styles.activeTab : ''}`}
+                  onClick={() => setActiveTab('workflow')}
+                >
+                  Workflow
+                </button>
+              )}
+            </div>
+          )}
+
+          <div className={`${styles.airaCardBody} ${compact ? styles.compactContent : ''}`}>
+            {isStreaming && !content ? (
               <InlineTypingIndicator />
             ) : (
               renderTabContent()
-            )
-          ) : (
-            content
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
