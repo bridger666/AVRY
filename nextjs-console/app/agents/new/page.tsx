@@ -7,6 +7,22 @@ import { CreateAgentRequest, AgentProvider, AgentRuntime } from '@/types/agents'
 
 const PROVIDERS: AgentProvider[] = ['openrouter', 'openai', 'anthropic', 'other'];
 const RUNTIMES: AgentRuntime[] = ['zeroclaw', 'direct', 'n8n'];
+const MODELS = [
+  { value: 'anthropic/claude-sonnet-4', label: 'Claude Sonnet 4' },
+  { value: 'anthropic/claude-3-5-haiku', label: 'Claude 3.5 Haiku' },
+  { value: 'qwen/qwen-2.5-72b-instruct', label: 'Qwen 2.5 72B' },
+  { value: 'qwen/qwen-2.5-7b-instruct', label: 'Qwen 2.5 7B' },
+  { value: 'openai/gpt-4o', label: 'GPT-4o' },
+  { value: 'openai/gpt-4o-mini', label: 'GPT-4o Mini' },
+  { value: 'google/gemini-2.0-flash-001', label: 'Gemini 2.0 Flash' },
+];
+
+const getProviderLabel = (provider: string): string => {
+  if (provider === 'zeroclaw') return 'Aivory Agent';
+  if (provider === 'direct') return 'Direct (OpenRouter)';
+  if (provider === 'n8n') return 'n8n Workflow';
+  return provider;
+};
 
 export default function NewAgentPage() {
   const router = useRouter();
@@ -56,8 +72,8 @@ export default function NewAgentPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a1a18] to-[#2a2a26] p-8">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-[#353531] p-8 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+      <div className="max-w-2xl mx-auto overflow-x-hidden">
         {/* Header */}
         <div className="mb-8">
           <Link href="/agents" className="text-[#00e59e] hover:text-[#00f5b0] text-sm font-medium mb-4 inline-block">
@@ -112,15 +128,19 @@ export default function NewAgentPage() {
             <label className="block text-sm font-medium text-zinc-300 mb-2">
               Model *
             </label>
-            <input
-              type="text"
+            <select
               name="model"
               value={formData.model}
               onChange={handleChange}
-              placeholder="e.g., claude-3-5-sonnet"
               required
-              className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-[#00e59e] transition-colors"
-            />
+              className="w-full px-3 py-2 bg-[#2E2E2A] border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-white/30 transition-colors"
+            >
+              {MODELS.map(m => (
+                <option key={m.value} value={m.value} className="bg-[#2a2a26]">
+                  {m.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Provider */}
@@ -137,7 +157,7 @@ export default function NewAgentPage() {
             >
               {PROVIDERS.map(p => (
                 <option key={p} value={p} className="bg-[#2a2a26]">
-                  {p}
+                  {getProviderLabel(p)}
                 </option>
               ))}
             </select>
