@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useTranslations } from "next-intl"
 import { useLocaleContext } from "@/hooks/useLocale"
+import { useState, useEffect } from "react"
 import LanguageOptionCard from "@/components/shared/LanguageOptionCard"
 import styles from "./settings.module.css"
 
