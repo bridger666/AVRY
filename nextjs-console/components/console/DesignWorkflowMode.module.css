@@ -99,7 +99,7 @@
 
 .charCount {
   font-size: 11px;
-  color: #6b6a68;
+  color: #a1a1aa;
   text-align: right;
 }
 
@@ -204,7 +204,7 @@
 
 .info {
   font-size: 12px;
-  color: #6b6a68;
+  color: #a1a1aa;
   padding: 12px;
   background: rgba(100, 200, 255, 0.05);
   border-radius: 6px;
@@ -327,7 +327,7 @@
 
 .stepType {
   font-size: 10px;
-  color: #6b6a68;
+  color: #a1a1aa;
   text-transform: uppercase;
   letter-spacing: 0.2px;
 }

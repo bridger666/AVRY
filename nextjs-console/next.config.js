@@ -1,5 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: '/api/bridge/:path*',
+        destination: 'http://43.156.108.96:3003/bridge/:path*',
+      },
+    ]
+  },
+
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // canvas is not available in the browser — alias to false to prevent build errors
@@ -11,12 +20,6 @@ const nextConfig = {
     return config
   },
 
-  // Prevent browsers from caching HTML pages so they always fetch fresh
-  // chunk references after a rebuild.
-  // Next.js already sets immutable cache headers on /_next/static/ internally.
-  // We only need to override the HTML page cache (Next sets s-maxage=31536000
-  // on statically prerendered pages by default, which causes browsers to serve
-  // stale HTML with old chunk hashes after a rebuild).
   async headers() {
     return [
       {

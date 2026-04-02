@@ -6,13 +6,30 @@ import { useLocaleContext } from "@/hooks/useLocale"
 import LanguageOptionCard from "@/components/shared/LanguageOptionCard"
 import styles from "./settings.module.css"
 
+import { useRouterContext } from '@/contexts/RouterContext'
+import { ContinuedFromConsole } from '@/components/routing/ContinuedFromConsole'
+
 export default function SettingsPage() {
   const t = useTranslations("settings")
   const tCommon = useTranslations("common")
   const { locale, setLocale } = useLocaleContext()
 
+  const { pendingContext, clearPendingContext } = useRouterContext()
+  const [routingNotice, setRoutingNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!pendingContext) return
+    if (Date.now() - pendingContext.timestamp > 300000) { clearPendingContext(); return }
+    if (pendingContext.targetRoute !== 'settings') return
+    setRoutingNotice(pendingContext.aiReplySummary || pendingContext.triggerMessage)
+    clearPendingContext()
+  }, [pendingContext, clearPendingContext])
+
   return (
     <div className={styles.settingsContainer}>
+      {routingNotice !== null && (
+        <ContinuedFromConsole summary={routingNotice} onDismiss={() => setRoutingNotice(null)} />
+      )}
       <h1 className={styles.pageTitle}>{t("title")}</h1>
       <p className={styles.pageDescription}>{t("description")}</p>
 

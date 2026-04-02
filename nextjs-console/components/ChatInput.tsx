@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, KeyboardEvent, ChangeEvent } from "react"
 import UploadMenu, { Attachment } from "./UploadMenu"
+import ContextToolbar from "./input/ContextToolbar"
 
 interface ChatInputProps {
   onSend: (message: string, attachment?: Attachment) => void
@@ -12,6 +13,7 @@ interface ChatInputProps {
 
 export default function ChatInput({ onSend, disabled = false, prefill, hasPendingFiles = false }: ChatInputProps) {
   const [message, setMessage] = useState(prefill ?? "")
+  const [activeTool, setActiveTool] = useState<string | null>(null)
 
   useEffect(() => {
     if (prefill) {
@@ -67,67 +69,103 @@ export default function ChatInput({ onSend, disabled = false, prefill, hasPendin
 
   const canSend = !disabled && !extracting && (!!message.trim() || !!attachment || hasPendingFiles)
 
+  const handleToolSelect = (tool: string) => {
+    setActiveTool(tool)
+    // For now, just log the selection - can be extended later
+    console.log(`Tool selected: ${tool}`)
+    if (tool === "upload-file") {
+      setUploadMenuOpen(o => !o)
+    }
+  }
+
   return (
-    <div className="input-wrapper">
-      {/* Toast */}
-      {toast && (
-        <div className="attachment-toast" role="status">{toast}</div>
+    <div className="relative">
+      {/* Context Toolbar */}
+      <ContextToolbar onToolSelect={handleToolSelect} />
+
+      {/* Attachment chip */}
+      {(attachment || extracting) && (
+        <div className="mb-3 p-2 bg-zinc-800 border border-zinc-700 rounded-lg inline-flex items-center gap-2">
+          <span className="text-sm text-zinc-300">
+            {extracting ? 'Extracting...' : attachment?.label}
+          </span>
+          {!extracting && (
+            <button
+              className="text-zinc-400 hover:text-zinc-200 transition-colors"
+              onClick={() => setAttachment(null)}
+              aria-label="Remove attachment"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          )}
+        </div>
       )}
 
-      <div className="input-box">
-        <button
-          className="add-btn"
-          onClick={() => setUploadMenuOpen(!uploadMenuOpen)}
-          aria-label="Add attachment"
-          aria-expanded={uploadMenuOpen}
-        >
-          +
-        </button>
-
-        {/* Attachment chip — shows extracting state while PDF/DOCX is being processed */}
-        {(attachment || extracting) && (
-          <div className="attachment-chip">
-            <span className="attachment-chip-label">
-              {extracting ? '⏳ Extracting…' : attachment?.label}
-            </span>
-            {!extracting && (
-              <button
-                className="attachment-chip-remove"
-                onClick={() => setAttachment(null)}
-                aria-label="Remove attachment"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        )}
-
+      {/* Input card — matches reference: rounded container, text on top, icons below */}
+      <div className="bg-[#42423f] border border-white/10 rounded-2xl overflow-hidden">
+        {/* Textarea area */}
         <textarea
           ref={textareaRef}
-          placeholder="Send Message to AIRA..."
+          placeholder="Send Message to Aivory..."
           value={message}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           disabled={disabled}
           rows={1}
+          className="w-full bg-transparent px-4 pt-3.5 pb-2 text-base text-zinc-100 placeholder:text-[#a1a1aa] focus:outline-none resize-none"
         />
 
-        <button
-          className="send-btn"
-          onClick={handleSend}
-          disabled={!canSend}
-        >
-          Send
-        </button>
+        {/* Bottom toolbar row: icons left, send right */}
+        <div className="flex items-center justify-between px-3 pb-3">
+          <div className="flex items-center gap-1">
+            {/* Add / attach button */}
+            <button
+              className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:border-white/20 transition-colors"
+              onClick={() => setUploadMenuOpen(o => !o)}
+              aria-label="Attach file"
+              type="button"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+            </button>
 
-        <UploadMenu
-          isOpen={uploadMenuOpen}
-          onClose={() => setUploadMenuOpen(false)}
-          onAttach={(a) => { setAttachment(a); setUploadMenuOpen(false) }}
-          onToast={showToast}
-          onExtractingChange={setExtracting}
-        />
+            {/* Paperclip / file button */}
+            <button
+              className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:border-white/20 transition-colors"
+              onClick={() => setUploadMenuOpen(o => !o)}
+              aria-label="Upload file"
+              type="button"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* Send button */}
+          <button
+            className="w-8 h-8 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-zinc-600 disabled:text-zinc-400 transition-colors flex items-center justify-center"
+            onClick={handleSend}
+            disabled={!canSend}
+            aria-label="Send"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 19V5M5 12l7-7 7 7"/>
+            </svg>
+          </button>
+        </div>
       </div>
+
+      <UploadMenu
+        isOpen={uploadMenuOpen}
+        onClose={() => setUploadMenuOpen(false)}
+        onAttach={(a) => { setAttachment(a); setUploadMenuOpen(false) }}
+        onToast={showToast}
+        onExtractingChange={setExtracting}
+      />
     </div>
   )
 }

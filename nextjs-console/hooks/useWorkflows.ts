@@ -41,6 +41,7 @@ export interface SavedWorkflow {
   // n8n activation data
   n8n_workflow_id?: string
   n8n_url?: string
+  n8nWebhookPath?: string | null
 }
 
 export function loadWorkflows(): SavedWorkflow[] {

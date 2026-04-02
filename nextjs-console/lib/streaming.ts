@@ -187,3 +187,22 @@ export async function* streamConsoleResponse(
     }
   }
 }
+
+
+// TYPEWRITER_PATCH_APPLIED
+
+// Simple typewriter-style accumulator for console stream
+export async function* typewriterConsoleStream(source: AsyncIterable<any>) {
+  let buffer = ''
+  for await (const chunk of source) {
+    if (chunk?.type === 'chunk' && typeof chunk.content === 'string') {
+      buffer += chunk.content
+      yield { type: 'chunk', content: buffer }
+    } else {
+      yield chunk
+      if (chunk?.type === 'done' || chunk?.type === 'error') {
+        buffer = ''
+      }
+    }
+  }
+}

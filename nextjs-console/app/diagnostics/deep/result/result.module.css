@@ -1,8 +1,9 @@
 /* Deep Diagnostic Result Page — dark teal-green accent theme */
 
 .pageContainer {
-  min-height: 100vh;
-  background-color: var(--bg-main, #1e1d1a);
+  height: 100%;
+  overflow-y: auto;
+  background-color: var(--bg-main, #353531);
   color: #f0f0f0;
   font-family: 'Inter Tight', 'Inter', sans-serif;
 }
@@ -10,8 +11,9 @@
 /* ── Loading ─────────────────────────────────────────────── */
 
 .loadingContainer {
-  min-height: 100vh;
-  background-color: var(--bg-main, #1e1d1a);
+  height: 100%;
+  overflow-y: auto;
+  background-color: var(--bg-main, #353531);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -322,7 +324,7 @@
 .scoreMax {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #444;
+  color: #a1a1aa;
 }
 
 .maturityBlock {
@@ -334,7 +336,7 @@
 .maturityLabel {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #555;
+  color: #a1a1aa;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }

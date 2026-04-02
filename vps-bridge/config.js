@@ -10,45 +10,72 @@ require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 // ============================================================================
 
 /**
- * Maps endpoints to OpenRouter models and use cases
- * This abstraction allows changing models without modifying frontend code
- * 
- * FINAL MODEL ROUTING TABLE:
- * - Console chat: qwen3-8b (speed, real-time)
- * - Free Diagnostic: qwen3-8b (speed + cost)
- * - Deep Diagnostic: qwen3-14b (deeper reasoning)
- * - Blueprint: qwen3-30b-a3b-thinking-2507 (quality + architecture)
- * - Workflow Synthesis: qwen3-coder-30b-a3b-instruct (structured JSON/config)
- * - Mobile Console: qwen3-8b (speed, lightweight)
+ * Fallback model chains — tried in order on retryable errors (429, 5xx, network, timeout).
+ * Primary: qwen3-80b-a3b (free, high quality)
+ * Secondary: qwen3-4b (free, fast fallback)
+ * Last resort: claude-3.5-haiku (paid, reliable)
+ */
+const MODEL_CHAINS = {
+  // Heavy tasks: blueprint, workflow synthesis, deep diagnostic
+  heavy: [
+    'qwen/qwen3.5-9b',
+    'qwen/qwen3-4b-instruct',
+    'anthropic/claude-3.5-haiku',
+  ],
+  // Light tasks: console chat, free diagnostic, mobile
+  light: [
+    'qwen/qwen3.5-9b',
+    'qwen/qwen3-4b-instruct',
+    'anthropic/claude-3.5-haiku',
+  ],
+};
+
+/**
+ * Maps endpoints to model fallback chains and use cases.
+ * `models` is an ordered array — callLLMWithFallback tries each in sequence.
+ *
+ * MODEL ROUTING TABLE:
+ * - Console chat: heavy chain (streaming)
+ * - Free Diagnostic: light chain
+ * - Deep Diagnostic: heavy chain
+ * - Blueprint: heavy chain (quality + architecture)
+ * - Workflow Synthesis: heavy chain (structured JSON/config)
+ * - Mobile Console: light chain (speed, lightweight)
  */
 const MODEL_ROUTING = {
   '/console/stream': {
-    model: 'qwen/qwen3-14b',
+    model: MODEL_CHAINS.heavy[0],
+    models: MODEL_CHAINS.heavy,
     useCase: 'console',
     streaming: true
   },
   '/console/mobile': {
-    model: 'qwen/qwen3-8b',
+    model: MODEL_CHAINS.light[0],
+    models: MODEL_CHAINS.light,
     useCase: 'console',
     streaming: false
   },
   '/diagnostics/free/run': {
-    model: 'qwen/qwen3-8b',
+    model: MODEL_CHAINS.light[0],
+    models: MODEL_CHAINS.light,
     useCase: 'diagnostic',
     streaming: false
   },
   '/diagnostics/run': {
-    model: 'qwen/qwen3-14b',
+    model: MODEL_CHAINS.heavy[0],
+    models: MODEL_CHAINS.heavy,
     useCase: 'diagnostic',
     streaming: false
   },
   '/blueprints/generate': {
-    model: 'qwen/qwen3-30b-a3b-thinking-2507',
+    model: MODEL_CHAINS.heavy[0],
+    models: MODEL_CHAINS.heavy,
     useCase: 'blueprint',
     streaming: false
   },
   '/workflows/synthesize': {
-    model: 'qwen/qwen3-coder-30b-a3b-instruct',
+    model: MODEL_CHAINS.heavy[0],
+    models: MODEL_CHAINS.heavy,
     useCase: 'workflow',
     streaming: false
   }
@@ -333,9 +360,9 @@ const config = {
   openrouterTimeout: 120000, // 120 seconds for complex requests
 
   // n8n — base URL is the single source of truth; n8nClient.js derives all paths from it
-  n8nBaseUrl: (process.env.N8N_BASE_URL || 'http://43.156.108.96:5678').replace(/\/$/, ''),
+  n8nBaseUrl: (process.env.N8N_BASE_URL || 'http://127.0.0.1:5678').replace(/\/$/, ''),
   get n8nWorkflowExecutionUrl() {
-    const base = (process.env.N8N_BASE_URL || 'http://43.156.108.96:5678').replace(/\/$/, '');
+    const base = (process.env.N8N_BASE_URL || 'http://127.0.0.1:5678').replace(/\/$/, '');
     return process.env.N8N_WORKFLOW_EXECUTION_URL ||
       `${base}/workflow/Tu5VrBcDwUtRChdh/executions?projectId=PRiNN55wgNnIcyGB`;
   },
@@ -347,7 +374,7 @@ const config = {
 
   // Zeroclaw Kiro/AIRA webhook base URL (used by /bridge/aira and /bridge/kiro)
   // zeroclawClient.js reads ZEROCLAW_BASE_URL directly from env
-  zeroclawKiroUrl: process.env.ZEROCLAW_BASE_URL || process.env.ZEROCLAW_KIRO_URL || 'http://43.156.108.96:3010',
+  zeroclawKiroUrl: process.env.ZEROCLAW_BASE_URL || process.env.ZEROCLAW_KIRO_URL || 'http://127.0.0.1:3010',
   
   // Logging
   logLevel: process.env.LOG_LEVEL || 'info'
@@ -375,6 +402,7 @@ function validateConfig() {
 }
 
 module.exports = {
+  MODEL_CHAINS,
   MODEL_ROUTING,
   SYSTEM_PROMPTS,
   config,

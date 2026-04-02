@@ -32,8 +32,9 @@ export class DiagnosticErrorBoundary extends React.Component<Props, State> {
       return (
         <div
           style={{
-            minHeight: '100vh',
-            backgroundColor: '#1e1d1a',
+            height: '100%',
+            overflow: 'auto',
+            backgroundColor: '#353531',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -64,7 +65,7 @@ export class DiagnosticErrorBoundary extends React.Component<Props, State> {
               onClick={this.handleStartOver}
               style={{
                 backgroundColor: '#d97706',
-                color: '#1e1d1a',
+                color: '#353531',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '0.75rem 1.5rem',

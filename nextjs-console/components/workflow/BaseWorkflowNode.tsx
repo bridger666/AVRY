@@ -95,7 +95,7 @@ export function BaseWorkflowNode({ selected, onAddStep, hideTarget, children }: 
           type="button"
           className={styles.addBtn}
           onClick={(e) => { e.stopPropagation(); onAddStep(); }}
-          title="Add follow-up step with AIRA"
+          title="Add follow-up step with Aivory"
           aria-label="Add follow-up step"
         >
           +

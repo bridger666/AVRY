@@ -24,6 +24,9 @@ export type WorkflowNodeData = {
   iconPath?: string;    // SVG path for app nodes
   appId?: string;       // links to AivoryApp.id
   connectionId?: string;
+  // Agent node fields
+  agentId?: string;     // links to Agent.id
+  agentName?: string;   // cached agent name for display
   // Optional labels for connections, mainly for conditions
   outputs?: { id: string; label: string }[];
   // Raw n8n node object for deep debugging / mapping if needed
@@ -45,6 +48,7 @@ export type NodeConfig =
   | IfConditionConfig
   | EditFieldsConfig
   | HttpResponseConfig
+  | AgentConfig
   | GenericConfig;
 
 export interface HttpRequestConfig {
@@ -113,6 +117,19 @@ export interface GenericConfig {
   name: string;
   description: string;
   fields: { key: string; value: string }[];
+}
+
+export interface AgentConfig {
+  type: 'agent';
+  agentName: string;
+  model: string;
+  provider: string;
+  runtime: string;
+  promptSummary: string;
+  inputVariables: string[];
+  outputVariable: string;
+  status?: 'default' | 'running' | 'error' | 'disabled';
+  errorMessage?: string;
 }
 
 export interface TestStepResult {

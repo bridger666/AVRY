@@ -5,6 +5,7 @@
  */
 
 import { beforeEach, afterEach } from 'vitest'
+import '@testing-library/jest-dom'
 
 // Create a mock localStorage implementation
 const createLocalStorageMock = () => {

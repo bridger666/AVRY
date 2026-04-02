@@ -1,5 +1,6 @@
 .page {
-  min-height: 100vh;
+  height: 100%;
+  overflow-y: auto;
   background: var(--bg-main, #1e1d1a);
   color: #e5e5e5;
   padding: 32px;
@@ -19,7 +20,7 @@
 
 .subtitle {
   font-size: 0.875rem;
-  color: #666;
+  color: #a1a1aa;
   margin: 0;
 }
 
@@ -33,13 +34,13 @@
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #555;
+  color: #a1a1aa;
   margin: 0 0 14px;
 }
 
 .emptyMsg {
   font-size: 0.875rem;
-  color: #444;
+  color: #7a7875;
   padding: 12px 0;
   margin: 0;
 }
@@ -61,7 +62,7 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #444;
+  color: #7a7875;
   gap: 12px;
 }
 
@@ -130,7 +131,7 @@
 
 .tableLastUsed {
   font-size: 0.8rem;
-  color: #555;
+  color: #a1a1aa;
 }
 
 .tableActions {
@@ -151,7 +152,7 @@
 }
 
 .actionBtn:hover {
-  border-color: #444;
+  border-color: #7a7875;
   color: #ccc;
 }
 
@@ -224,7 +225,7 @@
 }
 
 .appCard {
-  background: var(--bg-main, #1e1d1a);
+  background: var(--bg-main, #353531);
   border: 1px solid #1e1e1e;
   border-radius: 10px;
   padding: 16px;
@@ -292,14 +293,14 @@
 
 .appCategory {
   font-size: 0.7rem;
-  color: #555;
+  color: #a1a1aa;
   text-transform: capitalize;
   margin: 0;
 }
 
 .appDesc {
   font-size: 0.78rem;
-  color: #666;
+  color: #a1a1aa;
   line-height: 1.45;
   flex: 1;
   margin: 0;
@@ -387,13 +388,13 @@
 
 .modalSubtitle {
   font-size: 0.8rem;
-  color: #666;
+  color: #a1a1aa;
   margin: 0;
 }
 
 .securityNote {
   font-size: 0.78rem;
-  color: #555;
+  color: #a1a1aa;
   background: #0d0d0d;
   border: 1px solid #1e1e1e;
   border-radius: 6px;
@@ -417,7 +418,7 @@
 
 .optionalTag {
   font-weight: 400;
-  color: #555;
+  color: #a1a1aa;
   text-transform: none;
   letter-spacing: 0;
 }

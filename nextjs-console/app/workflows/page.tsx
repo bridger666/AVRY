@@ -9,13 +9,16 @@ import {
   activateWorkflow, deactivateWorkflow,
 } from '@/hooks/useWorkflows'
 import { WorkflowCanvas as N8nWorkflowCanvas } from '@/components/workflow/WorkflowCanvas'
-import { AiraCopilotFloating } from '@/components/workflow/AiraCopilotFloating'
+import { CopilotTogglePanel } from '@/components/workflow/CopilotTogglePanel'
 import { WorkflowGenerationModal } from '@/components/workflow/WorkflowGenerationModal'
-import { useWorkflowCopilot } from '@/hooks/useWorkflowCopilot'
 import { retrieveWorkflowSpec, clearWorkflowSpec, convertHandoffToNodes } from '@/lib/workflowHandoff'
 import { StandardNodePalette } from '@/components/workflow/StandardNodePalette'
+import { DynamicNodePalette } from '@/components/workflow/DynamicNodePalette'
 import { clearCanvasState } from '@/hooks/useCanvasPersistence'
+import { detectNodeIntent } from '@/lib/workflows/nodeMapper'
 import type { AivoryWorkflowSpec } from '@/types/workflow'
+import { useRouterContext } from '@/contexts/RouterContext'
+import { ContinuedFromConsole } from '@/components/routing/ContinuedFromConsole'
 import styles from './workflows.module.css'
 
 // ── Adapter: AivoryWorkflowSpec → SavedWorkflow ──────────
@@ -133,7 +136,7 @@ const Icons = {
     </svg>
   ),
   aivoryAvatar: (
-    <img src="/Aivory_Avatar.svg" alt="AIRA" style={{ width: '18px', height: '18px' }} />
+    <img src="/Aivory_Avatar.svg" alt="Aivory" style={{ width: '18px', height: '18px' }} />
   ),
   robot: (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -528,7 +531,7 @@ function RightPanel({
                 <div className={styles.credField}>
                   <label className={styles.credFieldLabel}>{t('credentialName')}</label>
                   <span className={styles.credFieldHelper}>
-                    Beri nama supaya AIRA bisa mereferensikannya saat membangun workflow. Contoh: 'Salesforce Production'.
+                    Beri nama supaya Aivory bisa mereferensikannya saat membangun workflow. Contoh: 'Salesforce Production'.
                   </span>
                   <input 
                     className={styles.credInput}
@@ -650,6 +653,17 @@ function WorkflowsPageInner() {
   // Pending handoff nodes/edges to inject once the canvas mounts
   const pendingHandoffRef = useRef<{ nodes: any[]; edges: any[] } | null>(null)
 
+  const { pendingContext, clearPendingContext } = useRouterContext()
+  const [routingNotice, setRoutingNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!pendingContext) return
+    if (Date.now() - pendingContext.timestamp > 300000) { clearPendingContext(); return }
+    if (pendingContext.targetRoute !== 'workflows') return
+    setRoutingNotice(pendingContext.aiReplySummary || pendingContext.triggerMessage)
+    clearPendingContext()
+  }, [pendingContext, clearPendingContext])
+
   // ── Apps sidebar state ───────────────────────────────────
   const [apps, setApps] = useState<Array<{ id: string; name: string; description: string; icon: string; iconPath?: string; defaultAction?: string; categories: string[] }>>([])
   const [appsSearch, setAppsSearch] = useState('')
@@ -677,38 +691,13 @@ function WorkflowsPageInner() {
 
   const selected = workflows.find(w => w.workflow_id === selectedId) ?? null
 
-  // ── Copilot floating assistant ───────────────────────────
-  const [copilotOpen, setCopilotOpen] = useState(false)
-
   // ── Onboarding empty state ───────────────────────────────
   const [showOnboarding, setShowOnboarding] = useState(() => {
     if (typeof window === 'undefined') return true
     return !localStorage.getItem('hasSeenWorkflowOnboarding')
   })
 
-  // Dismiss onboarding when copilot opens
-  useEffect(() => {
-    if (copilotOpen && showOnboarding) {
-      setShowOnboarding(false)
-      localStorage.setItem('hasSeenWorkflowOnboarding', '1')
-    }
-  }, [copilotOpen, showOnboarding])
-
-  // Hotkey: '/' or Cmd/Ctrl+K → open copilot
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      if (e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key === 'k')) {
-        e.preventDefault()
-        setCopilotOpen(true)
-      }
-    }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [])
-  const { messages, loading: copilotLoading, error: copilotError,
-    lastSuggestion, sendChat, buildWorkflow, clearMessages } = useWorkflowCopilot({ currentSpec: selected })
+  // Keyboard shortcuts now handled by useCopilotPanel hook inside CopilotTogglePanel})
   // Load localStorage on mount; auto-select from ?selected param or first item
   useEffect(() => {
     const wfs = loadWorkflows()
@@ -966,6 +955,7 @@ function WorkflowsPageInner() {
           status: 'active',
           n8n_workflow_id: data.n8n_workflow_id,
           n8n_url: data.n8n_url,
+          n8nWebhookPath: data.n8nWebhookUrl || null,
         })
         setLocalWorkflows(loadWorkflows())
         showToast('Workflow activated ✓', 'success')
@@ -1003,28 +993,34 @@ function WorkflowsPageInner() {
   // ALWAYS creates a NEW workflow — never appends to existing canvas
   const handleCopilotApply = async (suggestion: import('@/hooks/useWorkflowCopilot').CopilotSuggestion) => {
     // Build React Flow nodes + edges from the copilot suggestion steps
-    const iconMap: Record<string, string> = {
-      trigger: 'webhook', action: 'http', condition: 'branch', channel: 'respond',
+    // Map nodeMapper intents to canvas icon/category
+    const intentToIcon: Record<string, string> = {
+      email: 'mail', messaging: 'slack', http: 'http', respond: 'respond',
+      filter: 'branch', transform: 'set', schedule: 'schedule', ai: 'http',
     }
-    const categoryMap: Record<string, string> = {
-      trigger: 'trigger', action: 'action', condition: 'condition', channel: 'channel',
+    const intentToCategory: Record<string, string> = {
+      email: 'channel', messaging: 'channel', http: 'action', respond: 'channel',
+      filter: 'condition', transform: 'action', schedule: 'trigger', ai: 'action',
     }
     const allSteps = [
       { step: 0, action: suggestion.trigger, tool: '', output: '', type: 'trigger' },
       ...suggestion.steps,
     ]
-    const rfNodes = allSteps.map((s, i) => ({
-      id: `copilot-${Date.now()}-${i}`,
-      type: 'standardNode' as const,
-      position: { x: 400, y: 100 + i * 180 },
-      data: {
-        label: s.action || `Step ${i + 1}`,
-        icon: iconMap[s.type || ''] ?? 'http',
-        category: categoryMap[s.type || ''] ?? 'action',
-        title: s.action || `Step ${i + 1}`,
-        description: s.output || s.tool || '',
-      },
-    }))
+    const rfNodes = allSteps.map((s, i) => {
+      const intent = detectNodeIntent(s.action || '', s.tool || '')
+      return {
+        id: `copilot-${Date.now()}-${i}`,
+        type: 'standardNode' as const,
+        position: { x: 400, y: 100 + i * 180 },
+        data: {
+          label: s.action || `Step ${i + 1}`,
+          icon: i === 0 ? 'webhook' : (intentToIcon[intent] ?? 'http'),
+          category: i === 0 ? 'trigger' : (intentToCategory[intent] ?? 'action'),
+          title: s.action || `Step ${i + 1}`,
+          description: s.output || s.tool || '',
+        },
+      }
+    })
     const rfEdges = allSteps.slice(0, -1).map((_, i) => ({
       id: `copilot-e-${Date.now()}-${i}`,
       source: rfNodes[i].id,
@@ -1038,7 +1034,7 @@ function WorkflowsPageInner() {
     // Generate a meaningful title from the suggestion trigger text
     const title = suggestion.trigger
       ? `${suggestion.trigger} (AI)`
-      : `AIRA Workflow ${new Date().toLocaleTimeString()}`
+      : `Aivory Workflow ${new Date().toLocaleTimeString()}`
 
     const newWorkflow: SavedWorkflow = {
       workflow_id: `workflow_${Date.now()}`,
@@ -1077,8 +1073,7 @@ function WorkflowsPageInner() {
       body: JSON.stringify({ nodes: rfNodes, edges: rfEdges }),
     }).catch(() => {})
 
-    setCopilotOpen(false)
-    showToast('New workflow created from AIRA suggestion ✓', 'success')
+    showToast('New workflow created from Aivory suggestion ✓', 'success')
   }
 
   // ── Generation apply handler ─────────────────────────────
@@ -1148,7 +1143,7 @@ function WorkflowsPageInner() {
       <div className={styles.onboardingOverlay}>
         <div className={styles.onboardingContent}>
           <div className={styles.onboardingAvatarWrap}>
-            <img src="/Aivory_Avatar.svg" alt="AIRA" width={28} height={28} />
+            <img src="/Aivory_Avatar.svg" alt="Aivory" width={28} height={28} />
           </div>
           <h2 className={styles.onboardingTitle}>{t('onboardingTitle')}</h2>
           <p className={styles.onboardingSubtitle}>
@@ -1156,13 +1151,13 @@ function WorkflowsPageInner() {
           </p>
           <button
             className={styles.onboardingCTA}
-            onClick={() => setCopilotOpen(true)}
+            onClick={() => {}}
           >
             <img src="/Aivory_Avatar.svg" alt="" width={16} height={16} aria-hidden="true" />
             {t('askAiraCopilot')}
           </button>
           <p className={styles.onboardingHotkey}>
-            Press <kbd>/</kbd> or <kbd>⌘K</kbd> anytime to open AIRA Copilot
+            Press <kbd>/</kbd> or <kbd>⌘K</kbd> anytime to open Aivory Copilot
           </p>
           <p className={styles.onboardingSecondary}>
             {t('alreadyHaveBlueprint')}{' '}
@@ -1173,15 +1168,8 @@ function WorkflowsPageInner() {
         </div>
 
         {/* Copilot panel renders over the overlay */}
-        <AiraCopilotFloating
-          isOpen={copilotOpen}
-          onOpenChange={setCopilotOpen}
-          messages={messages}
-          loading={copilotLoading}
-          error={copilotError}
-          lastSuggestion={lastSuggestion}
-          onSendChat={sendChat}
-          onBuildWorkflow={buildWorkflow}
+        <CopilotTogglePanel
+          currentSpec={null}
           onApplySuggestion={handleCopilotApply}
         />
       </div>
@@ -1190,6 +1178,9 @@ function WorkflowsPageInner() {
 
   return (
     <div className={styles.workflowsLayout}>
+      {routingNotice !== null && (
+        <ContinuedFromConsole summary={routingNotice} onDismiss={() => setRoutingNotice(null)} />
+      )}
 
       {/* ── Left sidebar ── */}
       <aside className={`${styles.workflowList} ${isWorkflowListCollapsed ? styles.workflowListCollapsed : ''}`}>
@@ -1365,7 +1356,7 @@ function WorkflowsPageInner() {
             </div>
 
             {/* Standard Nodes palette — drag to canvas */}
-            <StandardNodePalette />
+            <DynamicNodePalette />
           </div>
         )}
       </aside>
@@ -1513,6 +1504,11 @@ function WorkflowsPageInner() {
                         )}
                       </div>
                     )}
+                    {selected.n8nWebhookPath && (
+                      <div style={{ fontSize: '0.75rem', opacity: 0.8, cursor: 'text', userSelect: 'all', marginTop: 4, wordBreak: 'break-all' }}>
+                        Webhook: {selected.n8nWebhookPath}
+                      </div>
+                    )}
                   </>
                 ) : (
                   // Preview workflow — Activate button
@@ -1539,17 +1535,10 @@ function WorkflowsPageInner() {
 
           {/* Canvas flow — fills remaining space */}
           <div className={styles.canvasBody}>
-            {/* ── AIRA Copilot — floating pill/panel ── */}
-            <AiraCopilotFloating
-              isOpen={copilotOpen}
-              onOpenChange={setCopilotOpen}
-              messages={messages}
-              loading={copilotLoading}
-              error={copilotError}
+            {/* ── Aivory Copilot — toggle panel ── */}
+            <CopilotTogglePanel
+              currentSpec={selected ? selected : null}
               currentWorkflowName={selected?.title}
-              lastSuggestion={lastSuggestion}
-              onSendChat={sendChat}
-              onBuildWorkflow={buildWorkflow}
               onApplySuggestion={handleCopilotApply}
             />
             <N8nWorkflowCanvas

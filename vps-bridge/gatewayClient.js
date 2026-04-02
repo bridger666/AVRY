@@ -3,7 +3,7 @@
  * Routes plain chat requests to internal gateway instead of OpenRouter
  */
 
-const axios = require('axios');
+const { post } = require('./lib/http');
 const { logger } = require('./logger');
 
 const { N8N_WEBHOOK_BASE } = require('./n8nClient');
@@ -28,7 +28,7 @@ async function sendToGateway(message, requestId) {
       message_length: message.length
     });
     
-    const response = await axios.post(
+    const response = await post(
       GATEWAY_CONFIG.url,
       { message },
       {
@@ -42,25 +42,25 @@ async function sendToGateway(message, requestId) {
     logger.debug('Received response from gateway', { 
       request_id: requestId,
       status: response.status,
-      model: response.data?.model
+      model: response?.model
     });
     
     // Extract response from gateway format
-    if (!response.data || !response.data.response) {
+    if (!response || !response.response) {
       const err = new Error('Invalid response from gateway: missing response field');
       err.statusCode = 502;
       err.errorCode = 'GATEWAY_INVALID_RESPONSE';
       throw err;
     }
     
-    return response.data.response;
+    return response.response;
     
   } catch (error) {
     logger.error('Gateway request failed', { 
       request_id: requestId,
       error: error.message,
       code: error.code,
-      status: error.response?.status
+      status: error.statusCode
     });
     
     // Map gateway errors to standard error format
@@ -82,7 +82,7 @@ async function sendToGateway(message, requestId) {
       throw err;
     }
     
-    if (error.response && error.response.status >= 500) {
+    if (error.statusCode && error.statusCode >= 500) {
       const err = new Error('Internal gateway error. Please try again.');
       err.statusCode = 502;
       err.errorCode = 'GATEWAY_ERROR';
@@ -103,7 +103,7 @@ async function sendToGateway(message, requestId) {
  */
 async function gatewayHealthCheck() {
   try {
-    const response = await axios.post(
+    const response = await post(
       GATEWAY_CONFIG.url,
       { message: 'health check' },
       { timeout: 5000 }

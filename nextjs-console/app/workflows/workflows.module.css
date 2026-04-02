@@ -1,7 +1,7 @@
 /* ─────────────────────────────────────────────────────────
    AIVORY WORKFLOW EDITOR — unified dark warm theme
    Color system:
-     Canvas bg:      var(--bg-main, #1e1d1a)
+     Canvas bg:      var(--bg-main, #353531)
      Sidebar bg:     rgba(255,255,255,0.02)
      Card surface:   rgba(255,255,255,0.055)
      Header bg:      rgba(255,255,255,0.025)
@@ -16,7 +16,7 @@
   display: flex;
   height: 100vh;
   overflow: hidden;
-  background: var(--bg-main, #1e1d1a);
+  background: var(--bg-main, #353531);
   font-family: 'Inter', 'Inter Tight', system-ui, sans-serif;
 }
 
@@ -27,7 +27,7 @@
   justify-content: center;
   width: 100%;
   height: 100vh;
-  background: var(--bg-main, #1e1d1a);
+  background: var(--bg-main, #353531);
 }
 .emptyContent {
   text-align: center;
@@ -255,7 +255,7 @@
 }
 .status_archived {
   background: rgba(255,255,255,0.03);
-  color: #6a6a6a;
+  color: #a1a1aa;
   border: 1px solid rgba(255,255,255,0.05);
 }
 
@@ -293,7 +293,7 @@
   min-height: 0;
   height: 100%;
   position: relative;
-  background-color: var(--bg-main, #1e1d1a);
+  background-color: var(--bg-main, #353531);
   background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
   background-size: 24px 24px;
 }
@@ -395,7 +395,7 @@
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  background: #1e1d1a;
+  background: #353531;
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 10px;
   padding: 6px;
@@ -552,7 +552,7 @@
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  background: #1e1d1a;
+  background: #353531;
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 10px;
   padding: 6px;
@@ -815,7 +815,7 @@
   align-items: center;
   gap: 4px;
 }
-.canvasStatIcon { color: #6a6a6a; }
+.canvasStatIcon { color: #a1a1aa; }
 
 /* ── Integrations collapsible bottom bar ────────────────── */
 .integrationsBar {
@@ -844,7 +844,7 @@
 .integrationsBarLabel {
   font-size: 10px;
   font-weight: 600;
-  color: #6a6a6a;
+  color: #a1a1aa;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-right: 4px;
@@ -870,11 +870,11 @@
 }
 .integrationsBarBadge {
   font-size: 10px;
-  color: #6a6a6a;
+  color: #a1a1aa;
   white-space: nowrap;
 }
 .integrationsBarChevron {
-  color: #6a6a6a;
+  color: #a1a1aa;
   transition: transform 0.2s;
   flex-shrink: 0;
 }
@@ -1095,7 +1095,7 @@
   backdrop-filter: blur(2px);
 }
 .aiModal {
-  background: var(--bg-main, #1e1d1a);
+  background: var(--bg-main, #353531);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 16px;
   padding: 28px;
@@ -1185,7 +1185,7 @@
 .aiPreviewLabel {
   font-size: 10px;
   font-weight: 700;
-  color: #6a6a6a;
+  color: #a1a1aa;
   text-transform: uppercase;
   letter-spacing: 0.6px;
   margin-bottom: 4px;
@@ -1207,14 +1207,14 @@
 .aiPreviewDivider {
   display: flex;
   align-items: center;
-  color: #6a6a6a;
+  color: #a1a1aa;
   font-size: 16px;
   padding-top: 22px;
 }
 
 /* ── Save Workflow modal ─────────────────────────────────── */
 .saveModal {
-  background: var(--bg-main, #1e1d1a);
+  background: var(--bg-main, #353531);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 16px;
   padding: 28px;
@@ -1327,7 +1327,7 @@
 
 /* ── React Flow customization ────────────────────────────── */
 .canvasBody :global(.react-flow__container) {
-  background-color: var(--bg-main, #1e1d1a);
+  background-color: var(--bg-main, #353531);
   background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
   background-size: 24px 24px;
 }
@@ -1354,7 +1354,7 @@
 }
 .canvasBody :global(.react-flow__handle) {
   background: #00e59e;
-  border: 2px solid var(--bg-main, #1e1d1a);
+  border: 2px solid var(--bg-main, #353531);
   width: 10px;
   height: 10px;
 }
@@ -1578,7 +1578,7 @@
 /* ── Step Editor Helper Text & API Credentials Section ────── */
 .fieldHelperText {
   font-size: 11px;
-  color: #6a6a6a;
+  color: #a1a1aa;
   font-style: italic;
   line-height: 1.5;
   margin-bottom: 5px;
@@ -1595,7 +1595,7 @@
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.09em;
-  color: #6a6a6a;
+  color: #a1a1aa;
   text-transform: uppercase;
   user-select: none;
   transition: color 0.15s;
@@ -1613,14 +1613,14 @@
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.07em;
-  color: #6a6a6a;
+  color: #a1a1aa;
   text-transform: uppercase;
   margin-bottom: 3px;
 }
 .credFieldHelper {
   display: block;
   font-size: 11px;
-  color: #4a4a4a;
+  color: #7a7875;
   font-style: italic;
   line-height: 1.45;
   margin-bottom: 6px;
@@ -1662,7 +1662,7 @@
 .jsonError { font-size: 10px; color: #ff6b6b; margin-top: 3px; display: block; }
 .subSectionHeader {
   font-size: 10px;
-  color: #6a6a6a;
+  color: #a1a1aa;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1794,7 +1794,7 @@
 }
 .copilotTextarea:focus { border-color: rgba(0,229,158,0.4); }
 .copilotTextarea:disabled { opacity: 0.5; cursor: not-allowed; }
-.copilotTextarea::placeholder { color: #6a6a6a; }
+.copilotTextarea::placeholder { color: #a1a1aa; }
 
 .copilotGenerateBtn {
   display: flex;
@@ -1847,7 +1847,7 @@
   justify-content: center;
   width: 100%;
   height: 100vh;
-  background-color: var(--bg-main, #1e1d1a);
+  background-color: var(--bg-main, #353531);
   background-image: radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px);
   background-size: 24px 24px;
   overflow: hidden;
@@ -1923,7 +1923,7 @@
 
 .onboardingHotkey {
   font-size: 11px;
-  color: #6a6a6a;
+  color: #a1a1aa;
   margin: 0;
 }
 
@@ -1941,7 +1941,7 @@
 .onboardingSecondary {
   margin-top: 24px;
   font-size: 12px;
-  color: #6a6a6a;
+  color: #a1a1aa;
 }
 
 .onboardingSecondaryLink {
@@ -2005,7 +2005,7 @@
 }
 
 .appsSearch::placeholder {
-  color: #6a6a6a;
+  color: #a1a1aa;
 }
 
 .appsCategoryPills {
@@ -2112,7 +2112,7 @@
 
 .appsEmpty {
   font-size: 11px;
-  color: #6a6a6a;
+  color: #a1a1aa;
   text-align: center;
   padding: 12px;
   margin: 0;

@@ -26,9 +26,11 @@ import { StepAiraEditModal } from './StepAiraEditModal';
 import { WorkflowAiraRefineModal } from './WorkflowAiraRefineModal';
 import { AddWithAiraPanel } from './AddWithAiraPanel';
 import { ExplainPathModal } from './ExplainPathModal';
+import { AgentConfigPanel } from './AgentConfigPanel';
 import AppNode from './AppNode';
 import TriggerNode from './TriggerNode';
 import StandardNode from './StandardNode';
+import AgentNode from './AgentNode';
 import { N8NAdaptiveEdge } from './WorkflowEdges';
 import NodeInspectorPanel from './inspector/NodeInspectorPanel';
 import { n8nToReactFlow, reactFlowToN8n } from '@/lib/n8nMapper';
@@ -36,6 +38,7 @@ import { loadCanvasState, fetchCanvasState, useCanvasAutosave } from '@/hooks/us
 import type { WorkflowNodeData } from '@/types/workflow-node';
 import type { SavedWorkflow } from '@/hooks/useWorkflows';
 import type { WorkflowStep, AivoryWorkflowSpec } from '@/types/workflows';
+import { detectNodeIntent } from '@/lib/workflows/nodeMapper';
 
 type Props = {
   workflowId: string;
@@ -110,6 +113,9 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
   // Explain path modal state
   const [showExplainModal, setShowExplainModal] = useState(false);
   const [explainTargetStep, setExplainTargetStep] = useState<WorkflowStep | null>(null);
+  // Agent config panel state
+  const [showAgentConfigPanel, setShowAgentConfigPanel] = useState(false);
+  const [agentConfigNodeId, setAgentConfigNodeId] = useState<string | null>(null);
 
   // ── Listen for edit-node events from BaseWorkflowNode edit button ──
   useEffect(() => {
@@ -171,15 +177,77 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
             y: event.clientY - reactFlowBounds.top,
           };
           const newId = `std-${Date.now()}`;
+
+          // Handle agent node type specially
+          if (nodeDef.type === 'agent') {
+            const newNode: Node<WorkflowNodeData> = {
+              id: newId,
+              type: 'standardNode',
+              position,
+              data: {
+                label: nodeDef.label,
+                icon: nodeDef.icon,
+                category: 'agent',
+                title: nodeDef.label,
+                agentId: undefined,
+                agentName: undefined,
+                onConfigureAgent: () => {
+                  setAgentConfigNodeId(newId);
+                  setShowAgentConfigPanel(true);
+                },
+                onAddStep: () => {
+                  setAiraSourceStepId(newId);
+                  setShowAddWithAiraPanel(true);
+                },
+              } as any,
+            };
+            setNodes((nds) => [...nds, newNode]);
+          } else {
+            const newNode: Node<WorkflowNodeData> = {
+              id: newId,
+              type: 'standardNode',
+              position,
+              data: {
+                label: nodeDef.label,
+                icon: nodeDef.icon,
+                category: nodeDef.category,
+                title: nodeDef.label,
+                onAddStep: () => {
+                  setAiraSourceStepId(newId);
+                  setShowAddWithAiraPanel(true);
+                },
+              } as any,
+            };
+            setNodes((nds) => [...nds, newNode]);
+          }
+        } catch (err) {
+          console.error('[onDrop standard]', err);
+        }
+        return;
+      }
+
+      // ── Dynamic node drop ──────────────────────────────
+      const nodeData = event.dataTransfer.getData('application/aivory-node');
+      if (nodeData) {
+        try {
+          const nodeDef = JSON.parse(nodeData);
+          const reactFlowBounds = (event.target as HTMLElement).getBoundingClientRect();
+          const position = {
+            x: event.clientX - reactFlowBounds.left,
+            y: event.clientY - reactFlowBounds.top,
+          };
+          const newId = `node-${Date.now()}`;
           const newNode: Node<WorkflowNodeData> = {
             id: newId,
             type: 'standardNode',
             position,
             data: {
               label: nodeDef.label,
-              icon: nodeDef.icon,
+              icon: nodeDef.type, // Use type as icon key for now
               category: nodeDef.category,
               title: nodeDef.label,
+              description: nodeDef.description,
+              color: nodeDef.color,
               onAddStep: () => {
                 setAiraSourceStepId(newId);
                 setShowAddWithAiraPanel(true);
@@ -188,7 +256,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
           };
           setNodes((nds) => [...nds, newNode]);
         } catch (err) {
-          console.error('[onDrop standard]', err);
+          console.error('[onDrop dynamic]', err);
         }
         return;
       }
@@ -420,7 +488,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
     }
   }, [n8nWorkflowId, workflowId]);
 
-  const nodeTypes = useMemo(() => ({ appNode: AppNode as any, triggerNode: TriggerNode as any, standardNode: StandardNode as any }), []);
+  const nodeTypes = useMemo(() => ({ appNode: AppNode as any, triggerNode: TriggerNode as any, standardNode: StandardNode as any, agent: AgentNode as any }), []);
   const defaultEdgeOptions = useMemo(() => ({
     type: 'n8nAdaptive' as const,
     animated: false,
@@ -520,9 +588,9 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
                   opacity: (airaLoading || isEmpty) ? 0.5 : 1,
                   transition: 'all 0.15s',
                 }}
-                title={isEmpty ? 'Add steps to refine workflow' : 'Refine workflow with AIRA'}
+                title={isEmpty ? 'Add steps to refine workflow' : 'Refine workflow with Aivory'}
               >
-                Refine with AIRA
+                Refine with Aivory
               </button>
               <button
                 type="button"
@@ -561,7 +629,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
               zIndex: 10,
               width: 20,
               height: 48,
-              background: 'var(--surface-secondary, #1e1d1a)',
+              background: 'var(--surface-secondary, #353531)',
               border: '1px solid var(--border-subtle, rgba(255,255,255,0.07))',
               borderRight: 'none',
               borderRadius: '6px 0 0 6px',
@@ -581,7 +649,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
               e.currentTarget.style.color = 'var(--text-primary, #e8e6e3)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--surface-secondary, #1e1d1a)';
+              e.currentTarget.style.background = 'var(--surface-secondary, #353531)';
               e.currentTarget.style.color = 'var(--text-secondary, #a8a6a2)';
             }}
           >
@@ -715,7 +783,13 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
           onClose={() => setShowWorkflowAiraModal(false)}
           onApply={(updatedWorkflow) => {
             // Update nodes and edges based on updated workflow
-            const updatedNodes = updatedWorkflow.steps.map((step, i) => ({
+            const updatedNodes = updatedWorkflow.steps.map((step, i) => {
+              const intentToIcon: Record<string, string> = {
+                email: 'mail', messaging: 'send', http: 'http', respond: 'respond',
+                filter: 'branch', transform: 'edit', schedule: 'schedule', ai: 'sparkles',
+              }
+              const intent = detectNodeIntent(step.action || '', step.tool || '')
+              return {
               id: `step-${i}`,
               type: 'standardNode' as const,
               position: { x: 0, y: i * 160 },
@@ -725,9 +799,10 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
                 subtitle: step.tool || undefined,
                 description: step.output || undefined,
                 category: 'action' as const,
-                icon: 'http',
+                icon: intentToIcon[intent] ?? 'http',
               } as WorkflowNodeData,
-            }))
+            }
+            })
             const updatedEdges = updatedNodes.slice(0, -1).map((_, i) => ({
               id: `e-${i}-${i + 1}`,
               source: `step-${i}`,
@@ -802,6 +877,37 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
           onClose={() => {
             setShowExplainModal(false);
             setExplainTargetStep(null);
+          }}
+        />
+      )}
+
+      {/* ── Agent Config Panel ── */}
+      {showAgentConfigPanel && agentConfigNodeId && (
+        <AgentConfigPanel
+          nodeId={agentConfigNodeId}
+          agentId={nodes.find(n => n.id === agentConfigNodeId)?.data?.agentId}
+          agentName={nodes.find(n => n.id === agentConfigNodeId)?.data?.agentName}
+          onSave={(agentId, agentName) => {
+            setNodes((nds) =>
+              nds.map((n) =>
+                n.id === agentConfigNodeId
+                  ? {
+                      ...n,
+                      data: {
+                        ...n.data,
+                        agentId,
+                        agentName,
+                      },
+                    }
+                  : n
+              )
+            );
+            setShowAgentConfigPanel(false);
+            setAgentConfigNodeId(null);
+          }}
+          onClose={() => {
+            setShowAgentConfigPanel(false);
+            setAgentConfigNodeId(null);
           }}
         />
       )}

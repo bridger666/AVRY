@@ -52,9 +52,9 @@ export function StepAiraEditModal({
       if (errorData?.errorCode) {
         const airaError = errorData as AiraErrorResponse
         if (airaError.errorCode === 'UNSUPPORTED') {
-          setError("AIRA can't safely perform that change. Try a more specific instruction.")
+          setError("Aivory can't safely perform that change. Try a more specific instruction.")
         } else if (airaError.errorCode === 'TIMEOUT' || airaError.errorCode === 'LLM_ERROR') {
-          setError('AIRA ran into an issue. Please try again.')
+          setError('Aivory ran into an issue. Please try again.')
         } else {
           setError(airaError.errorMessage || 'An error occurred')
         }
@@ -86,7 +86,7 @@ export function StepAiraEditModal({
     >
       <div
         style={{
-          background: '#1e1d1a',
+          background: '#353531',
           border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: 12,
           padding: 24,
@@ -98,7 +98,7 @@ export function StepAiraEditModal({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h3 style={{ margin: 0, fontSize: 15, fontWeight: 300, color: '#d4d2ce' }}>
-            Edit Step {stepIndex + 1} with AIRA
+            Edit Step {stepIndex + 1} with Aivory
           </h3>
           <button
             onClick={onClose}
@@ -123,7 +123,7 @@ export function StepAiraEditModal({
 
         <div style={{ marginBottom: 16 }}>
           <label style={{ display: 'block', fontSize: 12, color: '#a8a6a2', marginBottom: 8 }}>
-            How should AIRA improve this step?
+            How should Aivory improve this step?
           </label>
           <textarea
             value={instruction}
@@ -147,7 +147,7 @@ export function StepAiraEditModal({
         </div>
 
         <div style={{ fontSize: 12, color: '#5a5a58', marginBottom: 16, lineHeight: 1.5 }}>
-          AIRA will adjust this step while keeping the rest of the workflow consistent.
+          Aivory will adjust this step while keeping the rest of the workflow consistent.
         </div>
 
         {error && (
@@ -214,7 +214,7 @@ export function StepAiraEditModal({
               btn.style.background = '#00e59e'
             }}
           >
-            {loading ? 'Editing…' : 'Ask AIRA to edit this step'}
+            {loading ? 'Editing…' : 'Ask Aivory to edit this step'}
           </button>
         </div>
       </div>

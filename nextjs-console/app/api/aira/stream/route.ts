@@ -61,8 +61,15 @@ export async function POST(request: NextRequest) {
     }
 
     // /bridge/aira returns JSON — convert to SSE for the frontend chat stream
-    const bridgeData = await bridgeResponse.json() as { raw_agent_response?: string }
-    const text = bridgeData.raw_agent_response ?? ''
+    // Bridge now returns both final_text (cleaned) and raw_agent_response (compat)
+    const bridgeData = await bridgeResponse.json() as {
+      raw_agent_response?: string
+      final_text?: string
+      mode?: string
+      model?: string
+      skill?: string
+    }
+    const text = bridgeData.final_text ?? bridgeData.raw_agent_response ?? ''
     const enc = new TextEncoder()
 
     const { readable, writable } = new TransformStream()

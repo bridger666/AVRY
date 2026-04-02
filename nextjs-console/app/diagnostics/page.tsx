@@ -4,12 +4,28 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { FreeDiagnosticService } from '@/services/freeDiagnostic'
+import { useRouterContext } from '@/contexts/RouterContext'
+import { ContinuedFromConsole } from '@/components/routing/ContinuedFromConsole'
 import styles from './diagnostics.module.css'
 
 export default function DiagnosticsPage() {
   const [freeDiagnosticCompleted, setFreeDiagnosticCompleted] = useState(false)
   const [freeDiagnosticScore, setFreeDiagnosticScore] = useState<number | null>(null)
+  const [routingNotice, setRoutingNotice] = useState<string | null>(null)
   const t = useTranslations('diagnostics')
+
+  const { pendingContext, clearPendingContext } = useRouterContext()
+
+  useEffect(() => {
+    if (!pendingContext) return
+    if (Date.now() - pendingContext.timestamp > 5 * 60 * 1000) {
+      clearPendingContext()
+      return
+    }
+    if (pendingContext.targetRoute !== 'diagnostic') return
+    setRoutingNotice(pendingContext.aiReplySummary || pendingContext.triggerMessage)
+    clearPendingContext()
+  }, [pendingContext, clearPendingContext])
 
   useEffect(() => {
     const result = FreeDiagnosticService.getResult()
@@ -22,6 +38,12 @@ export default function DiagnosticsPage() {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.pageContent}>
+        {routingNotice !== null && (
+          <ContinuedFromConsole
+            summary={routingNotice}
+            onDismiss={() => setRoutingNotice(null)}
+          />
+        )}
         <header className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>{t('title')}</h1>
           <p className={styles.pageDescription}>

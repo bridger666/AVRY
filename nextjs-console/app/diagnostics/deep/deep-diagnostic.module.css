@@ -1,8 +1,9 @@
 /* Deep Diagnostic Flow — glassmorphism, matches dashboard */
 
 .pageContainer {
-  min-height: 100vh;
-  background-color: var(--bg-main, #1e1d1a);
+  height: 100%;
+  overflow-y: auto;
+  background-color: var(--bg-main, #353531);
   color: #f5f5f4;
   font-family: 'Inter Tight', sans-serif;
   display: flex;
@@ -12,8 +13,9 @@
 /* ── Loading ─────────────────────────────────────────────── */
 
 .loadingContainer {
-  min-height: 100vh;
-  background-color: var(--bg-main, #1e1d1a);
+  height: 100%;
+  overflow-y: auto;
+  background-color: var(--bg-main, #353531);
   display: flex;
   align-items: center;
   justify-content: center;

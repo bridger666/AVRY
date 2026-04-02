@@ -2,15 +2,21 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useRef, useEffect, useCallback } from "react"
+import Image from "next/image"
 import ChatMessage from "@/components/ChatMessage"
 import ChatInput from "@/components/ChatInput"
 import ConsoleTopBar from "@/components/console/ConsoleTopBar"
+import { CopilotTogglePanel } from "@/components/workflow/CopilotTogglePanel"
+import FollowUpChips from "@/components/chat/FollowUpChips"
+import { RoutingSuggestBanner } from "@/components/chat/RoutingSuggestBanner"
 import { getSessionId, clearSession, generateSessionId, saveSession } from "@/lib/session"
 import { streamConsoleResponse, validateFileSize } from "@/lib/streaming"
 import { extractTextFromFile } from "@/lib/fileExtractor"
 import { saveSessionMessages, loadSessionMessages, listSessions, ChatStorageError } from "@/lib/chatPersistence"
+import { useAgenticStream } from "@/hooks/useAgenticStream"
+import { useAutoScroll } from "@/hooks/useAutoScroll"
+import { useIntentRouter } from "@/hooks/useIntentRouter"
 import type { Attachment } from "@/components/UploadMenu"
-import styles from "./console.module.css"
 
 interface Message { id: string; role: "user" | "assistant"; content: string; isStreaming?: boolean }
 interface ChatSession { id: string; title: string; messages: Message[]; createdAt: number; pinned?: boolean }
@@ -19,6 +25,11 @@ interface Toast { id: string; type: "success" | "error"; message: string }
 const QUICK_TEMPLATES = [
   "Generate onboarding workflow", "Check compliance gap", "Summarize my diagnostics",
   "Suggest automation opportunities", "Review my AI readiness",
+]
+const DEFAULT_SUGGESTIONS = [
+  "Can you elaborate on that?",
+  "Show me an example",
+  "What are the tradeoffs?",
 ]
 const ALLOWED_TYPES = [
   "text/plain", "text/csv", "text/markdown", "application/json", "application/pdf",
@@ -36,10 +47,15 @@ export default function ConsolePage() {
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [toasts, setToasts] = useState<Toast[]>([])
   const [isDragging, setIsDragging] = useState(false)
-  // Tracks message IDs where workflow/automation intent was detected
-  const [workflowHints, setWorkflowHints] = useState<Set<string>>(new Set())
+  const [followUpSuggestions, setFollowUpSuggestions] = useState<string[]>([])
+  const { agenticState, processEvent, reset: resetAgentic } = useAgenticStream()
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { scrollToBottom, isAtBottom } = useAutoScroll(scrollContainerRef, [messages])
+  const { pendingRoute, triggerClassification, dismissRoute, acceptRoute } = useIntentRouter()
+
+  console.log('[Page] rendering messages, pendingRoute:', pendingRoute, 'lastAssistantId:', messages[messages.length - 1]?.id)
 
   useEffect(() => {
     const sid = getSessionId() || generateSessionId()
@@ -52,9 +68,7 @@ export default function ConsolePage() {
     setSessions(listSessions())
   }, [])
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+  // Auto-scroll is now handled by useAutoScroll hook via scrollContainerRef
 
   const addToast = useCallback((type: Toast["type"], message: string) => {
     const id = Math.random().toString(36).slice(2)
@@ -64,6 +78,7 @@ export default function ConsolePage() {
 
   const handleSend = useCallback(async (text: string, atts: Attachment[]) => {
     if (!text.trim() && atts.length === 0) return
+    setFollowUpSuggestions([])
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: text }
     setMessages(p => [...p, userMsg])
     setAttachments([])
@@ -80,12 +95,10 @@ export default function ConsolePage() {
         messages: allMessages,
       })
       for await (const chunk of stream) {
+        processEvent(chunk as any)
         if (chunk.type === "chunk" && chunk.content) {
           finalContent += chunk.content
           setMessages(p => p.map(m => m.id === assistantId ? { ...m, content: m.content + chunk.content } : m))
-        } else if (chunk.type === "workflow_spec" && chunk.workflow) {
-          // AIRA detected a workflow intent — show hint to use Workflows tab
-          setWorkflowHints(prev => new Set(prev).add(assistantId))
         } else if (chunk.type === "error") {
           addToast("error", chunk.error || "Something went wrong.")
           setMessages(p => p.filter(m => m.id !== assistantId))
@@ -93,6 +106,10 @@ export default function ConsolePage() {
           break
         } else if (chunk.type === "done") {
           setMessages(p => p.map(m => m.id === assistantId ? { ...m, isStreaming: false } : m))
+          // Set follow-up suggestions after the last AI message completes
+          setFollowUpSuggestions(DEFAULT_SUGGESTIONS)
+          // Trigger intent classification after AI stream ends
+          triggerClassification(text, finalContent)
         }
       }
     } catch {
@@ -114,7 +131,7 @@ export default function ConsolePage() {
         }
       }
     }
-  }, [currentSessionId, messages, addToast])
+  }, [currentSessionId, messages, addToast, processEvent])
 
   const handleNewChat = useCallback(() => {
     // Save current session before clearing
@@ -132,9 +149,9 @@ export default function ConsolePage() {
     saveSession(sid)
     setCurrentSessionId(sid)
     setMessages([])
-    setWorkflowHints(new Set())
+    resetAgentic()
     setSessions(listSessions())
-  }, [currentSessionId, messages, addToast])
+  }, [currentSessionId, messages, addToast, resetAgentic])
 
   const handleFileSelect = useCallback(async (files: FileList | null) => {
     if (!files) return
@@ -156,139 +173,158 @@ export default function ConsolePage() {
   const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(true) }, [])
   const handleDragLeave = useCallback(() => setIsDragging(false), [])
 
-  /** Detect workflow/automation intent in a message */
-  const hasWorkflowIntent = useCallback((text: string) => {
-    const keywords = /\b(workflow|automation|otomasi|automate|build workflow|buat workflow|alur kerja|n8n)\b/i
-    return keywords.test(text)
-  }, [])
-
-  /**
-   * CTA language is derived from last user message language, not hardcoded.
-   * Simple heuristic: if last user message contains common Indonesian markers → 'id', else 'en'.
-   */
-  const detectConversationLang = useCallback((): "en" | "id" => {
-    const lastUserMsg = messages.filter(m => m.role === "user").slice(-1)[0]?.content || ""
-    if (!lastUserMsg) return "en"
-    const idMarkers = /\b(saya|aku|tolong|buat|buatkan|bagaimana|cara|dengan|untuk|dari|yang|ini|itu|sudah|belum|bisa|tidak|mau|ingin|mohon|silakan|terima kasih|otomasi|alur kerja)\b/i
-    return idMarkers.test(lastUserMsg) ? "id" : "en"
-  }, [messages])
-
   return (
-    <div className={styles.consoleWrapper} onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave}>
+    <div className="flex flex-col h-full bg-[#353531]" onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave}>
       <ConsoleTopBar onNewChat={handleNewChat} />
 
-      <div className={styles.toastContainer}>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {messages.length === 0 ? (
+          // Empty state: centered layout
+          <div className="flex-1 flex flex-col items-center justify-center px-6">
+            <div className="max-w-[800px] mx-auto text-center">
+              <div className="w-16 h-16 flex items-center justify-center mx-auto mb-6">
+                <Image
+                  src="/Aivory_Avatar.svg"
+                  alt="Aivory"
+                  width={40}
+                  height={40}
+                />
+              </div>
+              <h1 className="text-2xl font-semibold text-white mb-2">
+                What can I do for you today?
+              </h1>
+              <p className="text-sm text-[#d6d6c9] leading-relaxed">
+                Ask Aivory about your business goals, diagnostics, or AI System Blueprint, then turn them into workflows and automation.
+              </p>
+            </div>
+
+            <div className="w-full max-w-[800px] mt-6">
+              <ChatInput
+                onSend={(text: string) => handleSend(text, attachments)}
+                disabled={isStreaming}
+              />
+            </div>
+          </div>
+        ) : (
+          // Has messages: chat fills top, input floats at bottom
+          <>
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-8 py-8 pb-44">
+              <div className="max-w-[800px] mx-auto gap-0 flex flex-col">
+                {messages.map(m => (
+                  <div key={m.id}>
+                    <ChatMessage 
+                      role={m.role} 
+                      content={m.content} 
+                      isStreaming={m.isStreaming} 
+                      agenticState={m.role === 'assistant' && m.id === messages[messages.length - 1]?.id ? agenticState : undefined}
+                      onAcceptRoute={acceptRoute}
+                      onDismissRoute={dismissRoute}
+                    />
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+                {/* Intent routing banner - rendered at page level, independent of message renderer */}
+                {pendingRoute && messages.length > 0 && messages[messages.length - 1]?.role === 'assistant' && !messages[messages.length - 1]?.isStreaming && (
+                  <div className="mt-2">
+                    <RoutingSuggestBanner 
+                      intent={pendingRoute} 
+                      onAccept={acceptRoute} 
+                      onDismiss={dismissRoute} 
+                    />
+                  </div>
+                )}
+                {/* Follow-up chips - only show after the last AI message */}
+                {messages.length > 0 && messages[messages.length - 1].role === "assistant" && followUpSuggestions.length > 0 && (
+                  <FollowUpChips
+                    suggestions={followUpSuggestions}
+                    onSelect={(suggestion) => {
+                      setFollowUpSuggestions([])
+                      handleSend(suggestion, attachments)
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+            {/* Floating input bar — sticky at bottom, content scrolls behind it */}
+            <div className="sticky bottom-0 z-10 px-8 pt-2 pb-4" style={{ background: 'linear-gradient(to bottom, transparent, #353531 24px)' }}>
+              <div className="max-w-[800px] mx-auto">
+                <ChatInput
+                  onSend={(text: string) => handleSend(text, attachments)}
+                  disabled={isStreaming}
+                />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Toast container */}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
         {toasts.map(toast => (
-          <div key={toast.id} className={`${styles.toast} ${toast.type === "success" ? styles.toastSuccess : styles.toastError}`}>
+          <div key={toast.id} className={`px-4 py-2 rounded-lg text-sm ${
+            toast.type === "success"
+              ? "bg-green-900/50 border border-green-700 text-green-300"
+              : "bg-red-900/50 border border-red-700 text-red-300"
+          }`}>
             {toast.message}
           </div>
         ))}
       </div>
 
-      <div className={styles.consoleBody}>
-        <div className={styles.consoleContainer}>
-          <div className={styles.chatArea}>
-            {messages.length === 0 ? (
-              <div className={styles.emptyState}>
-                <p className={styles.emptyStateTitle}>Meet A.I.R.A™ (Aivory Intelligence & Reasoning Agent)</p>
-                <p className={styles.emptyStateText}>Ask AIRA™ about your business goals, diagnostics, or AI System Blueprint, then turn them into workflows and automation.</p>
-                <div className={styles.templates}>
-                  {QUICK_TEMPLATES.map(tpl => (
-                    <button key={tpl} className={styles.templateBtn} onClick={() => handleSend(tpl, [])}>
-                      {tpl}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <>
-                {messages.map(m => (
-                  <div key={m.id}>
-                    <ChatMessage role={m.role} content={m.content} isStreaming={m.isStreaming} />
-                    {/* Show workflow CTA hint when AIRA produced a workflow_spec or user message has workflow intent */}
-                    {m.role === "assistant" && !m.isStreaming && (workflowHints.has(m.id) || hasWorkflowIntent(m.content)) && (() => {
-                      const lang = detectConversationLang()
-                      return (
-                        <div className={styles.workflowCta}>
-                          <span className={styles.workflowCtaIcon}>✦</span>
-                          <span className={styles.workflowCtaText}>
-                            {lang === "id"
-                              ? "Untuk membangun dan mengaktifkan automation, gunakan AIRA Copilot di tab Workflows."
-                              : "To build and activate automations, use AIRA Copilot in the Workflows tab."}
-                          </span>
-                          <button
-                            className={styles.workflowCtaBtn}
-                            onClick={() => router.push("/workflows")}
-                          >
-                            {lang === "id" ? "Buka Workflows →" : "Open Workflows →"}
-                          </button>
-                        </div>
-                      )
-                    })()}
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </>
-            )}
-          </div>
-
-          <div className={styles.inputZone}>
-            <ChatInput
-              onSend={(text: string) => handleSend(text, attachments)}
-              disabled={isStreaming}
-            />
-          </div>
+      {/* History sidebar */}
+      <aside
+        className={`fixed top-0 right-0 h-full w-72 z-40 flex flex-col transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "translate-x-full"}`}
+        style={{
+          background: "#353531",
+          backdropFilter: "blur(16px)",
+          borderLeft: "1px solid rgba(255, 255, 255, 0.08)",
+        }}
+      >
+        <div className="flex items-center justify-between px-4 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <span className="text-sm font-semibold text-text-primary">Chat History</span>
+          <button
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors duration-150"
+            style={{ background: "rgba(255,255,255,0.06)" }}
+            onClick={() => setSidebarOpen(false)}
+          >
+            ✕
+          </button>
         </div>
 
-        {/* Sidebar toggle button */}
-        <button
-          className={`${styles.sidebarToggle} ${sidebarOpen ? styles.sidebarToggleOpen : ""}`}
-          onClick={() => setSidebarOpen(p => !p)}
-          title={sidebarOpen ? "Close history" : "Open history"}
-        >
-          {sidebarOpen ? "›" : "‹"}
-        </button>
-
-        {/* History sidebar */}
-        <aside className={`${styles.sidebar} ${sidebarOpen ? "" : styles.sidebarClosed}`}>
-          <div className={styles.sidebarHeader}>
-            <span className={styles.sidebarTitle}>Chat History</span>
-            <button className={styles.sidebarCloseBtn} onClick={() => setSidebarOpen(false)}>✕</button>
-          </div>
-          <div className={styles.sidebarList}>
-            {sessions.length === 0
-              ? <p className={styles.sidebarEmpty}>No chat history yet.</p>
-              : sessions.map(s => (
-                  <div
-                    key={s.id}
-                    className={`${styles.sidebarItem} ${s.id === currentSessionId ? styles.sidebarItemActive : ""}`}
-                    onClick={() => {
-                      if (s.id === currentSessionId) return
-                      // Save current session first
-                      if (messages.length > 0) {
-                        try { saveSessionMessages(currentSessionId, messages) } catch {}
-                      }
-                      // Load target session
-                      const loaded = loadSessionMessages(s.id)
-                      setMessages(loaded)
-                      setCurrentSessionId(s.id)
-                      setWorkflowHints(new Set())
-                      setSessions(listSessions())
-                    }}
-                  >
-                    <div className={styles.sidebarItemContent}>
-                      <div className={styles.sidebarItemTitle}>{s.title || "New chat"}</div>
-                    </div>
+        <div className="flex-1 overflow-y-auto py-2">
+          {sessions.length === 0 ? (
+            <p className="text-sm text-text-secondary px-4 py-3">No chat history yet.</p>
+          ) : (
+            sessions.map(s => {
+              const isActive = s.id === currentSessionId
+              return (
+                <div
+                  key={s.id}
+                  className={`px-4 py-3 cursor-pointer text-sm text-text-secondary transition-colors duration-150 rounded-lg mx-2 ${isActive ? "bg-[rgba(0,229,158,0.08)] border-l-2 border-accent text-text-primary" : "hover:bg-[rgba(255,255,255,0.04)]"}`}
+                  onClick={() => {
+                    if (s.id === currentSessionId) return
+                    if (messages.length > 0) {
+                      try { saveSessionMessages(currentSessionId, messages) } catch {}
+                    }
+                    const loaded = loadSessionMessages(s.id)
+                    setMessages(loaded)
+                    setCurrentSessionId(s.id)
+                    setSessions(listSessions())
+                  }}
+                >
+                  <div className="truncate text-sm font-medium">
+                    {s.title || "New chat"}
                   </div>
-                ))
-            }
-          </div>
-        </aside>
-      </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      </aside>
 
       {isDragging && (
-        <div className={styles.dragOverlay}>
-          <div className={styles.dragOverlayInner}>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center pointer-events-none">
+          <div className="px-6 py-4 border-2 border-dashed border-emerald-400 rounded-2xl text-emerald-300 text-lg">
             Drop files to attach
           </div>
         </div>
@@ -296,6 +332,11 @@ export default function ConsolePage() {
 
       <input ref={fileInputRef} type="file" multiple hidden accept={ALLOWED_TYPES.join(",")}
         onChange={e => handleFileSelect(e.target.files)} />
+
+      {/* Aivory Copilot toggle panel */}
+      <div className="relative">
+        <CopilotTogglePanel currentSpec={null} />
+      </div>
     </div>
   )
 }

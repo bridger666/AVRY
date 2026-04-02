@@ -4,9 +4,10 @@
  */
 
 console.log('[endpoints.js] Loading module');
-const { sendRequest, sendStreamingRequest, healthCheck } = require('./openrouterClient');
+const { sendRequest, sendStreamingRequest, callLLMWithFallback, healthCheck } = require('./openrouterClient');
 const { sendToGateway } = require('./gatewayClient');
 const { callN8N } = require('./n8nClient');
+const { streamPost } = require('./lib/http');
 console.log('[endpoints.js] sendStreamingRequest type:', typeof sendStreamingRequest);
 const { MODEL_ROUTING, config } = require('./config');
 const https = require('https');
@@ -17,10 +18,6 @@ const { logger } = require('./logger');
 // CONSOLE CHAT STREAMING ENDPOINT
 // ============================================================================
 
-/**
- * POST /console/stream
- * Streams AI console responses using Server-Sent Events
- */
 async function handleConsoleStream(req, res, next) {
   console.log('[console/stream] handler hit');
   console.log('[console/stream] req.body:', JSON.stringify(req.body));
@@ -29,7 +26,6 @@ async function handleConsoleStream(req, res, next) {
   try {
     const { session_id, messages } = req.body;
     
-    // Validate required fields
     if (!session_id) {
       const error = new Error('Missing required field: session_id');
       error.statusCode = 400;
@@ -57,30 +53,26 @@ async function handleConsoleStream(req, res, next) {
       requestId: req.requestId
     });
     
-    // Set SSE headers BEFORE calling sendStreamingRequest
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     
-    // Forward to OpenRouter with streaming
     await sendStreamingRequest(
       routing.model,
       routing.useCase,
       messages,
       res,
-      req.requestId
+      req.requestId,
+      routing.models
     );
     
     console.log('[console/stream] sendStreamingRequest completed');
     
   } catch (error) {
     console.error('[console/stream] unhandled error:', error);
-    // Only call next(error) if headers haven't been sent yet
-    // (SSE headers are set before streaming starts, so errors mid-stream can't use next())
     if (!res.headersSent) {
       next(error);
     } else {
-      // Headers already sent — write error event and end the stream
       try {
         res.write(`data: ${JSON.stringify({ type: 'error', error: error.message || 'Stream failed' })}\n\n`);
         res.end();
@@ -92,21 +84,100 @@ async function handleConsoleStream(req, res, next) {
 }
 
 // ============================================================================
+// AIRA CONVERSATION HELPERS (history + onboarding rewrite)
+// ============================================================================
+
+function buildHistoryText(recentMessages) {
+  return recentMessages
+    .map((m, idx) => {
+      const role = (m.role || 'user').toUpperCase();
+      const content = m.content || '';
+      return `[${idx + 1}] ${role}: ${content}`;
+    })
+    .join('\n');
+}
+
+function rewriteOnboardingChoiceMessage(recentMessages) {
+  if (!Array.isArray(recentMessages) || recentMessages.length < 2) return null;
+
+  const last = recentMessages[recentMessages.length - 1];
+  const prev = recentMessages[recentMessages.length - 2];
+
+  const lastContent = (last?.content || '').trim();
+  const prevContent = (prev?.content || '');
+
+  if (!['1', '2', '3'].includes(lastContent)) return null;
+
+  const looksLikeOnboarding =
+    /[Dd]iagnostic/.test(prevContent) &&
+    /[Bb]lueprint/.test(prevContent) &&
+    (/[123]/.test(prevContent));
+
+  if (!looksLikeOnboarding) return null;
+
+  let choiceMeaning;
+  if (lastContent === '1') {
+    choiceMeaning = 'The user chose option 1: they already have a Diagnostic result and an AI System Blueprint.';
+  } else if (lastContent === '2') {
+    choiceMeaning = 'The user chose option 2: they have a Diagnostic result but no Blueprint yet.';
+  } else {
+    choiceMeaning = [
+      'The user chose option 3: they are starting from scratch.',
+      'You MUST guide them to the Aivory product flow first — do NOT give generic consulting advice yet.',
+      'Tell them to go to the Aivory Dashboard and run the AI Readiness Diagnostic.',
+      'Explain what the Diagnostic does in 3-5 bullet points:',
+      '- Assesses their current AI maturity across key dimensions',
+      '- Identifies strengths and primary constraints',
+      '- Calculates an AI readiness score (0-100)',
+      '- Surfaces concrete automation opportunities',
+      '- Provides a narrative summary with recommended next steps',
+      'Then mention that after the Diagnostic, the next steps are:',
+      '1. Generate an AI System Blueprint from the Diagnostic results',
+      '2. Build an Implementation Roadmap with phases and timelines',
+      'Offer to help them interpret results once they complete the Diagnostic.',
+      'Do NOT introduce any A/B/C submenu or additional choices.',
+    ].join('\n');
+  }
+
+  return [
+    'You previously showed the onboarding menu with options 1, 2, and 3.',
+    choiceMeaning,
+    'Do not repeat the onboarding menu.',
+    'Instead, continue the onboarding flow from this choice:',
+    '- For option 1: ask the user to share their Blueprint and offer to analyze gaps and next steps.',
+    '- For option 2: ask for their Diagnostic result and propose generating a Blueprint from it.',
+    '- For option 3: follow the PRODUCT-FIRST BEHAVIOR instructions in the system prompt.',
+    "Respond in the user's language and keep the answer concise and actionable."
+  ].join('\n');
+}
+
+function buildAiraFinalMessage(messages) {
+  const recentMessages = (messages || []).slice(-8);
+  const onboardingOverride = rewriteOnboardingChoiceMessage(recentMessages);
+
+  if (onboardingOverride) {
+    return onboardingOverride;
+  }
+
+  if (recentMessages.length <= 1) {
+    return recentMessages[0]?.content || '';
+  }
+
+  const historyText = buildHistoryText(recentMessages);
+  return [
+    'You are continuing a multi-turn conversation with the user.',
+    'Here is the recent conversation history:',
+    historyText,
+    '',
+    'The last line above is the most recent user message.',
+    'Continue the conversation naturally based on this context.'
+  ].join('\n');
+}
+
+// ============================================================================
 // FLOATING AIRA STREAMING ENDPOINT (Zeroclaw-orchestrated)
 // ============================================================================
 
-/**
- * POST /aria/stream  ← CANONICAL AIRA ENTRY POINT
- * This is the single canonical path for ALL AIRA chat traffic from every tab
- * (console, roadmap, diagnostic, workflow, blueprint).
- * Path: AiraFloatingAssistant → /api/aira/stream → /bridge/aira → Zeroclaw → OpenRouter
- *
- * Tab-specific context (source_tab + pageContext) is passed via the `context` field.
- * Primary path: Zeroclaw /webhook → streams back to client.
- * Fallback path: OpenRouter direct (if Zeroclaw unreachable).
- *
- * Immediately sends a "thinking" chunk so the client never hits idle timeout.
- */
 async function handleAiraStream(req, res, next) {
   console.log('[aria/stream] handler hit');
 
@@ -116,64 +187,66 @@ async function handleAiraStream(req, res, next) {
     return res.status(400).json({ error: true, code: 'BAD_REQUEST', message: 'session_id and messages are required' });
   }
 
-  // Set SSE headers immediately so the client knows the connection is alive
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no');
 
-  // FIXED: STREAM HEARTBEAT — send an immediate acknowledgement chunk within ~100ms
-  // This prevents the client-side idle timer from firing before the LLM responds
   res.write(`data: ${JSON.stringify({ type: 'chunk', content: '' })}\n\n`);
 
-  // Start a heartbeat interval — sends SSE comment pings every 8s
   const heartbeat = setInterval(() => {
     try { res.write(': ping\n\n'); } catch { /* stream closed */ }
   }, 8000);
 
   const cleanup = () => clearInterval(heartbeat);
 
-  // ── Try Zeroclaw first ──────────────────────────────────────────────────
-  const zeroclawUrl = config.zeroclawUrl;
-  const zeroclawToken = config.zeroclawToken;
-  const lastUserMessage = messages[messages.length - 1]?.content || '';
+  const { ZEROCLAW_BASE_URL, CONSOLE_SYSTEM_PROMPT, detectLanguage } = require('./zeroclawClient');
+
+  const finalMessage = buildAiraFinalMessage(messages);
+
+  // handleAiraStream uses streamPost directly (not callZeroclawStructured), so we must
+  // inject the persona here — Zeroclaw ignores the system_prompt field.
+  const messageWithPrompt =
+    `[SYSTEM INSTRUCTION — follow this persona strictly]\n${CONSOLE_SYSTEM_PROMPT}\n[END SYSTEM INSTRUCTION]\n\nUser message: ${finalMessage}`;
 
   const zeroclawPayload = {
-    message: lastUserMessage,
-    tenantId: organization_id || 'demo_org',
-    userId: session_id,
-    source: 'ai_roadmap_floating_aira',
-    intent: 'aivory_assistant',
-    specVersion: '1.0.0',
-    assistant: {
-      entryPoint: 'floating_tab',
-      context: context || { page: 'unknown' }
+    message: messageWithPrompt,
+    language: detectLanguage(messages),
+    context: {
+      ...(context || {}),
+      recentMessages: messages.slice(-8),
+      session_id,
+      organization_id,
     },
-    options: { mode: 'interactive', stream: true },
-    // Pass conversation history so Zeroclaw has context
-    history: messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }))
   };
 
-  // Attempt Zeroclaw streaming
-  const zeroclawReachable = zeroclawUrl && zeroclawToken;
+  const { selectZeroclawSkill, logSkillSelection } = require('./skillRouter');
+  const skillCtx = {
+    page: context?.page || undefined,
+    mode: context?.mode || undefined,
+    feature: context?.feature || undefined,
+    endpoint: '/aria/stream',
+  };
+  const selectedSkill = selectZeroclawSkill(skillCtx);
+  logSkillSelection(selectedSkill, skillCtx, 'aria/stream');
+
+  const zeroclawReachable = !!ZEROCLAW_BASE_URL;
   if (zeroclawReachable) {
     try {
-      const axios = require('axios');
-      const zeroclawRes = await axios.post(
-        `${zeroclawUrl}/webhook`,
+      const fetchRes = await streamPost(
+        `${ZEROCLAW_BASE_URL}/webhook`,
         zeroclawPayload,
         {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${zeroclawToken}`
-          },
-          responseType: 'stream',
-          timeout: config.zeroclawTimeout
+          headers: { 'Content-Type': 'application/json' },
+          timeout: parseInt(process.env.ZEROCLAW_TIMEOUT_MS || '115000', 10)
         }
       );
 
+      const { Readable } = require('node:stream');
+      const nodeStream = Readable.fromWeb(fetchRes.body);
+
       let buffer = '';
-      zeroclawRes.data.on('data', (chunk) => {
+      nodeStream.on('data', (chunk) => {
         buffer += chunk.toString();
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
@@ -190,7 +263,6 @@ async function handleAiraStream(req, res, next) {
           if (trimmed.startsWith('data: ')) {
             try {
               const parsed = JSON.parse(trimmed.slice(6));
-              // Zeroclaw may send OpenAI-style delta or our own chunk format
               const content =
                 parsed?.choices?.[0]?.delta?.content ||
                 parsed?.content ||
@@ -204,7 +276,6 @@ async function handleAiraStream(req, res, next) {
                 res.write(`data: ${JSON.stringify({ type: 'error', error: parsed.error || 'Zeroclaw error' })}\n\n`);
               }
             } catch {
-              // Plain text token
               const text = trimmed.slice(6).trim();
               if (text) res.write(`data: ${JSON.stringify({ type: 'chunk', content: text })}\n\n`);
             }
@@ -212,32 +283,29 @@ async function handleAiraStream(req, res, next) {
         }
       });
 
-      zeroclawRes.data.on('end', () => {
+      nodeStream.on('end', () => {
         cleanup();
         res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
         res.end();
       });
 
-      zeroclawRes.data.on('error', (err) => {
+      nodeStream.on('error', (err) => {
         console.error('[aria/stream] Zeroclaw stream error:', err.message);
         cleanup();
         res.write(`data: ${JSON.stringify({ type: 'error', error: 'Zeroclaw stream error' })}\n\n`);
         res.end();
       });
 
-      return; // Zeroclaw is handling it — don't fall through to OpenRouter
+      return;
     } catch (err) {
       console.warn('[aria/stream] Zeroclaw unreachable, falling back to OpenRouter:', err.message);
-      // Fall through to OpenRouter fallback below
     }
   }
 
-  // ── Fallback: OpenRouter direct (same as /console/stream) ───────────────
   console.log('[aria/stream] using OpenRouter fallback');
   try {
     const routing = MODEL_ROUTING['/console/stream'];
-    // sendStreamingRequest writes directly to res — pass res as the stream
-    await sendStreamingRequest(routing.model, routing.useCase, messages, res, req.requestId || 'aira-fallback');
+    await sendStreamingRequest(routing.model, routing.useCase, messages, res, req.requestId || 'aira-fallback', routing.models);
   } catch (err) {
     console.error('[aria/stream] OpenRouter fallback error:', err.message);
     if (!res.writableEnded) {
@@ -253,15 +321,10 @@ async function handleAiraStream(req, res, next) {
 // DEEP DIAGNOSTIC ENDPOINT
 // ============================================================================
 
-/**
- * POST /diagnostics/run
- * Processes deep diagnostic requests and returns DiagnosticResult
- */
 async function handleDeepDiagnostic(req, res, next) {
   try {
     const { mode, phases, diagnostic_payload } = req.body;
     
-    // Validate required fields
     if (mode !== 'deep') {
       const error = new Error('Invalid mode: expected "deep"');
       error.statusCode = 422;
@@ -270,7 +333,6 @@ async function handleDeepDiagnostic(req, res, next) {
       return next(error);
     }
     
-    // Accept either `phases` (new shape) or `diagnostic_payload` (legacy shape)
     const payload = phases || diagnostic_payload;
     
     if (!payload) {
@@ -283,29 +345,26 @@ async function handleDeepDiagnostic(req, res, next) {
 
     const routing = MODEL_ROUTING['/diagnostics/run'];
 
-    // Call OpenRouter directly (bypasses n8n which returns empty responses)
     const result = await sendRequest(
       routing.model,
       routing.useCase,
       JSON.stringify(payload, null, 2),
       req.requestId,
-      true // validate + repair JSON
+      true,
+      routing.models
     );
 
     console.log('[deep_diag result raw]', JSON.stringify(result));
 
-    // Helper to ensure arrays
     function ensureArray(value) {
       if (Array.isArray(value)) return value;
       if (typeof value === 'string') return value.split(',').map(s => s.trim()).filter(Boolean);
       return [];
     }
 
-    // Generate a guaranteed-unique diagnostic_id server-side
     const { v4: uuidv4 } = require('uuid');
     const diagnosticId = `DIAG_${uuidv4().replace(/-/g, '').substring(0, 12).toUpperCase()}`;
 
-    // Normalize to the shape the frontend expects
     const normalizedResult = {
       ...result,
       diagnostic_id: diagnosticId,
@@ -334,15 +393,10 @@ async function handleDeepDiagnostic(req, res, next) {
 // FREE DIAGNOSTIC ENDPOINT
 // ============================================================================
 
-/**
- * POST /diagnostics/free/run
- * Processes free diagnostic (12 questions) and returns DiagnosticResult
- */
 async function handleFreeDiagnostic(req, res, next) {
   try {
     const { mode, answers, language } = req.body;
     
-    // Validate required fields
     if (mode !== 'free') {
       const error = new Error('Invalid mode: expected "free"');
       error.statusCode = 422;
@@ -359,7 +413,6 @@ async function handleFreeDiagnostic(req, res, next) {
       return next(error);
     }
     
-    // Validate answers structure (should have 12 questions)
     const answerKeys = Object.keys(answers);
     if (answerKeys.length !== 12) {
       const error = new Error(`Invalid answers: expected 12 questions, got ${answerKeys.length}`);
@@ -369,7 +422,6 @@ async function handleFreeDiagnostic(req, res, next) {
       return next(error);
     }
     
-    // Validate each answer value (should be 0-3)
     for (const questionId in answers) {
       const value = answers[questionId];
       if (typeof value !== 'number' || value < 0 || value > 3) {
@@ -383,40 +435,33 @@ async function handleFreeDiagnostic(req, res, next) {
     
     const routing = MODEL_ROUTING['/diagnostics/free/run'];
     
-    // Convert answers to diagnostic payload for LLM
     const userContent = JSON.stringify({
       mode: 'free',
       answers,
       language: language || 'en'
     }, null, 2);
     
-    // Forward to n8n free diagnostic webhook
     const n8nResult = await callN8N('free_diag', userContent);
     if (!n8nResult.success) return res.status(503).json({ error: 'Gateway unavailable' });
     const result = n8nResult.data;
     
-    // Log raw result from LLM
     console.log('[diagnostic result raw]', JSON.stringify(result));
     
-    // Helper function to ensure field is always an array
     function ensureArray(value) {
       if (Array.isArray(value)) return value;
       if (typeof value === 'string') return value.split(',').map(s => s.trim()).filter(Boolean);
       return [];
     }
     
-    // Generate a guaranteed-unique diagnostic_id server-side
     const { v4: uuidv4 } = require('uuid');
     const diagnosticId = `DIAG_${uuidv4().replace(/-/g, '').substring(0, 12).toUpperCase()}`;
     
-    // Normalize array fields to prevent frontend crashes
     const normalizedResult = {
       ...result,
       diagnostic_id: diagnosticId,
       strengths: ensureArray(result.strengths),
       primary_constraints: ensureArray(result.primary_constraints),
       automation_opportunities: ensureArray(result.automation_opportunities),
-      // Map to frontend field names if needed
       blockers: ensureArray(result.primary_constraints),
       opportunities: ensureArray(result.automation_opportunities),
       score: result.ai_readiness_score || 0
@@ -431,18 +476,12 @@ async function handleFreeDiagnostic(req, res, next) {
   }
 }
 
-
 // ============================================================================
 // BLUEPRINT GENERATION ENDPOINT
 // ============================================================================
 
-// Blueprint uses a minimal system prompt — the full schema + instructions are in the user message (megaPrompt)
 const BLUEPRINT_SYSTEM_PROMPT = `You are an AI transformation consultant. You MUST respond with valid JSON only — no markdown, no code blocks, no commentary. Fill every field with specific, actionable content based on the diagnostic data provided.`;
 
-/**
- * Builds the blueprint generation prompt.
- * Returns a BlueprintV1 JSON object matching the exact schema the frontend expects.
- */
 function buildBlueprintPrompt(diagnosticData, companyProfile) {
   const companyName = companyProfile?.company_name || 'SME';
   const industry = companyProfile?.industry || 'General';
@@ -493,8 +532,8 @@ Return this EXACT JSON structure (fill all fields with real, specific content ba
   "system_architecture": {
     "data_sources": ["FILL: data source 1", "FILL: data source 2", "FILL: data source 3"],
     "processing_layers": ["FILL: processing layer 1", "FILL: processing layer 2"],
-    "decision_engine": "FILL: describe the AI decision engine (e.g. LLM-based classifier, rule engine, etc.)",
-    "memory_layer": "FILL: describe the memory/storage layer (e.g. vector DB, relational DB, etc.)",
+    "decision_engine": "FILL: describe the AI decision engine",
+    "memory_layer": "FILL: describe the memory/storage layer",
     "execution_layer": ["FILL: execution component 1", "FILL: execution component 2"]
   },
   "workflow_modules": [
@@ -530,7 +569,7 @@ Return this EXACT JSON structure (fill all fields with real, specific content ba
   },
   "deployment_plan": {
     "phase": "FILL: phased|immediate|enterprise",
-    "estimated_impact": "FILL: specific impact statement (e.g. 60% reduction in manual processing time)",
+    "estimated_impact": "FILL: specific impact statement",
     "estimated_roi_months": 6,
     "waves": [
       {
@@ -550,15 +589,10 @@ Return this EXACT JSON structure (fill all fields with real, specific content ba
 Replace every "FILL:" placeholder with specific, actionable content tailored to ${companyName} in the ${industry} industry based on the diagnostic results. Do not return any FILL placeholders in your response.`;
 }
 
-/**
- * POST /blueprints/generate
- * Generates AI System Blueprint using multi-agent mega-prompt via OpenRouter directly
- */
 async function handleBlueprintGeneration(req, res, next) {
   try {
     const { diagnostic_data, answers, company_profile, organization_id } = req.body;
 
-    // Accept diagnostic_data or fallback to answers
     const diagnosticData = diagnostic_data || answers;
 
     if (!diagnosticData) {
@@ -569,7 +603,6 @@ async function handleBlueprintGeneration(req, res, next) {
       return next(error);
     }
 
-    // Build company profile — use provided or derive from organization_id
     const resolvedProfile = company_profile || {
       company_name: organization_id || 'SME',
       industry: 'General',
@@ -577,7 +610,6 @@ async function handleBlueprintGeneration(req, res, next) {
       role: 'Unknown'
     };
 
-    // Build mega-prompt
     const megaPrompt = buildBlueprintPrompt(diagnosticData, resolvedProfile);
 
     console.log('[blueprint] diagnosticData received:', JSON.stringify(diagnosticData, null, 2));
@@ -585,13 +617,13 @@ async function handleBlueprintGeneration(req, res, next) {
 
     const routing = MODEL_ROUTING['/blueprints/generate'];
 
-    // Call OpenRouter directly with blueprint system prompt (bypasses n8n)
     const result = await sendRequest(
       routing.model,
       routing.useCase,
       megaPrompt,
       req.requestId,
-      true // validate + repair JSON
+      true,
+      routing.models
     );
 
     console.log('[blueprint] result keys:', Object.keys(result || {}));
@@ -608,10 +640,6 @@ async function handleBlueprintGeneration(req, res, next) {
 // WORKFLOW GENERATION ENDPOINT
 // ============================================================================
 
-/**
- * POST /blueprints/generate-workflow
- * Generates a detailed executable workflow definition from a blueprint module
- */
 async function handleWorkflowGeneration(req, res, next) {
   try {
     const { workflow_id, workflow_title, workflow_steps, diagnostic_context, company_name } = req.body;
@@ -641,7 +669,7 @@ Return this EXACT JSON structure:
   "title": "${workflow_title}",
   "trigger": "FILL: specific event or condition that starts this workflow",
   "steps": [
-    {"step": 1, "action": "FILL: specific action", "tool": "FILL: tool/service used (e.g. n8n HTTP node, OpenAI, Slack)", "output": "FILL: what this step produces"},
+    {"step": 1, "action": "FILL: specific action", "tool": "FILL: tool/service used", "output": "FILL: what this step produces"},
     {"step": 2, "action": "FILL: specific action", "tool": "FILL: tool/service", "output": "FILL: output"},
     {"step": 3, "action": "FILL: specific action", "tool": "FILL: tool/service", "output": "FILL: output"},
     {"step": 4, "action": "FILL: specific action", "tool": "FILL: tool/service", "output": "FILL: output"},
@@ -661,7 +689,8 @@ Replace every FILL placeholder with specific, actionable content for ${company_n
       routing.useCase,
       prompt,
       req.requestId,
-      true
+      true,
+      routing.models
     );
 
     res.json(result);
@@ -674,16 +703,10 @@ Replace every FILL placeholder with specific, actionable content for ${company_n
 // MOBILE CONSOLE ENDPOINT
 // ============================================================================
 
-/**
- * POST /console/mobile
- * Non-streaming console for mobile (WhatsApp, Telegram, Zenclaw)
- * Routes through internal n8n gateway instead of OpenRouter
- */
 async function handleMobileConsole(req, res, next) {
   try {
     const { session_id, message } = req.body;
     
-    // Validate required fields
     if (!session_id) {
       const error = new Error('Missing required field: session_id');
       error.statusCode = 400;
@@ -700,7 +723,6 @@ async function handleMobileConsole(req, res, next) {
       return next(error);
     }
     
-    // Forward to n8n console webhook
     const n8nResult = await callN8N('console', message);
     if (!n8nResult.success) return res.status(503).json({ error: 'Gateway unavailable' });
     
@@ -715,22 +737,10 @@ async function handleMobileConsole(req, res, next) {
 // ARIA CHAT ENDPOINT
 // ============================================================================
 
-/**
- * POST /aria
- * Plain chat endpoint for ARIA (routes through internal gateway)
- * 
- * Request body:
- * {
- *   message: string
- * }
- * 
- * Returns: { response: string }
- */
 async function handleAriaChat(req, res, next) {
   try {
     const { message } = req.body;
     
-    // Validate required fields
     if (!message || typeof message !== 'string') {
       const error = new Error('Missing or invalid field: message (expected string)');
       error.statusCode = 400;
@@ -739,7 +749,6 @@ async function handleAriaChat(req, res, next) {
       return next(error);
     }
     
-    // Forward to internal gateway
     const response = await sendToGateway(message, req.requestId);
     
     res.json({ response });
@@ -753,10 +762,6 @@ async function handleAriaChat(req, res, next) {
 // WORKFLOW SYNTHESIS ENDPOINT
 // ============================================================================
 
-/**
- * POST /workflows/synthesize
- * Triggers Aivory workflow generation via n8n executions API
- */
 async function handleWorkflowSynthesis(req, res, next) {
   try {
     const { workflow_module, prompt, tenantId, userId, source, context } = req.body;
@@ -781,7 +786,6 @@ async function handleWorkflowSynthesis(req, res, next) {
 
     logger.info('[workflow/synthesize] triggering n8n execution', { url: executionUrl });
 
-    // POST to n8n executions endpoint
     const n8nResponse = await new Promise((resolve, reject) => {
       const url = new URL(executionUrl);
       const transport = url.protocol === 'https:' ? https : http;
@@ -846,18 +850,9 @@ async function handleWorkflowSynthesis(req, res, next) {
 }
 
 // ============================================================================
-// BRIDGE / AIRA ENDPOINT  (general AIRA entry point for all Aivory clients)
+// BRIDGE / AIRA ENDPOINT
 // ============================================================================
 
-/**
- * POST /bridge/aira  ← CANONICAL AIRA BRIDGE HANDLER
- * General AIRA entry point for all Aivory clients.
- * Called by /api/aira/stream (Next.js) — do NOT add alternative bridge routes.
- * Builds a rich prompt from message + context, routes through ZeroClaw.
- *
- * Request body: { message: string, context?: object }
- * Returns: { mode: "zeroclaw", model, raw_agent_response, tool_calls }
- */
 async function handleBridgeAira(req, res, next) {
   try {
     const { message, context, mode, channel, entrypoint } = req.body;
@@ -870,36 +865,38 @@ async function handleBridgeAira(req, res, next) {
       return next(error);
     }
 
-    // ── Forward structured payload to Zeroclaw ───────────────────────────
-    // Zeroclaw is the sole orchestrator for ALL AIRA traffic.
-    // We forward mode/channel/entrypoint so Zeroclaw can select the
-    // correct agent:
-    //   mode === "console" | channel === "console_ui" → console agent
-    //   mode === "dev"                                → dev/identity agent
-    //   (no mode)                                     → Zeroclaw default
-    //
-    // DO NOT bypass Zeroclaw to OpenRouter for console or any other path.
-    // Agent selection is Zeroclaw's responsibility.
-    // ─────────────────────────────────────────────────────────────────────
-    const { callZeroclawStructured } = require('./zeroclawClient');
-    const result = await callZeroclawStructured({
-      message,
-      mode: mode || undefined,
+    const historyMessages = context?.history;
+    let enrichedMessage = message;
+
+    if (Array.isArray(historyMessages) && historyMessages.length > 1) {
+      enrichedMessage = buildAiraFinalMessage(historyMessages);
+    }
+
+    const { callZeroclawWithSkill, stripToolCalls } = require('./zeroclawClient');
+    const result = await callZeroclawWithSkill({
+      message: enrichedMessage,
+      mode: mode || context?.mode || undefined,
       channel: channel || context?.channel || undefined,
       entrypoint: entrypoint || undefined,
       context: context || undefined,
+      endpoint: '/bridge/aira',
     });
+
+    const finalText = stripToolCalls(result.response);
 
     res.json({
       mode: 'zeroclaw',
       model: result.model,
-      raw_agent_response: result.response,
-      tool_calls: []
+      skill: result.skill,
+      message: finalText,
+      raw_agent_response: finalText,
+      final_text: finalText,
+      tool_calls: [],
+      raw: { model: result.model, response: result.response },
     });
 
   } catch (error) {
     logger.error('[bridge/aira] error', { error: error.message });
-    // Distinguish ZeroClaw HTTP errors from unexpected errors
     const statusMatch = error.message?.match(/Zeroclaw returned (\d+)/);
     if (statusMatch) {
       return res.status(502).json({
@@ -920,24 +917,6 @@ async function handleBridgeAira(req, res, next) {
 // BRIDGE / KIRO ENDPOINT
 // ============================================================================
 
-/**
- * POST /bridge/kiro
- * Routes a Kiro-originated message through the Zeroclaw orchestrator.
- *
- * Request body:
- * {
- *   message: string,       // required — the user/agent message
- *   context?: object       // optional — additional context merged into the prompt
- * }
- *
- * Returns:
- * {
- *   mode: "zeroclaw",
- *   model: string,
- *   raw_agent_response: string,
- *   tool_calls: []
- * }
- */
 async function handleBridgeKiro(req, res, next) {
   try {
     const { message, context } = req.body;
@@ -950,18 +929,22 @@ async function handleBridgeKiro(req, res, next) {
       return next(error);
     }
 
-    // Build prompt — append context block if provided
     let prompt = message;
     if (context && typeof context === 'object' && Object.keys(context).length > 0) {
       prompt += `\n\n[Context]\n${JSON.stringify(context, null, 2)}`;
     }
 
-    const { callZeroclaw } = require('./zeroclawClient');
-    const result = await callZeroclaw(prompt);
+    const { callZeroclawWithSkill } = require('./zeroclawClient');
+    const result = await callZeroclawWithSkill({
+      message: prompt,
+      context: context || undefined,
+      endpoint: '/bridge/kiro',
+    });
 
     res.json({
       mode: 'zeroclaw',
       model: result.model,
+      skill: result.skill,
       raw_agent_response: result.response,
       tool_calls: []
     });
@@ -975,18 +958,10 @@ async function handleBridgeKiro(req, res, next) {
 // HEALTH CHECK ENDPOINT
 // ============================================================================
 
-/**
- * GET /health
- * Returns system health status
- */
 async function handleHealthCheck(req, res) {
   try {
-    // Check if API key is configured
     const openrouterApiKeySet = await healthCheck();
-    
-    // Determine overall status
     const status = openrouterApiKeySet ? 'ok' : 'down';
-    
     const response = {
       status,
       timestamp: new Date().toISOString(),
@@ -994,8 +969,6 @@ async function handleHealthCheck(req, res) {
         openrouter_api_key_set: openrouterApiKeySet
       }
     };
-    
-    // Return 503 if down, 200 otherwise
     const httpStatus = status === 'down' ? 503 : 200;
     res.status(httpStatus).json(response);
   } catch (error) {
@@ -1024,3 +997,318 @@ module.exports = {
   handleBridgeKiro,
   handleHealthCheck,
 };
+
+// Zeroclaw client (appended via EOF)
+const {
+  callZeroclaw,
+  callZeroclawStructured,
+  callZeroclawWithSkill,
+  stripToolCalls,
+} = require('./zeroclawClient');
+
+// Aivory diag+blueprint pipeline handler
+async function handleAivoryPipeline(req, res) {
+  try {
+    const { intent, diagnostic, companyProfile, options } = req.body || {};
+
+    if (!intent || !diagnostic) {
+      return res.status(400).json({
+        error: true,
+        code: 'PIPELINE_INVALID_INPUT',
+        message: 'intent and diagnostic are required',
+      });
+    }
+
+    const pipelineContext = {
+      intent,
+      diagnostic,
+      companyProfile: companyProfile || null,
+      options: options || {},
+    };
+
+    const { callZeroclawStructured } = require('./zeroclawClient');
+
+    const systemPrompt = `
+Anda adalah Aivory Pipeline Orchestrator.
+
+KONTEKS SISTEM:
+- Aplikasi backend sudah mengirimkan data "diagnostic" dan "companyProfile" ke Anda melalui konteks sistem.
+- Anda TIDAK perlu (dan TIDAK BISA) meminta user untuk upload atau paste dokumen lagi.
+- Anggap semua data yang tersedia sudah ada di konteks; jika ada kekurangan, gunakan asumsi eksplisit.
+
+TUGAS:
+- Membaca data diagnostic dan profil perusahaan dari konteks sistem.
+- Menyusun rencana AI System Blueprint dengan bahasa Indonesia yang jelas.
+- Fokus pada rekomendasi sistem & workflow, bukan instruksi UI/dashboard.
+
+ATURAN KERAS:
+- JANGAN menyebut Aivory Dashboard, menu, tombol, atau cara pakai aplikasi.
+- JANGAN meminta user untuk "klik", "akses", "upload", atau "paste" apapun.
+- JANGAN meminta dokumen tambahan, file, atau screenshot.
+- JANGAN mengulang nama user atau host (misal "ireichmann@Mawarid") dalam respons.
+- Jawaban harus fokus ke insight bisnis, rekomendasi sistem, dan arsitektur solusi.
+- Kalau data diagnostic kurang, jelaskan asumsi yang Anda pakai secara eksplisit di bagian "risks_and_assumptions". Jangan meminta user mengirim atau mengupload apa pun.
+
+FORMAT OUTPUT:
+Balas DALAM BENTUK JSON VALID dengan struktur PERSIS seperti ini:
+
+{
+  "diagnostic_summary": {
+    "objective": "string, ringkasan objective utama",
+    "current_state": "string, ringkasan kondisi sekarang berdasarkan diagnostic",
+    "key_issues": ["string", "..."],
+    "priority_areas": ["string", "..."]
+  },
+  "blueprint": {
+    "target_state": "string, gambaran kondisi ideal yang ingin dicapai",
+    "capability_map": [
+      {
+        "name": "string, nama capability",
+        "description": "string, deskripsi singkat",
+        "business_value": "string, value bisnis utama",
+        "owner": "string, peran pemilik"
+      }
+    ],
+    "workflows": [
+      {
+        "name": "string, nama workflow",
+        "description": "string, alur kerja end-to-end",
+        "triggers": ["string"],
+        "inputs": ["string"],
+        "outputs": ["string"],
+        "tools": ["string"],
+        "actors": ["string"],
+        "kpis": ["string"]
+      }
+    ],
+    "data_requirements": ["string", "..."],
+    "risks_and_assumptions": ["string", "..."]
+  }
+}
+
+JANGAN menambah field lain di luar struktur di atas.
+JANGAN menulis teks di luar JSON (tidak boleh ada penjelasan sebelum / sesudah curly braces).
+`.trim();
+
+    const result = await callZeroclawStructured({
+      message: `Jalankan Aivory diag+blueprint pipeline untuk intent: ${intent}. Gunakan diagnostic & profil perusahaan yang diberikan.`,
+      context: {
+        pipeline: 'aivory_diag_blueprint',
+        system_prompt: systemPrompt,
+        ...pipelineContext,
+      },
+    });
+
+    const rawStr = typeof result.response === 'string'
+      ? result.response
+      : JSON.stringify(result.response);
+
+    const raw = rawStr.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+
+    let parsed = null;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      parsed = null;
+    }
+
+    let diagnostic_summary = parsed && parsed.diagnostic_summary ? parsed.diagnostic_summary : null;
+    let blueprint = parsed && parsed.blueprint ? parsed.blueprint : null;
+
+    const serialized = parsed ? JSON.stringify(parsed).toLowerCase() : '';
+    const badPatterns = ['upload', 'paste', 'unggah', 'kirim data', 'bagikan atau upload'];
+    const containsBadPattern = badPatterns.some(p => serialized.includes(p));
+
+    if (containsBadPattern) {
+      diagnostic_summary = null;
+      blueprint = null;
+    }
+
+    const fallback_message = (!diagnostic_summary && !blueprint) ? raw : null;
+
+    return res.json({
+      error: false,
+      mode: 'zeroclaw',
+      model: result.model,
+      diagnostic_summary,
+      blueprint,
+      fallback_message,
+    });
+  } catch (err) {
+    console.error('[handleAivoryPipeline] error', err);
+    return res.status(500).json({
+      error: true,
+      code: 'PIPELINE_INTERNAL_ERROR',
+      message: 'Failed to run Aivory pipeline',
+    });
+  }
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports.handleAivoryPipeline = handleAivoryPipeline;
+}
+
+
+// ============================================================================
+// AGENTS CRUD ENDPOINTS
+// ============================================================================
+
+const agentsRepo = require('./lib/agentsRepository');
+
+/**
+ * GET /agents
+ * List agents for current workspace with optional filtering
+ * Query params: q (search), status (filter), page, pageSize
+ */
+async function handleListAgents(req, res, next) {
+  try {
+    const workspaceId = req.body?.organization_id || req.query?.workspace_id || 'default';
+    const { q, status, page = 1, pageSize = 20 } = req.query;
+
+    const filters = {};
+    if (q) filters.q = q;
+    if (status) filters.status = status;
+
+    const agents = agentsRepo.getAgentsByWorkspace(workspaceId, filters);
+    
+    // Apply pagination
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const pageSizeNum = Math.max(1, Math.min(100, parseInt(pageSize) || 20));
+    const start = (pageNum - 1) * pageSizeNum;
+    const end = start + pageSizeNum;
+
+    const items = agents.slice(start, end);
+
+    res.json({
+      items,
+      total: agents.length,
+      page: pageNum,
+      pageSize: pageSizeNum
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /agents
+ * Create a new agent
+ * Required: name, model, provider
+ * Optional: description, runtime, status, config, tags
+ */
+async function handleCreateAgent(req, res, next) {
+  try {
+    const workspaceId = req.body?.organization_id || 'default';
+    const { name, model, provider, description, runtime, status, config, tags } = req.body;
+
+    // Validate required fields
+    if (!name || !model || !provider) {
+      const error = new Error('Missing required fields: name, model, provider');
+      error.statusCode = 400;
+      error.errorCode = 'BAD_REQUEST';
+      error.details = { required: ['name', 'model', 'provider'] };
+      return next(error);
+    }
+
+    const agent = agentsRepo.createAgent(workspaceId, {
+      name,
+      model,
+      provider,
+      description,
+      runtime,
+      status,
+      config,
+      tags
+    });
+
+    res.status(201).json(agent);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /agents/:id
+ * Get a specific agent by ID
+ */
+async function handleGetAgent(req, res, next) {
+  try {
+    const { id } = req.params;
+    const workspaceId = req.body?.organization_id || req.query?.workspace_id || 'default';
+
+    const agent = agentsRepo.getAgentById(id, workspaceId);
+
+    if (!agent) {
+      const error = new Error('Agent not found');
+      error.statusCode = 404;
+      error.errorCode = 'AGENT_NOT_FOUND';
+      error.details = { id };
+      return next(error);
+    }
+
+    res.json(agent);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * PATCH /agents/:id
+ * Update an agent (partial update)
+ * Allowed fields: name, description, status, model, provider, runtime, tags, config
+ */
+async function handleUpdateAgent(req, res, next) {
+  try {
+    const { id } = req.params;
+    const workspaceId = req.body?.organization_id || 'default';
+    const updates = req.body;
+
+    // Remove organization_id from updates to prevent it being updated
+    delete updates.organization_id;
+
+    const agent = agentsRepo.updateAgent(id, workspaceId, updates);
+
+    if (!agent) {
+      const error = new Error('Agent not found');
+      error.statusCode = 404;
+      error.errorCode = 'AGENT_NOT_FOUND';
+      error.details = { id };
+      return next(error);
+    }
+
+    res.json(agent);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * DELETE /agents/:id
+ * Soft delete an agent
+ */
+async function handleDeleteAgent(req, res, next) {
+  try {
+    const { id } = req.params;
+    const workspaceId = req.body?.organization_id || req.query?.workspace_id || 'default';
+
+    const deleted = agentsRepo.deleteAgent(id, workspaceId);
+
+    if (!deleted) {
+      const error = new Error('Agent not found');
+      error.statusCode = 404;
+      error.errorCode = 'AGENT_NOT_FOUND';
+      error.details = { id };
+      return next(error);
+    }
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports.handleListAgents = handleListAgents;
+module.exports.handleCreateAgent = handleCreateAgent;
+module.exports.handleGetAgent = handleGetAgent;
+module.exports.handleUpdateAgent = handleUpdateAgent;
+module.exports.handleDeleteAgent = handleDeleteAgent;

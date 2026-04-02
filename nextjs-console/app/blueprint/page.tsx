@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { BlueprintV1, BlueprintV1WorkflowModule } from '@/types/blueprint'
 import { saveWorkflow } from '@/hooks/useWorkflows'
+import { useRouterContext } from '@/contexts/RouterContext'
+import { ContinuedFromConsole } from '@/components/routing/ContinuedFromConsole'
 import styles from './blueprint.module.css'
 import { exportBlueprintPDF, exportBlueprintDOCX } from '@/lib/blueprintExport'
 import { useTranslations } from 'next-intl'
@@ -664,6 +666,7 @@ export default function BlueprintPage() {
   const [parseError, setParseError] = useState(false)
   const [empty, setEmpty] = useState(false)
   const [currentVersionLabel, setCurrentVersionLabel] = useState<string | null>(null)
+  const [routingNotice, setRoutingNotice] = useState<string | null>(null)
 
   // Workflow generation state: keyed by workflow_id
   const [generatingWorkflow, setGeneratingWorkflow] = useState<Record<string, boolean>>({})
@@ -678,6 +681,19 @@ export default function BlueprintPage() {
   const [saveVersionName, setSaveVersionName] = useState('')
   const [showVersionHistory, setShowVersionHistory] = useState(false)
   const saveInputRef = useRef<HTMLInputElement>(null)
+
+  const { pendingContext, clearPendingContext } = useRouterContext()
+
+  useEffect(() => {
+    if (!pendingContext) return
+    if (Date.now() - pendingContext.timestamp > 5 * 60 * 1000) {
+      clearPendingContext()
+      return
+    }
+    if (pendingContext.targetRoute !== 'blueprint') return
+    setRoutingNotice(pendingContext.aiReplySummary || pendingContext.triggerMessage)
+    clearPendingContext()
+  }, [pendingContext, clearPendingContext])
 
   // Download state
   const [downloadLoading, setDownloadLoading] = useState(false)
@@ -945,6 +961,9 @@ export default function BlueprintPage() {
 
   return (
     <div className={styles.page}>
+      {routingNotice !== null && (
+        <ContinuedFromConsole summary={routingNotice} onDismiss={() => setRoutingNotice(null)} />
+      )}
       <div className={styles.content} ref={contentRef}>
 
         {/* ── Header ─────────────────────────────────────────── */}
