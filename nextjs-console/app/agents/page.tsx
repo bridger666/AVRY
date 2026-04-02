@@ -28,8 +28,8 @@ export default function AgentsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a1a18] to-[#2a2a26] p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-[#353531] p-8 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+      <div className="max-w-6xl mx-auto overflow-x-hidden">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
