@@ -5,8 +5,10 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 2.5rem 2rem 3rem;
-  min-height: 100vh;
-  /* no local background override — inherits body #1e1d1a */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* inherits body bg */
 }
 
 .mainContent {

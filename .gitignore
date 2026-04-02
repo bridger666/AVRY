@@ -59,3 +59,15 @@ build/
 node_modules/
 .next/
 coverage/
+# Env and secrets
+.env
+.env.local
+.env.*.local
+nextjs-console/.env*
+vps-bridge/.env*
+
+# Node / build
+node_modules/
+.next/
+dist/
+*.log

@@ -18,14 +18,14 @@
 .sectionTitle {
   font-size: 10px;
   font-weight: 700;
-  color: #5a5a58;
+  color: #a1a1aa;
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
 
 .chevron {
   font-size: 10px;
-  color: #5a5a58;
+  color: #a1a1aa;
   transition: transform 0.15s ease;
 }
 
@@ -92,7 +92,7 @@
 
 .nodeCategory {
   font-size: 9px;
-  color: #5a5a58;
+  color: #a1a1aa;
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }

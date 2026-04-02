@@ -1,11 +1,10 @@
-const axios = require('axios')
+const { post, streamPost } = require('./lib/http')
 const { config, SYSTEM_PROMPTS } = require('./config')
 const { logger } = require('./logger')
-
 console.log('[OPENROUTER CLIENT] Module loaded')
 
-const openrouterClient = axios.create({
-  baseURL: config.openrouterBaseUrl,
+const openrouterConfig = {
+  baseURL: config.openrouterBaseUrl.replace(/\/$/, ''),
   timeout: config.openrouterTimeout,
   headers: {
     'Authorization': `Bearer ${config.openrouterApiKey}`,
@@ -13,7 +12,15 @@ const openrouterClient = axios.create({
     'HTTP-Referer': 'https://aivory.app',
     'X-Title': 'Aivory'
   }
-})
+}
+
+function buildHeaders(extra = {}) {
+  return { ...openrouterConfig.headers, ...extra }
+}
+
+function buildUrl(path) {
+  return `${openrouterConfig.baseURL}${path}`
+}
 
 function mapError(error) {
   if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === 'ENETUNREACH') {
@@ -22,10 +29,10 @@ function mapError(error) {
   if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
     return { statusCode: 504, errorCode: 'AI_BACKEND_TIMEOUT', message: 'The AI request took too long to process. Please try again.' }
   }
-  if (error.response) {
-    const status = error.response.status
+  if (error.statusCode || error.response) {
+    const status = error.statusCode || error.response?.status
     if (status >= 400 && status < 500) {
-      return { statusCode: status, errorCode: 'AI_BACKEND_CLIENT_ERROR', message: error.response.data?.error?.message || 'Invalid request to AI engine.' }
+      return { statusCode: status, errorCode: 'AI_BACKEND_CLIENT_ERROR', message: error.responseBody?.error?.message || error.response?.data?.error?.message || 'Invalid request to AI engine.' }
     }
     if (status >= 500) {
       return { statusCode: 502, errorCode: 'AI_BACKEND_ERROR', message: 'AI engine temporarily unavailable. Please try again.' }
@@ -53,13 +60,9 @@ function extractJSON(text) {
 async function repairJSON(model, originalMessages, invalidResponse, requestId) {
   try {
     logger.warn('Attempting JSON repair', { request_id: requestId })
-    const repairMessages = [
-      ...originalMessages,
-      { role: 'assistant', content: invalidResponse },
-      { role: 'user', content: 'Fix and return valid JSON only. No markdown, no explanation.' }
-    ]
-    const response = await openrouterClient.post('/chat/completions', { model, messages: repairMessages, stream: false })
-    const repairedText = response.data.choices[0].message.content
+    const repairMessages = [...originalMessages, { role: 'assistant', content: invalidResponse }, { role: 'user', content: 'Fix and return valid JSON only. No markdown, no explanation.' }]
+    const response = await post(buildUrl('/chat/completions'), { model, messages: repairMessages, stream: false }, { headers: buildHeaders(), timeout: openrouterConfig.timeout })
+    const repairedText = response.choices[0].message.content
     return extractJSON(repairedText)
   } catch (error) {
     logger.error('JSON repair failed', { request_id: requestId, error: error.message })
@@ -67,23 +70,34 @@ async function repairJSON(model, originalMessages, invalidResponse, requestId) {
   }
 }
 
+async function callLLMWithFallback(models, useCase, userContent, requestId, validateJSON) {
+  const RETRYABLE = [429, 500, 502, 503, 504]
+  const RETRYABLE_CODES = ['ECONNREFUSED', 'ENOTFOUND', 'ENETUNREACH', 'ECONNABORTED', 'ETIMEDOUT']
+  let lastError
+  for (const model of models) {
+    try {
+      logger.info('Trying model', { model, request_id: requestId })
+      return await sendRequest(model, useCase, userContent, requestId, validateJSON)
+    } catch (err) {
+      const status = err.statusCode || err.response?.status
+      const retryable = RETRYABLE.includes(status) || RETRYABLE_CODES.includes(err.code)
+      if (!retryable) throw err
+      logger.warn('Model failed, trying next', { model, status, error: err.message, request_id: requestId })
+      lastError = err
+    }
+  }
+  throw lastError
+}
+
 async function sendRequest(model, useCase, userContent, requestId, validateJSON) {
   try {
     const systemPrompt = SYSTEM_PROMPTS[useCase]
     if (!systemPrompt) throw new Error('No system prompt found for use case: ' + useCase)
-    
     logger.debug('Sending request to OpenRouter', { request_id: requestId, model, use_case: useCase })
-    
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userContent }
-    ]
-    
-    const response = await openrouterClient.post('/chat/completions', { model, messages, stream: false })
-    logger.debug('Received response from OpenRouter', { request_id: requestId, status: response.status })
-    
-    const content = response.data.choices[0].message.content
-    
+    const messages = [{ role: 'system', content: systemPrompt }, { role: 'user', content: userContent }]
+    const response = await post(buildUrl('/chat/completions'), { model, messages, stream: false }, { headers: buildHeaders(), timeout: openrouterConfig.timeout })
+    logger.debug('Received response from OpenRouter', { request_id: requestId })
+    const content = response.choices[0].message.content
     if (validateJSON) {
       let jsonData = extractJSON(content)
       if (!jsonData) {
@@ -98,10 +112,9 @@ async function sendRequest(model, useCase, userContent, requestId, validateJSON)
       }
       return jsonData
     }
-    
     return content
   } catch (error) {
-    logger.error('OpenRouter request failed', { request_id: requestId, error: error.message, code: error.code, status: error.response?.status })
+    logger.error('OpenRouter request failed', { request_id: requestId, error: error.message, code: error.code, status: error.statusCode || error.response?.status })
     if (error.statusCode && error.errorCode) throw error
     const mappedError = mapError(error)
     const err = new Error(mappedError.message)
@@ -111,55 +124,39 @@ async function sendRequest(model, useCase, userContent, requestId, validateJSON)
   }
 }
 
-async function sendStreamingRequest(model, useCase, messages, responseStream, requestId) {
+async function sendStreamingRequest(model, useCase, messages, responseStream, requestId, models) {
   console.log('[sendStreamingRequest] ENTRY POINT called at', Date.now())
   console.log('[sendStreamingRequest] params:', { model, useCase, messagesLength: messages?.length, requestId })
-  
   try {
     const systemPrompt = SYSTEM_PROMPTS[useCase]
     console.log('[SSE] SYSTEM PROMPT CONTENT (first 300 chars):', systemPrompt ? systemPrompt.substring(0, 300) : 'NULL')
     if (!systemPrompt) throw new Error('No system prompt found for use case: ' + useCase)
-    
     logger.debug('Sending streaming request to OpenRouter', { request_id: requestId, model, use_case: useCase })
-    
-    const fullMessages = [
-      { role: 'system', content: systemPrompt },
-      ...messages
-    ]
-    
-    const response = await openrouterClient.post('/chat/completions', {
-      model,
-      messages: fullMessages,
-      stream: true
-    }, {
-      responseType: 'stream'
-    })
-    
+    const fullMessages = [{ role: 'system', content: systemPrompt }, ...messages]
+    if (models && models.length > 1) {
+      console.log('[sendStreamingRequest] Fallback chain detected, trying primary model first')
+    }
+    const fetchRes = await streamPost(buildUrl('/chat/completions'), { model, messages: fullMessages, stream: true }, { headers: buildHeaders(), timeout: 0 })
+    const { Readable } = require('node:stream')
+    const nodeStream = Readable.fromWeb(fetchRes.body)
     console.log('[sendStreamingRequest] OpenRouter responded, starting transformation')
-    
     responseStream.setHeader('Content-Type', 'text/event-stream')
     responseStream.setHeader('Cache-Control', 'no-cache')
     responseStream.setHeader('Connection', 'keep-alive')
-    
     let buffer = ''
-    
-    response.data.on('data', (chunk) => {
+    nodeStream.on('data', (chunk) => {
       buffer += chunk.toString()
       const lines = buffer.split('\n')
       buffer = lines.pop() || ''
-      
       for (const line of lines) {
         const trimmed = line.trim()
         if (!trimmed) continue
-        
         if (trimmed === 'data: [DONE]') {
           console.log('[sendStreamingRequest] received [DONE]')
           responseStream.write('data: {"type":"done"}\n\n')
           continue
         }
-        
         if (!trimmed.startsWith('data: ')) continue
-        
         try {
           const json = JSON.parse(trimmed.slice(6))
           const content = json?.choices?.[0]?.delta?.content
@@ -172,28 +169,23 @@ async function sendStreamingRequest(model, useCase, messages, responseStream, re
         }
       }
     })
-    
-    response.data.on('end', () => {
+    nodeStream.on('end', () => {
       console.log('[sendStreamingRequest] stream ended')
       responseStream.end()
     })
-    
-    response.data.on('error', (err) => {
+    nodeStream.on('error', (err) => {
       console.error('[sendStreamingRequest] stream error:', err)
       logger.error('Streaming error from OpenRouter', { request_id: requestId, error: err.message })
       responseStream.write('data: {"type":"error","content":"Stream error"}\n\n')
       responseStream.end()
     })
-    
   } catch (err) {
-    console.error('[sendStreamingRequest] ERROR:', err.response?.data || err.message)
-    logger.error('OpenRouter streaming request failed', { request_id: requestId, error: err.message, code: err.code, status: err.response?.status })
-    
+    console.error('[sendStreamingRequest] ERROR:', err.responseBody || err.message)
+    logger.error('OpenRouter streaming request failed', { request_id: requestId, error: err.message, code: err.code, status: err.statusCode || err.response?.status })
     if (!responseStream.headersSent) {
       responseStream.write('data: {"type":"error","content":"Failed to connect to AI engine"}\n\n')
     }
     responseStream.end()
-    
     const mappedError = mapError(err)
     const error = new Error(mappedError.message)
     error.statusCode = mappedError.statusCode
@@ -206,4 +198,4 @@ async function healthCheck() {
   return !!config.openrouterApiKey
 }
 
-module.exports = { sendRequest, sendStreamingRequest, healthCheck, mapError }
+module.exports = { sendRequest, sendStreamingRequest, callLLMWithFallback, healthCheck, mapError }

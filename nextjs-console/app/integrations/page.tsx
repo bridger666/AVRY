@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import styles from './integrations.module.css'
 import type { AivoryApp, AivoryConnection, CreateConnectionPayload } from '@/types/integrations'
+import { useRouterContext } from '@/contexts/RouterContext'
+import { ContinuedFromConsole } from '@/components/routing/ContinuedFromConsole'
 
 // ── Helpers ──────────────────────────────────────────────
 
@@ -170,6 +172,17 @@ export default function IntegrationsPage() {
   const t = useTranslations("integrations")
   const tCommon = useTranslations("common")
 
+  const { pendingContext, clearPendingContext } = useRouterContext()
+  const [routingNotice, setRoutingNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!pendingContext) return
+    if (Date.now() - pendingContext.timestamp > 300000) { clearPendingContext(); return }
+    if (pendingContext.targetRoute !== 'integrations') return
+    setRoutingNotice(pendingContext.aiReplySummary || pendingContext.triggerMessage)
+    clearPendingContext()
+  }, [pendingContext, clearPendingContext])
+
   const fetchApps = useCallback(async () => {
     try {
       const res = await fetch('/api/integrations/apps')
@@ -210,6 +223,9 @@ export default function IntegrationsPage() {
 
   return (
     <div className={styles.page}>
+      {routingNotice !== null && (
+        <ContinuedFromConsole summary={routingNotice} onDismiss={() => setRoutingNotice(null)} />
+      )}
       <div className={styles.header}>
         <h1 className={styles.title}>{t("title")}</h1>
         <p className={styles.subtitle}>{t("description")}</p>

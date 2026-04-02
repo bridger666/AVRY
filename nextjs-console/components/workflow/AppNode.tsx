@@ -141,7 +141,7 @@ const AppNode = memo(
         <button
           className={styles.addButton}
           onClick={onAddStep}
-          title="Add follow-up step with AIRA"
+          title="Add follow-up step with Aivory"
         >
           +
         </button>

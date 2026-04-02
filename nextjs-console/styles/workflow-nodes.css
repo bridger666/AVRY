@@ -84,6 +84,7 @@
 .workflow-node[data-category='logic']     { border-color: rgba(139, 92, 246, 0.28);  background: rgba(139, 92, 246, 0.06); }
 .workflow-node[data-category='transform'] { border-color: rgba(59, 130, 246, 0.28);  background: rgba(59, 130, 246, 0.06); }
 .workflow-node[data-category='ai']        { border-color: rgba(0, 229, 158, 0.28);   background: rgba(0, 229, 158, 0.05); }
+.workflow-node[data-category='agent']     { border-color: rgba(0, 229, 158, 0.28);   background: rgba(0, 229, 158, 0.05); }
 .workflow-node[data-category='condition'] { border-color: rgba(251, 191, 36, 0.28);  background: rgba(251, 191, 36, 0.06); }
 .workflow-node[data-category='channel']   { border-color: rgba(59, 130, 246, 0.28);  background: rgba(59, 130, 246, 0.06); }
 .workflow-node[data-category='system']    { border-color: rgba(139, 92, 246, 0.28);  background: rgba(139, 92, 246, 0.06); }
@@ -126,6 +127,7 @@
 .node-icon[data-category='logic']     { color: rgba(139, 92, 246, 0.85);  background: rgba(139, 92, 246, 0.08); }
 .node-icon[data-category='transform'] { color: rgba(59, 130, 246, 0.85);  background: rgba(59, 130, 246, 0.08); }
 .node-icon[data-category='ai']        { color: rgba(0, 229, 158, 0.85);   background: rgba(0, 229, 158, 0.08); }
+.node-icon[data-category='agent']     { color: rgba(0, 229, 158, 0.85);   background: rgba(0, 229, 158, 0.08); }
 .node-icon[data-category='condition'] { color: rgba(251, 191, 36, 0.85);  background: rgba(251, 191, 36, 0.08); }
 .node-icon[data-category='channel']   { color: rgba(59, 130, 246, 0.85);  background: rgba(59, 130, 246, 0.08); }
 .node-icon[data-category='system']    { color: rgba(139, 92, 246, 0.85);  background: rgba(139, 92, 246, 0.08); }
@@ -170,7 +172,7 @@
 .workflow-node .node-step {
   font-size: 10px;
   font-weight: 500;
-  color: #5a5a58;
+  color: #a1a1aa;
   text-transform: uppercase;
   letter-spacing: 0.4px;
   margin-bottom: 4px;

@@ -49,7 +49,7 @@ export function loadCanvasState(workflowId: string): CanvasState | null {
  * Old saves may have type: 'workflowStep', 'default', or missing icon/category.
  */
 function migrateNodes(nodes: Node[]): Node[] {
-  const CANONICAL_TYPES = new Set(['standardNode', 'appNode', 'triggerNode']);
+  const CANONICAL_TYPES = new Set(['standardNode', 'appNode', 'triggerNode', 'agent']);
   return nodes.map((n) => {
     if (CANONICAL_TYPES.has(n.type ?? '')) return n;
     // Remap to standardNode with safe defaults

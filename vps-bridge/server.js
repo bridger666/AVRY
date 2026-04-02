@@ -14,11 +14,11 @@ const rateLimit = require('express-rate-limit');
 // Import configuration and modules
 const { config, validateConfig } = require('./config');
 const { logger } = require('./logger');
-const { 
-  enrichRequest, 
-  logRequest, 
-  errorHandler, 
-  authenticateApiKey 
+const {
+  enrichRequest,
+  logRequest,
+  errorHandler,
+  authenticateApiKey
 } = require('./middleware');
 const {
   handleConsoleStream,
@@ -33,6 +33,12 @@ const {
   handleBridgeAira,
   handleBridgeKiro,
   handleHealthCheck,
+  handleAivoryPipeline,
+  handleListAgents,
+  handleCreateAgent,
+  handleGetAgent,
+  handleUpdateAgent,
+  handleDeleteAgent,
 } = require('./endpoints');
 
 // ============================================================================
@@ -67,8 +73,8 @@ app.use(express.json({ limit: '10mb' }));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Max 100 requests per window per IP
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: {
     error: true,
     code: 'RATE_LIMIT_EXCEEDED',
@@ -84,6 +90,7 @@ app.use('/console/', limiter);
 app.use('/diagnostics/', limiter);
 app.use('/blueprints/', limiter);
 app.use('/workflows/', limiter);
+app.use('/agents/', limiter);
 app.use('/aria/', limiter);
 app.use('/bridge/', limiter);
 
@@ -100,12 +107,15 @@ app.get('/health', handleHealthCheck);
 // Apply API key authentication to all protected routes
 app.use(authenticateApiKey(config.apiKey));
 
-// Apply request enrichment and logging to all AI endpoints (except /aria which is simpler)
-// /diagnostics/free/run is exempt from enrichRequest — it's a public free-tier endpoint
-// that does not require organization_id
-// /blueprints/generate-workflow is exempt from enrichRequest — organization_id is optional for workflow gen
-app.use(['/console/stream', '/console/mobile', '/diagnostics/run', '/blueprints/generate', '/workflows/*'], enrichRequest);
-app.use(['/console/*', '/diagnostics/*', '/blueprints/*', '/workflows/*'], logRequest);
+// Apply request enrichment and logging to all AI endpoints
+app.use(
+  ['/console/stream', '/console/mobile', '/diagnostics/run', '/blueprints/generate', '/workflows/*'],
+  enrichRequest
+);
+app.use(
+  ['/console/*', '/diagnostics/*', '/blueprints/*', '/workflows/*'],
+  logRequest
+);
 
 // ============================================================================
 // CONSOLE CHAT STREAMING
@@ -114,45 +124,20 @@ app.use(['/console/*', '/diagnostics/*', '/blueprints/*', '/workflows/*'], logRe
 /**
  * POST /console/stream
  * Streams AI console responses using Server-Sent Events
- * 
- * Request body:
- * {
- *   organization_id: string,
- *   session_id: string,
- *   language: string,
- *   messages: Array<{ role: 'user' | 'assistant', content: string }>
- * }
  */
 app.post('/console/stream', handleConsoleStream);
 
 /**
  * POST /console/mobile
  * Non-streaming console for mobile (WhatsApp, Telegram, Zenclaw)
- * 
- * Request body:
- * {
- *   organization_id: string,
- *   session_id: string,
- *   message: string
- * }
- * 
- * Returns: { response: string }
  */
 app.post('/console/mobile', handleMobileConsole);
 
 /**
  * POST /aria
  * Plain chat endpoint for ARIA (routes through internal gateway)
- * 
- * Request body:
- * {
- *   message: string
- * }
- * 
- * Returns: { response: string }
  */
 app.post('/aria', (req, res, next) => {
-  // Simple enrichment without organization_id requirement
   req.requestId = require('uuid').v4();
   req.startTime = Date.now();
   next();
@@ -161,8 +146,6 @@ app.post('/aria', (req, res, next) => {
 /**
  * POST /aria/stream
  * Streaming AIRA endpoint for the floating assistant tab.
- * Primary: Zeroclaw orchestrator. Fallback: OpenRouter direct.
- * Sends an immediate empty chunk to prevent client idle timeout.
  */
 app.post('/aria/stream', (req, res, next) => {
   req.requestId = require('uuid').v4();
@@ -177,31 +160,12 @@ app.post('/aria/stream', (req, res, next) => {
 /**
  * POST /diagnostics/run
  * Processes deep diagnostic requests
- * 
- * Request body:
- * {
- *   organization_id: string,
- *   mode: 'deep',
- *   diagnostic_payload: object
- * }
- * 
- * Returns: DiagnosticResult
  */
 app.post('/diagnostics/run', handleDeepDiagnostic);
 
 /**
  * POST /diagnostics/free/run
  * Processes free diagnostic (12 questions)
- * Public endpoint — no organization_id required.
- * 
- * Request body:
- * {
- *   mode: 'free',
- *   answers: { [questionId: string]: number },
- *   language: string
- * }
- * 
- * Returns: DiagnosticResult
  */
 app.post('/diagnostics/free/run', (req, res, next) => {
   req.requestId = require('uuid').v4();
@@ -216,19 +180,9 @@ app.post('/diagnostics/free/run', (req, res, next) => {
 /**
  * POST /blueprints/generate
  * Generates AI System Blueprint
- * 
- * Request body:
- * {
- *   organization_id: string,
- *   diagnostic_id: string,
- *   objective: string,
- *   constraints: object,
- *   industry: string
- * }
- * 
- * Returns: Blueprint
  */
 app.post('/blueprints/generate', handleBlueprintGeneration);
+
 app.post('/blueprints/generate-workflow', (req, res, next) => {
   req.requestId = require('uuid').v4();
   req.startTime = Date.now();
@@ -242,16 +196,42 @@ app.post('/blueprints/generate-workflow', (req, res, next) => {
 /**
  * POST /workflows/synthesize
  * Generates n8n workflow JSON from workflow module spec
- * 
- * Request body:
- * {
- *   organization_id: string,
- *   workflow_module: object
- * }
- * 
- * Returns: n8n workflow JSON
  */
 app.post('/workflows/synthesize', handleWorkflowSynthesis);
+
+// ============================================================================
+// AGENTS CRUD ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /agents
+ * List agents for current workspace with optional filtering
+ */
+app.get('/agents', handleListAgents);
+
+/**
+ * POST /agents
+ * Create a new agent
+ */
+app.post('/agents', handleCreateAgent);
+
+/**
+ * GET /agents/:id
+ * Get a specific agent by ID
+ */
+app.get('/agents/:id', handleGetAgent);
+
+/**
+ * PATCH /agents/:id
+ * Update an agent
+ */
+app.patch('/agents/:id', handleUpdateAgent);
+
+/**
+ * DELETE /agents/:id
+ * Soft delete an agent
+ */
+app.delete('/agents/:id', handleDeleteAgent);
 
 // ============================================================================
 // BRIDGE ENDPOINTS
@@ -260,10 +240,6 @@ app.post('/workflows/synthesize', handleWorkflowSynthesis);
 /**
  * POST /bridge/aira
  * General AIRA entry point for all Aivory clients.
- * Builds a rich prompt from message + context, routes through ZeroClaw.
- *
- * Request body: { message: string, context?: object }
- * Returns: { mode: "zeroclaw", model, raw_agent_response, tool_calls }
  */
 app.post('/bridge/aira', (req, res, next) => {
   req.requestId = require('uuid').v4();
@@ -274,15 +250,18 @@ app.post('/bridge/aira', (req, res, next) => {
 /**
  * POST /bridge/kiro
  * Routes a Kiro-originated message through the Zeroclaw orchestrator.
- *
- * Request body: { message: string, context?: object }
- * Returns: { mode: "zeroclaw", model, raw_agent_response, tool_calls }
  */
 app.post('/bridge/kiro', (req, res, next) => {
   req.requestId = require('uuid').v4();
   req.startTime = Date.now();
   next();
 }, handleBridgeKiro);
+
+/**
+ * POST /llm/aivory/pipeline
+ * Runs Aivory diag+blueprint pipeline via Zeroclaw.
+ */
+app.post('/llm/aivory/pipeline', handleAivoryPipeline);
 
 // ============================================================================
 // ERROR HANDLING
@@ -322,8 +301,14 @@ const server = app.listen(config.port, '0.0.0.0', () => {
   logger.info('  POST /diagnostics/free/run');
   logger.info('  POST /blueprints/generate');
   logger.info('  POST /workflows/synthesize');
+  logger.info('  GET  /agents');
+  logger.info('  POST /agents');
+  logger.info('  GET  /agents/:id');
+  logger.info('  PATCH /agents/:id');
+  logger.info('  DELETE /agents/:id');
   logger.info('  POST /bridge/aira');
   logger.info('  POST /bridge/kiro');
+  logger.info('  POST /llm/aivory/pipeline');
 });
 
 // ============================================================================
@@ -332,12 +317,12 @@ const server = app.listen(config.port, '0.0.0.0', () => {
 
 function gracefulShutdown(signal) {
   logger.info(`${signal} received, shutting down gracefully...`);
-  
+
   server.close(() => {
     logger.info('✅ Server closed successfully');
     process.exit(0);
   });
-  
+
   // Force shutdown after 10 seconds
   setTimeout(() => {
     logger.error('⚠️  Forced shutdown after timeout');
@@ -364,3 +349,4 @@ process.on('unhandledRejection', (reason, promise) => {
   });
   process.exit(1);
 });
+

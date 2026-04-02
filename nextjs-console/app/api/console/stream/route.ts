@@ -15,13 +15,12 @@ import type { ConsoleStreamRequest } from '@/types/console'
 // FIXED: TIMEOUT INCREASE — raised from 60s to 120s to support long AI responses
 export const maxDuration = 120
 
+
 export async function POST(request: NextRequest) {
   try {
-    // Parse request body
     const body = await request.json() as ConsoleStreamRequest
     const { session_id, organization_id, messages } = body
 
-    // Validate required fields (Requirement 5.1)
     if (!session_id || typeof session_id !== 'string') {
       return Response.json(
         createErrorResponse(
@@ -52,7 +51,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate message structure
     for (const message of messages) {
       if (!message.role || !['user', 'assistant'].includes(message.role)) {
         return Response.json(
@@ -74,51 +72,43 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get VPS bridge configuration (Requirement 1.1, 1.2)
     const config = getConfig()
-
-    // Forward request to VPS bridge — routes through ZeroClaw (AIRA runtime)
     const vpsBridgeUrl = `${config.VPS_BRIDGE_URL}/bridge/aira`
 
-    // FIXED: TIMEOUT INCREASE — abort after 115s (just under Vercel's 120s hard limit)
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 115000)
-    
+    const timeoutId = setTimeout(() => controller.abort(), 115_000)
+
     let vpsBridgeResponse: Response
     try {
       vpsBridgeResponse = await fetch(vpsBridgeUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Api-Key': config.VPS_BRIDGE_API_KEY
+          'X-Api-Key': config.VPS_BRIDGE_API_KEY,
         },
         body: JSON.stringify({
-          // Extract the last user message as the primary prompt
-          message: messages.filter(m => m.role === 'user').at(-1)?.content ?? '',
-          // Top-level routing fields — forwarded to Zeroclaw for agent selection
-          // Zeroclaw reads mode/channel/entrypoint to pick console agent vs dev agent
+          message: messages.filter((m) => m.role === 'user').at(-1)?.content ?? '',
           mode: 'console',
           channel: 'console_ui',
           entrypoint: 'console',
           context: {
             session_id,
             organization_id,
-            history: messages
-          }
+            history: messages,
+          },
         }),
-        signal: controller.signal
+        signal: controller.signal,
       })
     } finally {
       clearTimeout(timeoutId)
     }
 
-    // Handle VPS bridge errors (Requirement 5.8)
     if (!vpsBridgeResponse.ok) {
       let errorMessage = 'Failed to connect to VPS bridge'
       let errorDetails: any = undefined
 
       try {
-        const errorData = await vpsBridgeResponse.json()
+        const errorData = await vpsBridgeResponse.json() as any
         errorMessage = errorData.message || errorData.detail || errorMessage
         errorDetails = errorData.details
       } catch {
@@ -131,32 +121,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // /bridge/aira returns JSON — convert to SSE so the frontend chat stream works
     const bridgeData = await vpsBridgeResponse.json() as {
-      mode: string
-      model: string
-      raw_agent_response: string
-      tool_calls: unknown[]
+      raw_agent_response?: string
+      rawagentresponse?: string
     }
 
-    const text = bridgeData.raw_agent_response ?? ''
+    const text = bridgeData.raw_agent_response ?? bridgeData.rawagentresponse ?? ''
     const enc = new TextEncoder()
 
-    // ── Detect workflow_spec in AIRA response ──────────────────────────
-    // If AIRA's response contains a ```workflow_spec JSON block, extract it
-    // and emit it as a separate SSE event so the frontend can show the
-    // "Generate workflow to canvas" button.
     let workflowSpec: Record<string, unknown> | null = null
     let displayText = text
 
-    const specMatch = text.match(/```workflow_spec\s*\n?([\s\S]*?)\n?```/)
+    const specMatch = text.match(/```workflowspec[\s\S]*?```/)
     if (specMatch) {
       try {
         workflowSpec = JSON.parse(specMatch[1])
-        // Remove the spec block from the display text
-        displayText = text.replace(/```workflow_spec\s*\n?[\s\S]*?\n?```/, '').trim()
+        displayText = text.replace(/```workflowspec[\s\S]*?```/,'').trim()
       } catch {
-        // Invalid JSON in spec block — ignore, show full text
+        // ignore invalid JSON in workflowspec
       }
     }
 
@@ -165,21 +147,38 @@ export async function POST(request: NextRequest) {
 
     ;(async () => {
       try {
-        // Emit the text response as a single chunk (ZeroClaw is non-streaming)
-        await writer.write(enc.encode(
-          `data: ${JSON.stringify({ type: 'chunk', content: displayText })}\n\n`
-        ))
-        // If a workflow_spec was detected, emit it as a separate event
-        if (workflowSpec) {
-          await writer.write(enc.encode(
-            `data: ${JSON.stringify({ type: 'workflow_spec', workflow: workflowSpec })}\n\n`
-          ))
+        const step = 20
+
+        for (let i = 0; i < displayText.length; i += step) {
+          const piece = displayText.slice(i, i + step)
+
+          await writer.write(
+            enc.encode(
+              `data: ${JSON.stringify({ type: 'chunk', content: piece })}\n\n`
+            )
+          )
         }
-        await writer.write(enc.encode(
-          `data: ${JSON.stringify({ type: 'done' })}\n\n`
-        ))
+
+        if (workflowSpec) {
+          await writer.write(
+            enc.encode(
+              `data: ${JSON.stringify({
+                type: 'workflowspec',
+                workflow: workflowSpec,
+              })}\n\n`
+            )
+          )
+        }
+
+        await writer.write(
+          enc.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`)
+        )
       } finally {
-        try { await writer.close() } catch { /* already closed */ }
+        try {
+          await writer.close()
+        } catch {
+          // ignore
+        }
       }
     })()
 
@@ -187,16 +186,13 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
         'X-Accel-Buffering': 'no',
-      }
+      },
     })
-
   } catch (error) {
-    // Handle unexpected errors (Requirement 5.8)
     console.error('Console stream error:', error)
 
-    // Check for configuration errors
     if (error instanceof Error && error.message.includes('Missing required environment variables')) {
       return Response.json(
         createErrorResponse(
@@ -208,7 +204,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check for network errors
     if (error instanceof TypeError && error.message.includes('fetch')) {
       return Response.json(
         createErrorResponse(
@@ -220,7 +215,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check for timeout (AbortError)
     if (error instanceof Error && error.name === 'AbortError') {
       return Response.json(
         createErrorResponse(
@@ -232,12 +226,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generic error response
     return Response.json(
       createErrorResponse(
         'InternalError',
         'An unexpected error occurred. Please try again.',
-        { originalError: error instanceof Error ? error.message : String(error) }
+        {
+          originalError:
+            error instanceof Error ? error.message : String(error),
+        }
       ),
       { status: 500 }
     )

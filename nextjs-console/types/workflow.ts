@@ -130,3 +130,37 @@ export interface Connection {
   status: 'connected' | 'revoked' | 'needs_reauth';
   lastUsedAt?: string;
 }
+
+/**
+ * Represents data for an AI Agent node on the workflow canvas
+ * @property type - Node type identifier: 'agent'
+ * @property agentName - Name of the AI agent (required, max 100 chars)
+ * @property agentIcon - Optional icon URL or SVG for the agent
+ * @property model - LLM model name (required, e.g., "Claude 3.5", "GPT-4")
+ * @property provider - LLM provider (required, e.g., "OpenRouter", "OpenAI")
+ * @property runtime - Runtime environment (required, e.g., "Zeroclaw", "Local")
+ * @property promptSummary - Truncated prompt summary (required, max 500 chars)
+ * @property inputVariables - Array of input variable names (required, non-empty strings)
+ * @property outputVariable - Output variable name (required, non-empty string)
+ * @property status - Current node status (default, running, error, disabled)
+ * @property errorMessage - Error message if status is 'error'
+ * @property onDelete - Callback when delete button is clicked
+ * @property onAddStep - Callback when add button is clicked
+ * @property onExplainPath - Callback when info button is clicked
+ */
+export interface AgentNodeData {
+  type: 'agent';
+  agentName: string;
+  agentIcon?: string;
+  model: string;
+  provider: string;
+  runtime: string;
+  promptSummary: string;
+  inputVariables: string[];
+  outputVariable: string;
+  status?: 'default' | 'running' | 'error' | 'disabled';
+  errorMessage?: string;
+  onDelete?: () => void;
+  onAddStep?: () => void;
+  onExplainPath?: () => void;
+}

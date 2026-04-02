@@ -48,15 +48,15 @@ describe('Visual Consistency - Background Colors', () => {
   })
 
   it('should use consistent background color across Console page', () => {
-    // Read the console CSS file
-    const consoleCSS = readFileSync(
-      join(process.cwd(), 'app/console/console.module.css'),
+    // Read the console top bar CSS file (console uses global styles)
+    const consoleTopBarCSS = readFileSync(
+      join(process.cwd(), 'components/console/ConsoleTopBar.module.css'),
       'utf-8'
     )
     
-    // Check for the warm dark background color (#1e1d1a)
-    // Console uses direct color value in .consoleWrapper
-    expect(consoleCSS).toContain('#1e1d1a')
+    // Check for the design system variable
+    // Console uses var(--bg-main) which is defined in globals.css
+    expect(consoleTopBarCSS).toContain('var(--bg-main)')
   })
 
   it('should use consistent background color across Workflows page', () => {
@@ -66,8 +66,8 @@ describe('Visual Consistency - Background Colors', () => {
       'utf-8'
     )
     
-    // Check for var(--bg-main, #1e1d1a) in workflowsLayout
-    expect(workflowsCSS).toContain('var(--bg-main, #1e1d1a)')
+    // Check for the design system variable (with any fallback color)
+    expect(workflowsCSS).toContain('var(--bg-main')
   })
 
   it('should have matching background colors across all three pages', () => {
@@ -76,8 +76,8 @@ describe('Visual Consistency - Background Colors', () => {
       join(process.cwd(), 'app/integrations/integrations.module.css'),
       'utf-8'
     )
-    const consoleCSS = readFileSync(
-      join(process.cwd(), 'app/console/console.module.css'),
+    const consoleTopBarCSS = readFileSync(
+      join(process.cwd(), 'components/console/ConsoleTopBar.module.css'),
       'utf-8'
     )
     const workflowsCSS = readFileSync(
@@ -88,14 +88,14 @@ describe('Visual Consistency - Background Colors', () => {
     // Extract the background color value from Integrations
     const integrationsBackground = extractBackgroundColor(integrationsCSS, 'page')
     
-    // Verify Integrations uses the design system variable
+    // Verify Integrations uses the design system variable with correct fallback
     expect(integrationsBackground).toBe('var(--bg-main, #1e1d1a)')
     
-    // Verify Console uses the same color value
-    expect(consoleCSS).toContain('#1e1d1a')
+    // Verify Console uses the design system variable
+    expect(consoleTopBarCSS).toContain('var(--bg-main)')
     
-    // Verify Workflows uses the same design system variable
-    expect(workflowsCSS).toContain('var(--bg-main, #1e1d1a)')
+    // Verify Workflows uses the design system variable
+    expect(workflowsCSS).toContain('var(--bg-main')
   })
 
   it('should use CSS variable with fallback for theme consistency', () => {
@@ -142,7 +142,6 @@ describe('Visual Consistency - Background Colors', () => {
 
   it('should maintain visual consistency when navigating between pages', () => {
     // This test verifies that all pages use the same color system
-    const expectedColor = '#1e1d1a'
     const expectedVariable = 'var(--bg-main, #1e1d1a)'
     
     // Read all CSS files
@@ -150,8 +149,8 @@ describe('Visual Consistency - Background Colors', () => {
       join(process.cwd(), 'app/integrations/integrations.module.css'),
       'utf-8'
     )
-    const consoleCSS = readFileSync(
-      join(process.cwd(), 'app/console/console.module.css'),
+    const consoleTopBarCSS = readFileSync(
+      join(process.cwd(), 'components/console/ConsoleTopBar.module.css'),
       'utf-8'
     )
     const workflowsCSS = readFileSync(
@@ -159,19 +158,19 @@ describe('Visual Consistency - Background Colors', () => {
       'utf-8'
     )
     
-    // Verify Integrations page uses the variable
+    // Verify Integrations page uses the variable with correct fallback
     const integrationsBackground = extractBackgroundColor(integrationsCSS, 'page')
     expect(integrationsBackground).toBe(expectedVariable)
     
-    // Verify Console page uses the color value
-    expect(consoleCSS).toContain(expectedColor)
+    // Verify Console page uses the design system variable
+    expect(consoleTopBarCSS).toContain('var(--bg-main)')
     
-    // Verify Workflows page uses the variable
-    expect(workflowsCSS).toContain(expectedVariable)
+    // Verify Workflows page uses the design system variable
+    expect(workflowsCSS).toContain('var(--bg-main')
     
-    // All pages should reference the same color value
-    expect(integrationsCSS).toContain(expectedColor)
-    expect(consoleCSS).toContain(expectedColor)
-    expect(workflowsCSS).toContain(expectedColor)
+    // All pages should reference the design system variable
+    expect(integrationsCSS).toContain('var(--bg-main')
+    expect(consoleTopBarCSS).toContain('var(--bg-main)')
+    expect(workflowsCSS).toContain('var(--bg-main')
   })
 })

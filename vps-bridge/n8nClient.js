@@ -6,7 +6,7 @@
  * which n8n instance the Bridge talks to.
  */
 
-const axios = require('axios');
+const { post } = require('./lib/http');
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -83,14 +83,14 @@ async function callN8N(use_case, message, systemPrompt = null) {
   if (systemPrompt) body.system = systemPrompt;
 
   try {
-    const response = await axios.post(url, body, {
+    const response = await post(url, body, {
       headers: { 'Content-Type': 'application/json' },
       timeout: 120000,
     });
-    return { success: true, data: response.data };
+    return { success: true, data: response };
   } catch (err) {
     console.error('[bridge→n8n] webhook error', { use_case, url, error: err.message });
-    return { success: false, error: err.response?.data || err.message };
+    return { success: false, error: err.responseBody || err.message };
   }
 }
 

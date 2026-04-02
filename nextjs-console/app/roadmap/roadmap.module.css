@@ -1,7 +1,8 @@
 /* ── Base layout ─────────────────────────────────────────────── */
 .page {
-  min-height: 100vh;
-  background: var(--bg-main, #1e1d1a);
+  height: 100%;
+  overflow-y: auto;
+  background: var(--bg-main, #353531);
   color: var(--text-primary, #e8e6e3);
   font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
 }
@@ -38,7 +39,7 @@
 
 .headerLeft p {
   font-size: 0.9rem;
-  color: #7a7875;
+  color: #d6d6c9;
   margin: 0;
 }
 
@@ -70,7 +71,7 @@
 
 .updatedAt {
   font-size: 12px;
-  color: #5a5855;
+  color: #a1a1aa;
 }
 
 /* ── Timeline bar ────────────────────────────────────────────── */
@@ -156,7 +157,7 @@
 
 .timelineTime {
   font-size: 11px;
-  color: #5a5855;
+  color: #a1a1aa;
 }
 
 /* ── Phase cards ─────────────────────────────────────────────── */
@@ -246,7 +247,7 @@
 
 .phaseTimeframe {
   font-size: 0.8rem;
-  color: #5a5855;
+  color: #a1a1aa;
 }
 
 .phaseHeaderRight {
@@ -270,12 +271,12 @@
 
 .progressCount {
   font-size: 11px;
-  color: #5a5855;
+  color: #a1a1aa;
   font-variant-numeric: tabular-nums;
 }
 
 .chevron {
-  color: #5a5855;
+  color: #a1a1aa;
   flex-shrink: 0;
   transition: transform 0.2s;
 }
@@ -318,7 +319,7 @@
 .sectionLabel {
   font-size: 10px;
   font-weight: 700;
-  color: #5a5855;
+  color: #a1a1aa;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin: 0 0 8px;
@@ -380,13 +381,13 @@
 }
 
 .milestoneTitle.done {
-  color: #5a5855;
+  color: #a1a1aa;
   text-decoration: line-through;
 }
 
 .milestoneDesc {
   font-size: 0.8rem;
-  color: #5a5855;
+  color: #a1a1aa;
   line-height: 1.5;
 }
 
@@ -433,7 +434,7 @@
 
 .kpiLabel {
   font-size: 0.7rem;
-  color: #5a5855;
+  color: #a1a1aa;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.6px;
@@ -465,7 +466,7 @@
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.1);
   background: transparent;
-  color: #7a7875;
+  color: #d6d6c9;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.15s;
@@ -489,7 +490,7 @@
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.1);
   background: transparent;
-  color: #7a7875;
+  color: #d6d6c9;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.15s;
@@ -564,7 +565,7 @@
 
 .actionHint {
   font-size: 13px;
-  color: #5a5855;
+  color: #a1a1aa;
   flex: 1;
   min-width: 180px;
 }
@@ -589,8 +590,8 @@
 
 /* ── Loading ─────────────────────────────────────────────────── */
 .loadingWrap {
-  min-height: 100vh;
-  background: var(--bg-main, #1e1d1a);
+  height: 100%;
+  background: var(--bg-main, #353531);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -651,7 +652,7 @@
 
 .emptyBody {
   font-size: 0.9375rem;
-  color: #7a7875;
+  color: #d6d6c9;
   line-height: 1.7;
   max-width: 480px;
   margin: 0;
@@ -672,7 +673,7 @@
 
 .proTipText {
   font-size: 0.8125rem;
-  color: #5a5855;
+  color: #a1a1aa;
   line-height: 1.5;
 }
 
@@ -688,7 +689,7 @@
   border-radius: 7px;
   border: 1px solid rgba(255,255,255,0.1);
   background: transparent;
-  color: #7a7875;
+  color: #d6d6c9;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.15s;

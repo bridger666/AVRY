@@ -1,6 +1,7 @@
 .pageContainer {
-  min-height: 100vh;
-  background: #1e1d1a;
+  height: 100%;
+  overflow-y: auto;
+  background: #353531;
   padding: 2rem;
 }
 

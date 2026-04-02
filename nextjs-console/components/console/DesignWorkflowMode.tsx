@@ -71,7 +71,7 @@ export const DesignWorkflowMode: React.FC<DesignWorkflowModeProps> = ({ onClose 
 
         <div className={styles.content}>
           <div className={styles.description}>
-            Describe your automation in natural language, and AIRA will generate a workflow for you.
+            Describe your automation in natural language, and Aivory will generate a workflow for you.
           </div>
 
           <div className={styles.inputGroup}>

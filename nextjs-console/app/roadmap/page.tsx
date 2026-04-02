@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { loadRoadmap, saveRoadmap } from '@/hooks/useRoadmap';
 import type { AiryRoadmap, AiryRoadmapPhase, AiryRoadmapKpi, AiryRoadmapMilestone } from '@/types/roadmap';
+import { useRouterContext } from '@/contexts/RouterContext';
+import { ContinuedFromConsole } from '@/components/routing/ContinuedFromConsole';
 
 // ─── colour tokens ────────────────────────────────────────────
 const T = {
-  bg:           '#1e1d1a',
+  bg:           '#353531',
   card:         'rgba(255,255,255,0.03)',
   cardSolid:    '#242320',
   cardHover:    'rgba(255,255,255,0.05)',
@@ -28,6 +30,8 @@ const T = {
 };
 
 // ─── AIRA trigger ─────────────────────────────────────────────
+// Context (page/mode/roadmap) is driven by the current route in AiraFloatingAssistant,
+// NOT by the prefill text. The pageContext here is supplementary metadata only.
 const openAira = (msg: string, pageContext?: Record<string, unknown>) =>
   window.dispatchEvent(new CustomEvent('aira:open', {
     detail: {
@@ -497,6 +501,17 @@ export default function RoadmapPage() {
   const [activeIdx, setActiveIdx] = useState(0);
   const phaseRefs = useRef<Array<React.RefObject<HTMLDivElement>>>([]);
 
+  const { pendingContext, clearPendingContext } = useRouterContext()
+  const [routingNotice, setRoutingNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!pendingContext) return
+    if (Date.now() - pendingContext.timestamp > 300000) { clearPendingContext(); return }
+    if (pendingContext.targetRoute !== 'roadmap') return
+    setRoutingNotice(pendingContext.aiReplySummary || pendingContext.triggerMessage)
+    clearPendingContext()
+  }, [pendingContext, clearPendingContext])
+
   useEffect(() => {
     const rm = loadRoadmap();
     setRoadmap(rm);
@@ -543,14 +558,17 @@ export default function RoadmapPage() {
   const font = "'Inter Tight','Inter',system-ui,sans-serif";
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ height: '100%', background: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <style>{`@keyframes rm-spin{to{transform:rotate(360deg)}}`}</style>
       <div style={{ width: 36, height: 36, border: '2.5px solid rgba(255,255,255,0.06)', borderTopColor: T.green, borderRadius: '50%', animation: 'rm-spin 0.8s linear infinite' }} />
     </div>
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: T.bg, color: T.text, fontFamily: font }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: T.bg, color: T.text, fontFamily: font }}>
+      {routingNotice !== null && (
+        <ContinuedFromConsole summary={routingNotice} onDismiss={() => setRoutingNotice(null)} />
+      )}
       <style>{`@keyframes rm-spin{to{transform:rotate(360deg)}}`}</style>
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 24px 100px', display: 'flex', flexDirection: 'column', gap: 28 }}>
 

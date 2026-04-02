@@ -8,7 +8,7 @@ export interface StandardNodeDef {
   label: string;
   icon: React.ReactNode;
   iconKey: string; // string key for serialization
-  category: 'trigger' | 'logic' | 'transform' | 'utility';
+  category: 'trigger' | 'logic' | 'transform' | 'utility' | 'ai';
   description?: string;
 }
 
@@ -78,6 +78,15 @@ const Icons: Record<string, React.ReactNode> = {
       <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
     </svg>
   ),
+  agent: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="1" />
+      <path d="M12 1v6m0 6v6" />
+      <path d="M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24" />
+      <path d="M1 12h6m6 0h6" />
+      <path d="M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24" />
+    </svg>
+  ),
 };
 
 export const STANDARD_NODES: StandardNodeDef[] = [
@@ -92,6 +101,8 @@ export const STANDARD_NODES: StandardNodeDef[] = [
   { type: 'standardNode', label: 'Edit Fields',        iconKey: 'edit',      icon: Icons.edit,      category: 'transform', description: 'Map and rename fields' },
   { type: 'standardNode', label: 'Code',               iconKey: 'code',      icon: Icons.code,      category: 'transform', description: 'Run custom JavaScript' },
   { type: 'standardNode', label: 'Aggregate',          iconKey: 'aggregate', icon: Icons.aggregate, category: 'transform', description: 'Merge multiple items' },
+  // AI
+  { type: 'agent', label: 'Agent',                     iconKey: 'agent',     icon: Icons.agent,     category: 'ai',        description: 'Run an AI agent' },
   // Utility
   { type: 'standardNode', label: 'HTTP Request',       iconKey: 'http',      icon: Icons.http,      category: 'utility',   description: 'Call any REST API' },
   { type: 'standardNode', label: 'Respond to Webhook', iconKey: 'respond',   icon: Icons.respond,   category: 'utility',   description: 'Send HTTP response' },
@@ -102,6 +113,7 @@ const CATEGORY_LABELS: Record<StandardNodeDef['category'], string> = {
   logic:     'Logic',
   transform: 'Transform',
   utility:   'Utility',
+  ai:        'AI',
 };
 
 interface Props {

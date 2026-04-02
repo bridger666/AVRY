@@ -7,8 +7,9 @@ import ChatMessage from "@/components/ChatMessage"
 import ChatInput from "@/components/ChatInput"
 import { getSessionId } from "@/lib/session"
 import { streamConsoleResponse } from "@/lib/streaming"
+import { loadRoadmap } from "@/hooks/useRoadmap"
+import type { AiryRoadmap } from "@/types/roadmap"
 import type { Attachment } from "@/components/UploadMenu"
-import styles from "./aira-fab.module.css"
 
 interface Message {
   id: string
@@ -18,7 +19,7 @@ interface Message {
 }
 
 // Pages where the FAB should be visible
-const ALLOWED_PATHS = ["/console", "/diagnostics", "/blueprint", "/roadmap", "/workflows"]
+const ALLOWED_PATHS = ["/diagnostics", "/blueprint", "/roadmap", "/workflows"]
 
 function getPageContext(pathname: string): string {
   if (pathname.startsWith("/console")) return "console"
@@ -175,7 +176,10 @@ export default function AiraFloatingAssistant() {
     try {
       // Single canonical path for ALL tabs: /api/aira/stream → /bridge/aira → Zeroclaw
       // Tab-specific context (source_tab + pageContext) is passed via the `context` field.
+      // When on roadmap page, include mode=roadmap_explain and the full AiryRoadmap object.
       const effectiveSourceTab = activeSourceTab || pageContext || "unknown"
+      const isRoadmap = effectiveSourceTab === "roadmap"
+      const currentRoadmap: AiryRoadmap | null = isRoadmap ? loadRoadmap() : null
       const contextPrefix =
         messages.length === 0 && effectiveSourceTab
           ? `[Context: user is on the ${effectiveSourceTab} page] `
@@ -195,7 +199,9 @@ export default function AiraFloatingAssistant() {
         messages: apiMessages,
         context: {
           page: effectiveSourceTab,
+          mode: isRoadmap ? "roadmap_explain" : "general",
           source_tab: activeSourceTab || pageContext || "unknown",
+          ...(isRoadmap && currentRoadmap ? { roadmap: currentRoadmap } : {}),
           pageContext: activePageContext,
         },
       } as any)) {
@@ -241,7 +247,7 @@ export default function AiraFloatingAssistant() {
             m.id === assistantId
               ? {
                   ...m,
-                  content: "AIRA didn't respond. Please try again.",
+                  content: "Aivory didn't respond. Please try again.",
                   isStreaming: false,
                 }
               : m
@@ -275,7 +281,7 @@ export default function AiraFloatingAssistant() {
       {/* Mobile overlay */}
       {open && (
         <div
-          className={styles.overlay}
+          className="md:hidden fixed inset-0 bg-black/55 z-[1001]"
           onClick={handleClose}
           aria-hidden="true"
         />
@@ -285,28 +291,39 @@ export default function AiraFloatingAssistant() {
       {open && (
         <div
           ref={panelRef}
-          className={styles.panel}
+          className="fixed bottom-6 right-6 z-50 w-80 md:w-96 rounded-2xl overflow-hidden bg-[#353531] backdrop-blur-xl border border-white/8 flex flex-col animate-in fade-in-0 zoom-in-95 duration-200 ease-out"
+          style={{
+            boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+            borderTop: '2px solid transparent',
+            background: '#353531'
+          }}
           role="dialog"
           aria-modal="true"
-          aria-label="AIRA assistant"
+          aria-label="Aivory assistant"
         >
-          <div className={styles.panelHeader}>
-            <Image
-              src="/Aivory_Avatar.svg"
-              alt=""
-              width={24}
-              height={24}
-              aria-hidden="true"
-            />
-            <span className={styles.panelTitle}>AIRA</span>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border-soft flex-shrink-0">
+            <div className="flex items-center gap-2.5">
+              <Image
+                src="/Aivory_Avatar.svg"
+                alt=""
+                width={20}
+                height={20}
+                aria-hidden="true"
+              />
+              <span className="font-semibold text-sm text-text-primary">Aivory</span>
+              <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Online</span>
+              </div>
+            </div>
             {(activeSourceTab || pageContext) && (
-              <span className={styles.panelContext}>{activeSourceTab || pageContext}</span>
+              <span className="text-xs text-white/35 uppercase tracking-wider">{activeSourceTab || pageContext}</span>
             )}
             <button
               ref={closeBtnRef}
-              className={styles.closeBtn}
+              className="text-text-secondary hover:text-text-primary p-1 rounded-md hover:bg-white/8 transition-colors duration-150"
               onClick={handleClose}
-              aria-label="Close AIRA assistant"
+              aria-label="Close Aivory assistant"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <path
@@ -319,12 +336,22 @@ export default function AiraFloatingAssistant() {
             </button>
           </div>
 
-          <div ref={chatAreaRef} className={styles.chatArea}>
+          <div ref={chatAreaRef} className="flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-1 scrollbar-thin scrollbar-thumb-white/1 scrollbar-track-transparent">
             {messages.length === 0 ? (
-              <div className={styles.emptyState}>
-                <div className={styles.emptyStateTitle}>Ask AIRA&trade;</div>
-                <div className={styles.emptyStateText}>
-                  Ask about your diagnostics, blueprints, roadmap, or workflows.
+              <div className="flex-1 flex flex-col items-center justify-center text-center px-4 gap-6">
+                <div className="w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center animate-pulse">
+                  <Image
+                    src="/Aivory_Avatar.svg"
+                    alt=""
+                    width={32}
+                    height={32}
+                  />
+                </div>
+                <div>
+                  <div className="text-2xl font-semibold text-text-primary mb-2">Ask Aivory</div>
+                  <div className="text-text-secondary text-sm max-w-xs">
+                    Ask about your diagnostics, blueprints, roadmap, or workflows.
+                  </div>
                 </div>
               </div>
             ) : (
@@ -334,13 +361,12 @@ export default function AiraFloatingAssistant() {
                   role={m.role}
                   content={m.content}
                   isStreaming={m.isStreaming}
-                  compact
                 />
               ))
             )}
           </div>
 
-          <div className={styles.inputArea}>
+          <div className="border-t border-border-soft p-3 flex-shrink-0">
             <ChatInput onSend={handleSend} disabled={isLoading} prefill={prefill} />
           </div>
         </div>
@@ -349,17 +375,23 @@ export default function AiraFloatingAssistant() {
       {/* FAB */}
       <button
         ref={fabRef}
-        className={styles.fab}
+        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full shadow-lg hover:scale-105 transition-transform duration-200 flex items-center justify-center flex-shrink-0 focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-3"
+        style={{
+          background: 'rgba(0,229,158,0.15)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          border: '1px solid rgba(0,229,158,0.3)',
+        }}
         onClick={() => setOpen(o => !o)}
-        aria-label={open ? "Close AIRA assistant" : "Open AIRA assistant"}
+        aria-label={open ? "Close Aivory assistant" : "Open Aivory assistant"}
         aria-expanded={open}
         aria-haspopup="dialog"
       >
         <Image
           src="/Aivory_Avatar.svg"
           alt=""
-          width={28}
-          height={28}
+          width={20}
+          height={20}
           aria-hidden="true"
         />
       </button>

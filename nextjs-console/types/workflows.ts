@@ -15,8 +15,9 @@
  * - 'action': Step that performs an operation in an external app
  * - 'ai': Step that uses AI to process or transform data
  * - 'filter': Step that conditionally routes workflow execution
+ * - 'agent': Step that runs an AI agent
  */
-export type WorkflowStepType = 'trigger' | 'action' | 'ai' | 'filter'
+export type WorkflowStepType = 'trigger' | 'action' | 'ai' | 'filter' | 'agent'
 
 /**
  * Individual unit in a workflow with configuration and positioning
@@ -31,6 +32,8 @@ export type WorkflowStepType = 'trigger' | 'action' | 'ai' | 'filter'
  * @property {Object} position - Canvas positioning coordinates
  * @property {number} position.x - Canvas X coordinate
  * @property {number} position.y - Canvas Y coordinate
+ * @property {string} [agentId] - Optional agent ID for type: 'agent' nodes
+ * @property {string} [agentName] - Optional agent name (cached for display)
  */
 export interface WorkflowStep {
   id: string
@@ -43,6 +46,8 @@ export interface WorkflowStep {
     x: number
     y: number
   }
+  agentId?: string
+  agentName?: string
 }
 
 /**

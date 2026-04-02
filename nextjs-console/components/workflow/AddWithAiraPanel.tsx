@@ -170,7 +170,7 @@ export const AddWithAiraPanel: React.FC<AddWithAiraPanelProps> = ({
             className={styles.askAiraBtn}
             onClick={handleAskAira}
             disabled={loading || !instruction.trim()}
-            title={loading ? 'Generating...' : 'Ask AIRA to generate follow-up steps'}
+            title={loading ? 'Generating...' : 'Ask Aivory to generate follow-up steps'}
           >
             {loading ? (
               <>
@@ -206,7 +206,7 @@ export const AddWithAiraPanel: React.FC<AddWithAiraPanelProps> = ({
 
         {/* Info */}
         <div className={styles.info}>
-            <p>Describe what you want to happen next, and AIRA will generate the steps.</p>
+            <p>Describe what you want to happen next, and Aivory will generate the steps.</p>
         </div>
       </div>
     </div>

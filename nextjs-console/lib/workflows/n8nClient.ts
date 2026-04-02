@@ -9,6 +9,8 @@
  */
 import type { AivoryWorkflowSpec } from '@/types/workflow'
 import { convertToN8nWorkflow } from '@/lib/workflowConverter'
+import { validateWorkflow as mcpValidateWorkflow } from '@/lib/workflows/n8nMcpClient'
+import type { N8nWorkflowValidationResult } from '@/lib/workflows/n8nMcpClient'
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -18,7 +20,7 @@ function getConfig() {
     process.env.N8N_BASE_URL ||
     process.env.N8N_API_URL ||
     process.env.N8N_URL ||
-    'http://43.156.108.96:5678'
+    'http://43.156.108.96:3003'
   ).replace(/\/$/, '')
   const key = process.env.N8N_API_KEY
   if (!key) throw new Error('N8N_API_KEY is not configured')
@@ -109,7 +111,7 @@ export function getN8nWorkflowUiUrl(n8nWorkflowId: string): string {
 
 /**
  * Build the full webhook URL from a stored relative path.
- * e.g. n8nWebhookPath="/webhook/abc-123" → "http://43.156.108.96:5678/webhook/abc-123"
+ * e.g. n8nWebhookPath="/webhook/abc-123" → "<bridge-url>/webhook/abc-123"
  */
 export function getN8nWebhookUrl(n8nWebhookPath: string): string {
   const { uiBase } = getConfig()
@@ -237,6 +239,18 @@ export async function deployAndActivate(
   onDraftCreated?: (n8nId: string, n8nUrl: string, n8nWebhookPath: string | null) => void
 ): Promise<{ n8nWorkflowId: string; n8nWorkflowUrl: string; n8nWebhookPath: string | null }> {
   const { uiBase } = getConfig()
+
+  // ── Step 0: validate workflow via n8n-MCP (non-blocking) ──────────────────
+  const payload = buildPayload(spec)
+  try {
+    const validation = await mcpValidateWorkflow(payload as unknown as Record<string, unknown>)
+    if (!validation.valid && validation.errors.length > 0) {
+      console.warn('[n8nClient] MCP validation found issues:', validation.errors)
+      // Log but don't block — let n8n be the final arbiter
+    }
+  } catch (e) {
+    console.warn('[n8nClient] MCP validation skipped (non-fatal):', e)
+  }
 
   // ── Step 1: create or update draft ──────────────────────────────────────────
   let n8nId: string

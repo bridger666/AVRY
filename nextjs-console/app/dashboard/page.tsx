@@ -12,12 +12,26 @@ import LoadingState from "@/components/dashboard/LoadingState"
 import ErrorState from "@/components/dashboard/ErrorState"
 import styles from "./dashboard.module.css"
 
+import { useRouterContext } from '@/contexts/RouterContext'
+import { ContinuedFromConsole } from '@/components/routing/ContinuedFromConsole'
+
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [freeDiagnosticScore, setFreeDiagnosticScore] = useState<number | null>(null)
   const [freeDiagnosticCompleted, setFreeDiagnosticCompleted] = useState(false)
   const t = useTranslations("dashboard")
+
+  const { pendingContext, clearPendingContext } = useRouterContext()
+  const [routingNotice, setRoutingNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!pendingContext) return
+    if (Date.now() - pendingContext.timestamp > 300000) { clearPendingContext(); return }
+    if (pendingContext.targetRoute !== 'dashboard') return
+    setRoutingNotice(pendingContext.aiReplySummary || pendingContext.triggerMessage)
+    clearPendingContext()
+  }, [pendingContext, clearPendingContext])
 
   useEffect(() => {
     fetchDashboardData()
@@ -47,6 +61,9 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.dashboardContainer}>
+      {routingNotice !== null && (
+        <ContinuedFromConsole summary={routingNotice} onDismiss={() => setRoutingNotice(null)} />
+      )}
       <div className={styles.mainContent}>
         <h1 className={styles.pageTitle}>{t('title')}</h1>
         
