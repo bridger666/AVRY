@@ -287,7 +287,7 @@ export default function AgentDetailPage() {
                   >
                     {RUNTIMES.map(r => (
                       <option key={r} value={r} className="bg-[#2a2a26]">
-                        {r}
+                        {getProviderLabel(r)}
                       </option>
                     ))}
                   </select>
