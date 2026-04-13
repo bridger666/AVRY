@@ -5,13 +5,18 @@ import UploadMenu, { Attachment } from "./UploadMenu"
 import ContextToolbar from "./input/ContextToolbar"
 
 interface ChatInputProps {
-  onSend: (message: string, attachment?: Attachment) => void
+  onSend: (message: string, attachments: Attachment[]) => void
   disabled?: boolean
   prefill?: string
   hasPendingFiles?: boolean
+  pendingAttachments?: Attachment[]
+  onClearPendingAttachments?: () => void
 }
 
-export default function ChatInput({ onSend, disabled = false, prefill, hasPendingFiles = false }: ChatInputProps) {
+export default function ChatInput({ onSend, disabled = false, prefill, hasPendingFiles = false,
+  pendingAttachments = [],
+  onClearPendingAttachments,
+}: ChatInputProps) {
   const [message, setMessage] = useState(prefill ?? "")
   const [activeTool, setActiveTool] = useState<string | null>(null)
 
@@ -39,14 +44,21 @@ export default function ChatInput({ onSend, disabled = false, prefill, hasPendin
   }
 
   const handleSend = () => {
+    console.log('[INPUT DEBUG] handleSend triggered')
     const trimmed = message.trim()
-    if (!trimmed && !attachment && !hasPendingFiles) return
+    if (!trimmed && !attachment && pendingAttachments.length === 0 && !hasPendingFiles) return
     if (disabled) return
 
-    const finalMessage = trimmed || `Please analyze this ${attachment?.type === 'image' ? 'image' : attachment?.type === 'blueprint' ? 'blueprint' : 'file'}`
-    onSend(finalMessage, attachment ?? undefined)
+    const allAttachments = [
+      ...(attachment ? [attachment] : []),
+      ...pendingAttachments,
+    ]
+    const finalMessage = trimmed || `Please analyze this file`
+    console.log('[INPUT DEBUG] calling onSend with message:', finalMessage)
+    onSend(finalMessage, allAttachments)
     setMessage("")
     setAttachment(null)
+    onClearPendingAttachments?.()
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
@@ -67,7 +79,7 @@ export default function ChatInput({ onSend, disabled = false, prefill, hasPendin
     }
   }
 
-  const canSend = !disabled && !extracting && (!!message.trim() || !!attachment || hasPendingFiles)
+  const canSend = !disabled && !extracting && (!!message.trim() || !!attachment || pendingAttachments.length > 0 || hasPendingFiles)
 
   const handleToolSelect = (tool: string) => {
     setActiveTool(tool)
@@ -82,6 +94,22 @@ export default function ChatInput({ onSend, disabled = false, prefill, hasPendin
     <div className="relative">
       {/* Context Toolbar */}
       <ContextToolbar onToolSelect={handleToolSelect} />
+
+      {/* Pending attachments from drag & drop */}
+      {pendingAttachments.map((att, i) => (
+        <div key={i} className="mb-3 p-2 bg-zinc-800 border border-zinc-700 rounded-lg inline-flex items-center gap-2">
+          <span className="text-sm text-zinc-300">{att.filename}</span>
+          <button
+            className="text-zinc-400 hover:text-zinc-200 transition-colors"
+            onClick={() => onClearPendingAttachments?.()}
+            aria-label="Remove attachment"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      ))}
 
       {/* Attachment chip */}
       {(attachment || extracting) && (

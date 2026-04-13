@@ -15,6 +15,31 @@ const http = require('http');
 const { logger } = require('./logger');
 
 // ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Retrieve user context from session (diagnostic/blueprint state)
+ * @param {string} sessionId - Session identifier
+ * @returns {Promise<Object>} User context object
+ */
+async function getUserContext(sessionId) {
+  try {
+    // TODO: Implement session/user context retrieval from database or cache
+    // For now, return empty context - will be populated by actual implementation
+    return {
+      has_diagnostic: false,
+      has_blueprint: false,
+      diagnostic_summary: null,
+      blueprint_summary: null,
+    };
+  } catch (err) {
+    logger.warn('[getUserContext] error retrieving context:', { error: err.message });
+    return {};
+  }
+}
+
+// ============================================================================
 // CONSOLE CHAT STREAMING ENDPOINT
 // ============================================================================
 
@@ -850,6 +875,210 @@ async function handleWorkflowSynthesis(req, res, next) {
 }
 
 // ============================================================================
+// BRIDGE / AIRA STREAMING HANDLER
+// ============================================================================
+
+/**
+ * Streaming version of handleBridgeAira.
+ * Forwards SSE events from Zeroclaw directly to the client without buffering.
+ */
+async function handleBridgeAiraStreaming(req, res, next, params) {
+  try {
+    const { streamZeroclawWithSkillCallback, stripToolCalls } = require('./zeroclawStreamingClient');
+
+    // Set SSE headers
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+
+    let cancelled = false;
+    let fullText = '';
+    let workflowSpec = null;
+
+    // Handle client disconnect
+    req.on('close', () => {
+      cancelled = true;
+    });
+
+    // Stream events from Zeroclaw
+    streamZeroclawWithSkillCallback(
+      {
+        message: params.message,
+        mode: params.mode,
+        channel: params.channel,
+        entrypoint: params.entrypoint,
+        context: params.context,
+        endpoint: '/bridge/aira',
+      },
+      // onEvent callback
+      (event) => {
+        if (cancelled) return;
+
+        try {
+          // Handle different event types from Zeroclaw/LLM
+          if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+            // Anthropic format
+            const text = event.delta.text || '';
+            fullText += text;
+            
+            // Forward as chunk event
+            const payload = JSON.stringify({ type: 'chunk', content: text });
+            res.write(`data: ${payload}\n\n`);
+          } else if (event.type === 'chunk' && event.content) {
+            // Generic chunk format
+            fullText += event.content;
+            const payload = JSON.stringify({ type: 'chunk', content: event.content });
+            res.write(`data: ${payload}\n\n`);
+          } else if (event.type === 'message_start' || event.type === 'message_delta') {
+            // Anthropic message events - skip for now
+          } else if (event.type === 'content_block_start') {
+            // Anthropic content block start - skip
+          } else if (event.type === 'content_block_stop') {
+            // Anthropic content block stop - skip
+          } else if (event.type === 'message_stop') {
+            // Anthropic message stop - will handle in onEnd
+          } else {
+            // Unknown event type - log and skip
+            logger.debug('[bridge/aira streaming] unknown event type', { type: event.type });
+          }
+        } catch (e) {
+          logger.error('[bridge/aira streaming] error processing event', { error: e.message });
+        }
+      },
+      // onError callback
+      (error) => {
+        if (cancelled) return;
+        logger.error('[bridge/aira streaming] zeroclaw error', { error: error.message });
+        const payload = JSON.stringify({
+          type: 'error',
+          error: error.message || 'Stream error from Zeroclaw',
+        });
+        res.write(`data: ${payload}\n\n`);
+        res.end();
+      },
+      // onEnd callback
+      () => {
+        if (cancelled) return;
+
+        try {
+          // Extract workflowspec if present
+          const specMatch = fullText.match(/```workflowspec\n([\s\S]*?)```/);
+          if (specMatch) {
+            try {
+              workflowSpec = JSON.parse(specMatch[1]);
+            } catch {
+              // ignore invalid JSON in workflowspec
+            }
+          }
+
+          // Send workflowspec event if found
+          if (workflowSpec) {
+            const payload = JSON.stringify({
+              type: 'workflowspec',
+              workflow: workflowSpec,
+            });
+            res.write(`data: ${payload}\n\n`);
+          }
+
+          // Send done event
+          const donePayload = JSON.stringify({ type: 'done' });
+          res.write(`data: ${donePayload}\n\n`);
+        } catch (e) {
+          logger.error('[bridge/aira streaming] error sending final events', { error: e.message });
+        } finally {
+          res.end();
+        }
+      }
+    );
+  } catch (error) {
+    logger.error('[bridge/aira streaming] error', { error: error.message });
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({
+      error: 'stream_error',
+      message: error.message || 'Streaming error',
+    });
+  }
+}
+
+// ============================================================================
+// CONSOLE STREAM ENDPOINT
+// ============================================================================
+
+async function handleConsoleStream(req, res, next) {
+  try {
+    const { organization_id, user_id, session_id, messages } = req.body;
+
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      const error = new Error('Missing or invalid field: messages (expected non-empty array)');
+      error.statusCode = 400;
+      error.errorCode = 'BAD_REQUEST';
+      error.details = { field: 'messages', expected: 'array' };
+      return next(error);
+    }
+
+    const lastUserMessage = messages.filter(m => m.role === 'user').at(-1)?.content ?? '';
+
+    if (!lastUserMessage) {
+      const error = new Error('No user message found in messages array');
+      error.statusCode = 400;
+      error.errorCode = 'BAD_REQUEST';
+      return next(error);
+    }
+
+    const { callZeroclawWithSkill, stripToolCalls } = require('./zeroclawClient');
+    const userCtx = await getUserContext(session_id).catch(() => ({}));
+
+    const enrichedContext = {
+      session_id,
+      organization_id,
+      user_id,
+      history: messages,
+      source: 'console',
+      aivory_state: {
+        has_diagnostic: userCtx.has_diagnostic || false,
+        has_blueprint: userCtx.has_blueprint || false,
+        diagnostic_summary: userCtx.diagnostic_summary || null,
+        blueprint_summary: userCtx.blueprint_summary || null,
+      },
+    };
+
+    const result = await callZeroclawWithSkill({
+      message: lastUserMessage,
+      context: enrichedContext,
+    });
+
+    const finalText = stripToolCalls(result.response);
+
+    res.json({
+      mode: 'zeroclaw',
+      model: result.model,
+      skill: result.skill,
+      message: finalText,
+      raw_agent_response: finalText,
+      final_text: finalText,
+      tool_calls: [],
+      raw: { model: result.model, response: result.response },
+    });
+  } catch (error) {
+    logger.error('[console/stream] error', { error: error.message });
+    const statusMatch = error.message?.match(/Zeroclaw returned (\d+)/);
+    if (statusMatch) {
+      return res.status(502).json({
+        error: 'zeroclaw_error',
+        status: parseInt(statusMatch[1], 10),
+        detail: error.message,
+      });
+    }
+    return res.status(500).json({
+      error: 'zeroclaw_error',
+      status: 500,
+      detail: error.message || 'Failed to connect to AI engine',
+    });
+  }
+}
+
+// ============================================================================
 // BRIDGE / AIRA ENDPOINT
 // ============================================================================
 
@@ -872,6 +1101,21 @@ async function handleBridgeAira(req, res, next) {
       enrichedMessage = buildAiraFinalMessage(historyMessages);
     }
 
+    // Check if client requested streaming (via query param or header)
+    const wantsStreaming = req.query.stream === 'true' || req.headers['x-stream'] === 'true';
+
+    if (wantsStreaming) {
+      // Use streaming response
+      return handleBridgeAiraStreaming(req, res, next, {
+        message: enrichedMessage,
+        mode: mode || context?.mode || undefined,
+        channel: channel || context?.channel || undefined,
+        entrypoint: entrypoint || undefined,
+        context: context || undefined,
+      });
+    }
+
+    // Original non-streaming path (for backward compatibility)
     const { callZeroclawWithSkill, stripToolCalls } = require('./zeroclawClient');
     const result = await callZeroclawWithSkill({
       message: enrichedMessage,
@@ -879,7 +1123,6 @@ async function handleBridgeAira(req, res, next) {
       channel: channel || context?.channel || undefined,
       entrypoint: entrypoint || undefined,
       context: context || undefined,
-      endpoint: '/bridge/aira',
     });
 
     const finalText = stripToolCalls(result.response);
@@ -938,7 +1181,6 @@ async function handleBridgeKiro(req, res, next) {
     const result = await callZeroclawWithSkill({
       message: prompt,
       context: context || undefined,
-      endpoint: '/bridge/kiro',
     });
 
     res.json({
@@ -1307,8 +1549,66 @@ async function handleDeleteAgent(req, res, next) {
   }
 }
 
+/**
+ * Handle UI state updates from frontend
+ * Stores UI state in session context for Zeroclaw to access
+ */
+async function handleContextUiState(req, res) {
+  try {
+    const { session_id, active_tab, page_url, last_action, form_errors, extra } = req.body;
+
+    if (!session_id) {
+      return res.status(400).json({
+        error: true,
+        message: 'Missing session_id'
+      });
+    }
+
+    // Get or create session context
+    let context = await getUserContext(session_id);
+    if (!context) {
+      context = {
+        session_id,
+        ui_state: {}
+      };
+    }
+
+    // Update UI state in session context
+    context.ui_state = {
+      active_tab: active_tab || context.ui_state?.active_tab,
+      page_url: page_url || context.ui_state?.page_url,
+      last_action: last_action || context.ui_state?.last_action,
+      form_errors: form_errors || context.ui_state?.form_errors,
+      extra: extra || context.ui_state?.extra,
+      updated_at: new Date().toISOString()
+    };
+
+    // Store in session (in-memory for now, could be extended to persistent storage)
+    // This context will be available to Zeroclaw for context-aware responses
+    logger.info('[handleContextUiState] UI state updated', {
+      session_id,
+      active_tab,
+      page_url,
+      last_action
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'UI state updated',
+      session_id
+    });
+  } catch (error) {
+    logger.error('[handleContextUiState] error', { error: error.message });
+    return res.status(500).json({
+      error: true,
+      message: 'Failed to update UI state'
+    });
+  }
+}
+
 module.exports.handleListAgents = handleListAgents;
 module.exports.handleCreateAgent = handleCreateAgent;
 module.exports.handleGetAgent = handleGetAgent;
 module.exports.handleUpdateAgent = handleUpdateAgent;
 module.exports.handleDeleteAgent = handleDeleteAgent;
+module.exports.handleContextUiState = handleContextUiState;

@@ -3,6 +3,7 @@
 import React, { memo } from 'react';
 import { Handle, Position, useReactFlow, useNodeId } from '@xyflow/react';
 import { WorkflowNode } from '@/types/workflow';
+import { getNodeIcon } from '@/lib/nodeIcons';
 import styles from './AppNode.module.css';
 
 interface StandardNodeProps {
@@ -21,7 +22,6 @@ const StandardNode = memo(
   ({ data, selected, isConnecting }: StandardNodeProps) => {
     const {
       label = 'Step',
-      icon = '',
       onDelete,
       onAddStep,
       onExplainPath,
@@ -55,13 +55,7 @@ const StandardNode = memo(
 
         <div className={styles.nodeHeader}>
           <div className={styles.nodeIcon}>
-            {icon ? (
-              <img src={icon} alt="" width={16} height={16} style={{ borderRadius: 3, objectFit: 'contain' }} />
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/>
-              </svg>
-            )}
+            {getNodeIcon(label)}
           </div>
           <div className={styles.nodeName}>{label}</div>
         </div>

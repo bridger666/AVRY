@@ -1,21 +1,21 @@
 /**
  * Property-Based Tests for Markdown Element Styling Compliance
- * 
+ *
  * **Validates: Requirements 15.1, 15.2, 15.3**
- * 
+ *
  * These tests verify correctness properties of markdown element styling:
  * - Property 9: Markdown element styling compliance
- * 
+ *
  * Verifies that tables, code blocks, and lists render with correct
  * Manus Design System classes as specified in the design document.
  */
-const markdownComponents = {
-  code: ({ inline, className, children }: any) => {
-    if (inline) {
-      return (
-        <code className="bg-white/8 text-pink-400 px-1.5 py-0.5 rounded border border-white/10 font-mono text-[0.875rem]">
-          {children}
-        </code>
+
+import React from 'react'
+import { render } from '@testing-library/react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import * as fc from 'fast-check'
+
 /**
  * Markdown components matching ChatMessage.tsx implementation
  */
@@ -42,6 +42,47 @@ const markdownComponents = {
   p: ({ children }: any) => (
     <p className="text-base leading-[1.6] mb-4 text-[#d6d6c9] last:mb-0">
       {children}
+    </p>
+  ),
+  thead: ({ children }: any) => (
+    <thead className="bg-white/4">
+      {children}
+    </thead>
+  ),
+  th: ({ children }: any) => (
+    <th className="px-4 py-3 text-left text-sm font-semibold text-[#d6d6c9] border-b border-[#E5E7EB]/10">
+      {children}
+    </th>
+  ),
+  td: ({ children }: any) => (
+    <td className="px-4 py-3 text-sm text-[#d6d6c9] border-b border-[#E5E7EB]/10">
+      {children}
+    </td>
+  ),
+  table: ({ children }: any) => (
+    <div className="my-5 border border-[#E5E7EB]/10 rounded-xl overflow-hidden">
+      <table className="w-full border-collapse">
+        {children}
+      </table>
+    </div>
+  ),
+  ul: ({ children }: any) => (
+    <ul className="my-4 list-none pl-0">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }: any) => (
+    <ol className="my-4 list-decimal pl-6">
+      {children}
+    </ol>
+  ),
+  li: ({ children }: any) => (
+    <li className="mb-2 text-base text-[#d6d6c9] leading-[1.6]">
+      <span>{children}</span>
+    </li>
+  ),
+}
+
 /**
  * Arbitraries for generating markdown content
  */
@@ -66,10 +107,8 @@ const codeBlockMarkdownArbitrary = (): fc.Arbitrary<string> => {
   return fc.stringMatching(/^[A-Za-z0-9\s\(\)\{\}\[\]\:\;\,\.]{5,100}$/).map(code =>
     `\`\`\`javascript\n${code}\n\`\`\``
   )
-}   <thead className="bg-white/4">
-      {children}
-    </thead>
-  ),
+}
+
 describe('Markdown Element Styling - Property-Based Tests', () => {
   describe('Property 9: Markdown element styling compliance', () => {
     it('should render code blocks with bg-[#1E1E1E] background', () => {
@@ -389,7 +428,5 @@ describe('Markdown Element Styling - Property-Based Tests', () => {
       const thead = container.querySelector('thead')
       expect(thead?.className).toContain('bg-white/4')
     })
-  })
-})  })
   })
 })

@@ -10,11 +10,11 @@ import { CopilotTogglePanel } from "@/components/workflow/CopilotTogglePanel"
 import FollowUpChips from "@/components/chat/FollowUpChips"
 import { RoutingSuggestBanner } from "@/components/chat/RoutingSuggestBanner"
 import { getSessionId, clearSession, generateSessionId, saveSession } from "@/lib/session"
-import { streamConsoleResponse, validateFileSize } from "@/lib/streaming"
+import { streamConsoleResponse, typewriterStream, validateFileSize } from "@/lib/streaming"
 import { extractTextFromFile } from "@/lib/fileExtractor"
 import { saveSessionMessages, loadSessionMessages, listSessions, ChatStorageError } from "@/lib/chatPersistence"
+import { normalizeAssistantText } from "@/lib/normalizeAssistantText"
 import { useAgenticStream } from "@/hooks/useAgenticStream"
-import { useAutoScroll } from "@/hooks/useAutoScroll"
 import { useIntentRouter } from "@/hooks/useIntentRouter"
 import type { Attachment } from "@/components/UploadMenu"
 
@@ -52,10 +52,15 @@ export default function ConsolePage() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const { scrollToBottom, isAtBottom } = useAutoScroll(scrollContainerRef, [messages])
+  // auto-scroll disabled
   const { pendingRoute, triggerClassification, dismissRoute, acceptRoute } = useIntentRouter()
 
-  console.log('[Page] rendering messages, pendingRoute:', pendingRoute, 'lastAssistantId:', messages[messages.length - 1]?.id)
+  const messagesRef = useRef<Message[]>([])
+
+  // Keep ref in sync with state so handleSend can read current messages without stale closure
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
 
   useEffect(() => {
     const sid = getSessionId() || generateSessionId()
@@ -63,6 +68,7 @@ export default function ConsolePage() {
     setCurrentSessionId(sid)
     // Load persisted messages for this session
     const restored = loadSessionMessages(sid)
+    console.log('[INIT] restored messages count:', restored.length)
     if (restored.length > 0) setMessages(restored)
     // Load all sessions for sidebar
     setSessions(listSessions())
@@ -77,42 +83,79 @@ export default function ConsolePage() {
   }, [])
 
   const handleSend = useCallback(async (text: string, atts: Attachment[]) => {
-    if (!text.trim() && atts.length === 0) return
+    console.log('[PAGE DEBUG] onSend called, text:', text, 'attachments:', atts.length)
+    if (!text.trim() && atts.length === 0) {
+      console.log('[PAGE DEBUG] early return: empty text and no attachments')
+      return
+    }
     setFollowUpSuggestions([])
-    const userMsg: Message = { id: Date.now().toString(), role: "user", content: text }
-    setMessages(p => [...p, userMsg])
+    
+    // FIXED: Inject attachment content into user message
+    const attachmentText = atts
+      .filter(a => a.content)
+      .map(a => `[Attached file: ${a.filename}]\n${a.content}`)
+      .join('\n\n')
+    const userContent = attachmentText ? `${text}\n\n${attachmentText}` : text
+    
+    const userMsg: Message = { id: Date.now().toString(), role: "user", content: userContent }
+    const assistantId = (Date.now() + 1).toString()
+    
+    // Build allMessages BEFORE state updates using the ref (always current)
+    const allMessages = [...messagesRef.current, userMsg].map(m => ({
+      role: m.role,
+      content: m.content,
+    }))
+    
+    // FIX: Add both messages in a single state update to avoid batching issues
+    setMessages(p => [
+      ...p, 
+      userMsg,
+      { id: assistantId, role: "assistant", content: "", isStreaming: true }
+    ])
     setAttachments([])
     setIsStreaming(true)
-    const assistantId = (Date.now() + 1).toString()
-    setMessages(p => [...p, { id: assistantId, role: "assistant", content: "", isStreaming: true }])
+    
     let finalContent = ""
     let streamError = false
     try {
-      const allMessages = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }))
-      const stream = streamConsoleResponse("/api/console/stream", {
+      console.log('[PAGE DEBUG] allMessages count:', allMessages.length)
+      console.log('[PAGE DEBUG] calling streamConsoleResponse')
+      const baseStream = streamConsoleResponse("/api/console/stream", {
         session_id: currentSessionId,
         organization_id: "default",
         messages: allMessages,
       })
+      console.log('[PAGE DEBUG] wrapping with typewriterStream')
+      const stream = typewriterStream(baseStream)
+      console.log('[STREAM DEBUG] start streaming')
       for await (const chunk of stream) {
+        console.log('[STREAM DEBUG] got chunk', chunk)
         processEvent(chunk as any)
         if (chunk.type === "chunk" && chunk.content) {
-          finalContent += chunk.content
-          setMessages(p => p.map(m => m.id === assistantId ? { ...m, content: m.content + chunk.content } : m))
+          // FIXED: /bridge/console returns full text in each chunk, not deltas.
+          // Use the chunk content directly as the authoritative full text.
+          finalContent = chunk.content
+          setMessages(p => p.map(m => m.id === assistantId ? { ...m, content: finalContent } : m))
+        } else if (chunk.type === "done") {
+          console.log('[STREAM DEBUG] done')
+          // Apply tone normalization before finalizing
+          const normalized = normalizeAssistantText(finalContent)
+          finalContent = normalized
+          // Set follow-up suggestions after the last AI message completes
+          setFollowUpSuggestions(DEFAULT_SUGGESTIONS)
+          // Trigger intent classification after AI stream ends
+          triggerClassification(text, normalized)
         } else if (chunk.type === "error") {
+          console.log('[STREAM DEBUG] error', chunk.error)
           addToast("error", chunk.error || "Something went wrong.")
           setMessages(p => p.filter(m => m.id !== assistantId))
           streamError = true
           break
-        } else if (chunk.type === "done") {
-          setMessages(p => p.map(m => m.id === assistantId ? { ...m, isStreaming: false } : m))
-          // Set follow-up suggestions after the last AI message completes
-          setFollowUpSuggestions(DEFAULT_SUGGESTIONS)
-          // Trigger intent classification after AI stream ends
-          triggerClassification(text, finalContent)
         }
       }
-    } catch {
+      console.log('[STREAM DEBUG] loop finished')
+    } catch (error) {
+      console.error('[PAGE DEBUG] catch block error:', error)
       addToast("error", "Something went wrong. Please try again.")
       setMessages(p => p.filter(m => m.id !== assistantId))
       streamError = true
@@ -121,9 +164,16 @@ export default function ConsolePage() {
       // Persist messages after streaming completes successfully
       if (!streamError) {
         try {
-          const updatedMessages = [...messages, userMsg, { id: assistantId, role: "assistant" as const, content: finalContent, isStreaming: false }]
-          saveSessionMessages(currentSessionId, updatedMessages)
-          setSessions(listSessions())
+          setMessages(prev => {
+            const updated = prev.map(m =>
+              m.id === assistantId
+                ? { ...m, content: finalContent, isStreaming: false }
+                : m
+            )
+            saveSessionMessages(currentSessionId, updated)
+            setSessions(listSessions())
+            return updated
+          })
         } catch (e) {
           if (e instanceof ChatStorageError) {
             addToast("error", "Chat history storage is full. Messages may not be saved.")
@@ -131,7 +181,7 @@ export default function ConsolePage() {
         }
       }
     }
-  }, [currentSessionId, messages, addToast, processEvent])
+  }, [currentSessionId, addToast, processEvent, triggerClassification])
 
   const handleNewChat = useCallback(() => {
     // Save current session before clearing
@@ -165,19 +215,48 @@ export default function ConsolePage() {
     }
   }, [addToast])
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault(); setIsDragging(false)
-    handleFileSelect(e.dataTransfer.files)
+  // Global drop handler — captures file from anywhere on the page
+  useEffect(() => {
+    const handleGlobalDrop = (e: DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDragging(false)
+      const files = e.dataTransfer?.files
+      if (files && files.length > 0) {
+        handleFileSelect(files)
+      }
+    }
+    const handleGlobalDragOver = (e: DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDragging(true)
+    }
+    const handleGlobalDragLeave = (e: DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDragging(false)
+    }
+    window.addEventListener('drop', handleGlobalDrop)
+    window.addEventListener('dragover', handleGlobalDragOver)
+    window.addEventListener('dragleave', handleGlobalDragLeave)
+    return () => {
+      window.removeEventListener('drop', handleGlobalDrop)
+      window.removeEventListener('dragover', handleGlobalDragOver)
+      window.removeEventListener('dragleave', handleGlobalDragLeave)
+    }
   }, [handleFileSelect])
 
-  const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(true) }, [])
-  const handleDragLeave = useCallback(() => setIsDragging(false), [])
+  // FIX 5: Add visible debug state temporarily
+  console.log('[RENDER] messages.length =', messages.length, 'ids:', messages.map(m => m.id))
+
+  // FIX 1: Debug JSX render branch
+  console.log('[JSX] messages at render time:', messages.length)
 
   return (
-    <div className="flex flex-col h-full bg-[#353531]" onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave}>
+    <div className="flex flex-col h-full bg-[#353531]">
       <ConsoleTopBar onNewChat={handleNewChat} />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden h-full">
         {messages.length === 0 ? (
           // Empty state: centered layout
           <div className="flex-1 flex flex-col items-center justify-center px-6">
@@ -200,8 +279,10 @@ export default function ConsolePage() {
 
             <div className="w-full max-w-[800px] mt-6">
               <ChatInput
-                onSend={(text: string) => handleSend(text, attachments)}
+                onSend={(text: string, atts: Attachment[]) => handleSend(text, atts)}
                 disabled={isStreaming}
+                pendingAttachments={attachments}
+                onClearPendingAttachments={() => setAttachments([])}
               />
             </div>
           </div>
@@ -239,7 +320,7 @@ export default function ConsolePage() {
                     suggestions={followUpSuggestions}
                     onSelect={(suggestion) => {
                       setFollowUpSuggestions([])
-                      handleSend(suggestion, attachments)
+                      handleSend(suggestion, [])
                     }}
                   />
                 )}
@@ -249,8 +330,10 @@ export default function ConsolePage() {
             <div className="sticky bottom-0 z-10 px-8 pt-2 pb-4" style={{ background: 'linear-gradient(to bottom, transparent, #353531 24px)' }}>
               <div className="max-w-[800px] mx-auto">
                 <ChatInput
-                  onSend={(text: string) => handleSend(text, attachments)}
+                  onSend={(text: string, atts: Attachment[]) => handleSend(text, atts)}
                   disabled={isStreaming}
+                  pendingAttachments={attachments}
+                  onClearPendingAttachments={() => setAttachments([])}
                 />
               </div>
             </div>

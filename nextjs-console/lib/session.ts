@@ -10,12 +10,26 @@
 const SESSION_STORAGE_KEY = 'console_session_id';
 
 /**
- * Generates a unique session ID using crypto.randomUUID()
+ * Generates a unique session ID using crypto.randomUUID() with fallback to UUID v4
+ * 
+ * Fallback is needed for HTTP environments where crypto.randomUUID is not available
+ * (only available in Secure Context: HTTPS or localhost)
  * 
  * @returns A unique session identifier
  */
 export function generateSessionId(): string {
-  return crypto.randomUUID();
+  // Try to use crypto.randomUUID if available (HTTPS/localhost)
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+
+  // Fallback: Manual UUID v4 generation using Math.random()
+  // Pattern: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
 }
 
 /**

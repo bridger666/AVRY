@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { classifyIntent, ClassifiedIntent } from '@/lib/intentClassifier'
 import { useRouterContext } from '@/contexts/RouterContext'
@@ -32,9 +32,9 @@ export function useIntentRouter(): UseIntentRouterReturn {
   const router = useRouter()
   const { setPendingContext } = useRouterContext()
 
-  console.log('[IntentRouter] ✅ hook loaded, pendingRoute:', pendingRoute)
+  // FIX 1: Removed console.log that runs on every render
 
-  function triggerClassification(userMsg: string, aiReply: string): void {
+  const triggerClassification = useCallback((userMsg: string, aiReply: string): void => {
     const key = userMsg.trim().slice(0, 100)
     if (key === lastMessageRef.current) return
 
@@ -60,14 +60,14 @@ export function useIntentRouter(): UseIntentRouterReturn {
       console.log('[IntentRouter] error during classification:', err)
       setIsClassifying(false)
     })
-  }
+  }, [])
 
-  function dismissRoute(): void {
+  const dismissRoute = useCallback((): void => {
     setPendingRoute(null)
     abortRef.current = true
-  }
+  }, [])
 
-  function acceptRoute(): void {
+  const acceptRoute = useCallback((): void => {
     if (!pendingRoute) return
     const path = TAB_PATHS[pendingRoute.route] ?? '/console'
     setPendingContext({
@@ -79,7 +79,7 @@ export function useIntentRouter(): UseIntentRouterReturn {
     setPendingRoute(null)
     abortRef.current = true
     router.push(path)
-  }
+  }, [pendingRoute, router, setPendingContext])
 
-  return { pendingRoute, isClassifying, triggerClassification, dismissRoute, acceptRoute }
+  return { pendingRoute: pendingRoute ?? null, isClassifying, triggerClassification, dismissRoute, acceptRoute }
 }

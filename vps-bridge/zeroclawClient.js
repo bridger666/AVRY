@@ -49,13 +49,12 @@ function callZeroclawStructured(payload) {
 }
 
 function callZeroclawWithSkill(params) {
-  const { message, context, feature, endpoint } = params;
+  const { message, context, feature } = params;
 
   const skillCtx = {
     page: context?.page || undefined,
     mode: context?.mode || params.mode || undefined,
     feature: feature || undefined,
-    endpoint: endpoint || undefined,
   };
   const skill = selectZeroclawSkill(skillCtx);
   logSkillSelection(skill, skillCtx, 'callZeroclawWithSkill');

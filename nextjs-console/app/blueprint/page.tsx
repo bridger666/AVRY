@@ -7,6 +7,7 @@ import { BlueprintV1, BlueprintV1WorkflowModule } from '@/types/blueprint'
 import { saveWorkflow } from '@/hooks/useWorkflows'
 import { useRouterContext } from '@/contexts/RouterContext'
 import { ContinuedFromConsole } from '@/components/routing/ContinuedFromConsole'
+import BlueprintHeader from '@/components/blueprint/BlueprintHeader'
 import styles from './blueprint.module.css'
 import { exportBlueprintPDF, exportBlueprintDOCX } from '@/lib/blueprintExport'
 import { useTranslations } from 'next-intl'
@@ -967,85 +968,33 @@ export default function BlueprintPage() {
       <div className={styles.content} ref={contentRef}>
 
         {/* ── Header ─────────────────────────────────────────── */}
-        <header className={styles.header}>
-          <div className={styles.headerTop}>
-            <div>
-              <h1 className={styles.orgName}>{organization?.name}</h1>
-              <p className={styles.orgMeta}>
-                {organization?.industry}
-                {organization?.size && (
-                  <span className={styles.sizeBadge}>{SIZE_LABELS[organization.size] ?? organization.size}</span>
-                )}
-              </p>
-            </div>
-            <div className={styles.headerActions}>
-              <span className={styles.statusBadge}>{currentVersionLabel ?? blueprint.status ?? 'draft'}</span>
-              <button className={styles.headerBtn} onClick={handleOpenSaveModal}>
-                {t("saveVersion")}
-              </button>
-
-              {/* Download dropdown */}
-              <div className={styles.downloadWrap} ref={downloadMenuRef}>
-                <button
-                  className={styles.headerBtn}
-                  onClick={() => setShowDownloadMenu(v => !v)}
-                  disabled={downloadLoading}
-                  aria-label="Download blueprint"
-                >
-                  {downloadLoading ? (
-                    <><span className={styles.btnSpinnerSmall} aria-hidden="true" /> {t("exporting")}</>
-                  ) : (
-                    <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="7 10 12 15 17 10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
-                      </svg>
-                      {t("download")}
-                    </>
-                  )}
-                </button>
-                {showDownloadMenu && (
-                  <div className={styles.downloadMenu}>
-                    <button className={styles.downloadMenuItem} onClick={handleDownloadPDF}>
-                      {t("downloadPdf")}
-                    </button>
-                    <button className={styles.downloadMenuItem} onClick={handleDownloadDOCX}>
-                      {t("downloadDocx")}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {versions.length > 0 && (
-                <button
-                  className={styles.headerBtn}
-                  onClick={() => setShowVersionHistory(v => !v)}
-                >
-                  {t("history")} ({versions.length})
-                </button>
-              )}
-
-              <button
-                className={styles.headerBtn}
-                onClick={handleGenerateRoadmap}
-                disabled={generatingRoadmap}
-                title={t("generateRoadmap")}
-              >
-                {generatingRoadmap ? t("generatingRoadmap") : t("generateRoadmap")}
-              </button>
-            </div>
-          </div>
-
-          {Array.isArray(diagnostic_summary?.primary_constraints) && diagnostic_summary.primary_constraints.length > 0 && (
-            <div className={styles.constraintsRow}>
-              <span className={styles.constraintsLabel}>{t("primaryConstraints")}:</span>
-              {diagnostic_summary.primary_constraints.map((c, i) => (
-                <span key={i} className={styles.constraintTag}>{c}</span>
-              ))}
-            </div>
-          )}
-        </header>
+        <BlueprintHeader
+          blueprintId={blueprint.blueprint_id || 'BP-001'}
+          companyName={organization?.name || 'Company'}
+          version={currentVersionLabel || blueprint.version || '1'}
+          status={blueprint.status || 'draft'}
+          maturityLevel={diagnostic_summary?.maturity_level || 'Emerging'}
+          estimatedROI={blueprint.deployment_plan?.estimated_roi_months || 6}
+          showSampleBanner={false}
+          versions={versions.map(v => ({
+            version: v.version,
+            created_at: v.timestamp,
+            created_by: 'System',
+            status: 'saved'
+          }))}
+          onVersionChange={(v) => {
+            const selected = versions.find(ver => ver.version === v)
+            if (selected) handleLoadVersion(selected)
+          }}
+          onSaveVersion={handleOpenSaveModal}
+          onDownloadPDF={handleDownloadPDF}
+          onDownloadDOCX={handleDownloadDOCX}
+          onShowHistory={() => setShowVersionHistory(true)}
+          versionsCount={versions.length}
+          downloadLoading={downloadLoading}
+          generatingRoadmap={generatingRoadmap}
+          onGenerateRoadmap={handleGenerateRoadmap}
+        />
 
         {/* ── Version History panel ─────────────────────────── */}
         {showVersionHistory && (

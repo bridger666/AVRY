@@ -39,6 +39,7 @@ const {
   handleGetAgent,
   handleUpdateAgent,
   handleDeleteAgent,
+  handleContextUiState,
 } = require('./endpoints');
 
 // ============================================================================
@@ -264,6 +265,16 @@ app.post('/bridge/kiro', (req, res, next) => {
 app.post('/llm/aivory/pipeline', handleAivoryPipeline);
 
 // ============================================================================
+// CONTEXT ENDPOINTS
+// ============================================================================
+
+/**
+ * POST /context/ui-state
+ * Receives UI state updates from frontend for context awareness
+ */
+app.post('/context/ui-state', handleContextUiState);
+
+// ============================================================================
 // ERROR HANDLING
 // ============================================================================
 
@@ -309,6 +320,7 @@ const server = app.listen(config.port, '0.0.0.0', () => {
   logger.info('  POST /bridge/aira');
   logger.info('  POST /bridge/kiro');
   logger.info('  POST /llm/aivory/pipeline');
+  logger.info('  POST /context/ui-state');
 });
 
 // ============================================================================

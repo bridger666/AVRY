@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;400;600;700&display=swap');
 @import "tailwindcss";
 /* NOTE: @xyflow/react styles are imported directly in WorkflowCanvas.tsx, not here,
    to avoid React Flow's DOM cleanup running on pages that don't use it (e.g. /console). */
@@ -753,4 +754,19 @@ main td {
   padding: 0.75rem 1rem;
   color: #d6d6c9;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ── Global heading typography — Inter Tight weight 200 ──── */
+/* Apply Inter Tight weight 200 to all headings across the app */
+h1, h2, h3, h4, h5, h6,
+[class*="title"],
+[class*="Title"],
+[class*="heading"],
+[class*="Heading"],
+[class*="cardTitle"],
+[class*="sectionTitle"],
+[class*="cardHeading"],
+[class*="sectionHeading"] {
+  font-family: 'Inter Tight', sans-serif !important;
+  font-weight: 200 !important;
 }
