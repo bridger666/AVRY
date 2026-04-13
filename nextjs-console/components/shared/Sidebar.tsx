@@ -194,26 +194,25 @@ export default function Sidebar() {
   return (
     <aside className={`flex flex-col h-full bg-[#353531] border-r border-white/5 transition-all duration-300 ${collapsed ? "w-12" : "w-[220px]"}`}>
       {/* Logo / Header */}
-      <div className="flex items-center gap-2 px-2 mb-6 h-12 items-center">
+      <div className="flex items-center gap-2 px-4 pt-8 pb-4">
         {!collapsed ? (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center">
             <Image
-              src="/Aivory_Avatar.svg"
+              src="/Aivory_logo_2026.svg"
               alt="Aivory"
-              width={32}
-              height={32}
-              className="rounded-lg"
+              width={100}
+              height={28}
+              className="object-contain"
             />
-            <span className="text-sm font-semibold text-zinc-100 tracking-wide">AIVORY</span>
           </div>
         ) : (
-          <div className="flex items-center justify-center w-full">
+          <div className="flex items-center justify-center w-full py-1">
             <Image
-              src="/Aivory_Avatar.svg"
+              src="/Aivory_icon_2026.svg"
               alt="Aivory"
               width={32}
               height={32}
-              className="rounded-lg"
+              className="object-contain"
             />
           </div>
         )}

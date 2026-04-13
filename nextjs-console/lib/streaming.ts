@@ -189,20 +189,42 @@ export async function* streamConsoleResponse(
 }
 
 
-// TYPEWRITER_PATCH_APPLIED
+// TYPEWRITER — client-side animation for console streaming
+// Collect all chunk text, then re-emit with delay and accumulated content
+const TYPEWRITER_STEP_MS = 40  // delay between pieces (ms)
+const TYPEWRITER_CHARS = 10    // characters per piece
 
-// Simple typewriter-style accumulator for console stream
-export async function* typewriterConsoleStream(source: AsyncIterable<any>) {
-  let buffer = ''
-  for await (const chunk of source) {
-    if (chunk?.type === 'chunk' && typeof chunk.content === 'string') {
-      buffer += chunk.content
-      yield { type: 'chunk', content: buffer }
+export async function* typewriterStream(
+  source: AsyncIterable<StreamChunk>
+): AsyncGenerator<StreamChunk> {
+  let fullText = ''
+  const nonChunkEvents: StreamChunk[] = []
+
+  // Collect all chunk text from source first
+  for await (const ev of source) {
+    if (ev.type === 'chunk' && typeof ev.content === 'string') {
+      fullText += ev.content
     } else {
-      yield chunk
-      if (chunk?.type === 'done' || chunk?.type === 'error') {
-        buffer = ''
+      // Save non-chunk events (workflowspec, done, error) to emit after animation
+      nonChunkEvents.push(ev)
+      if (ev.type === 'error') {
+        // If error, forward immediately and stop
+        yield ev
+        return
       }
     }
+  }
+
+  // Animate fullText per TYPEWRITER_CHARS characters with delay
+  let displayed = ''
+  for (let i = 0; i < fullText.length; i += TYPEWRITER_CHARS) {
+    displayed += fullText.slice(i, i + TYPEWRITER_CHARS)
+    yield { type: 'chunk', content: displayed } as StreamChunk
+    await new Promise(resolve => setTimeout(resolve, TYPEWRITER_STEP_MS))
+  }
+
+  // Emit remaining events (workflowspec, done, etc) after animation
+  for (const ev of nonChunkEvents) {
+    yield ev
   }
 }

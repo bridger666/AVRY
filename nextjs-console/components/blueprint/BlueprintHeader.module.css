@@ -1,5 +1,7 @@
 .headerContainer {
   margin-bottom: 32px;
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 200;
 }
 
 .sampleBanner {
@@ -24,64 +26,79 @@
   line-height: 1.5;
 }
 
+/* layout */
 .headerContent {
-  text-align: center;
-}
-
-.titleRow {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-bottom: 8px;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
 }
 
-.title {
-  font-size: 32px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.regenerateButton {
+.blueprintHeaderLeft {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 6px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-soft);
-  border-radius: 10px;
-  padding: 8px 14px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 200;
+  flex: 1;
+}
+
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* company label */
+.companyLabel {
+  font-size: 11px;
+  font-weight: 200;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #888;
   font-family: 'Inter Tight', sans-serif;
 }
 
-.regenerateButton:hover {
-  background: var(--bg-soft);
-  color: var(--text-primary);
-  border-color: rgba(255, 255, 255, 0.15);
+/* company name */
+.companyName {
+  font-size: 18px;
+  font-weight: 200;
+  color: #fff;
+  margin: 0;
+  font-family: 'Inter Tight', sans-serif;
 }
 
-.regenerateButton svg {
-  width: 16px;
-  height: 16px;
+/* title row */
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
 }
 
-.subtitle {
+.blueprintTitle {
+  font-size: 18px;
+  font-weight: 200;
+  color: #fff;
+  margin: 0;
+  line-height: 1.1;
+  font-family: 'Inter Tight', sans-serif;
+}
+
+.blueprintId {
   font-size: 14px;
-  color: var(--text-secondary);
-  margin-bottom: 20px;
+  font-weight: 200;
+  color: #555;
+  font-family: 'Inter Tight', sans-serif;
+}
+
+/* version row */
+.versionRow {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  flex-wrap: wrap;
-}
-
-.metadataItem {
-  white-space: nowrap;
+  margin-top: 4px;
 }
 
 .versionDropdown {
@@ -89,7 +106,8 @@
   border: 1px solid var(--border-soft);
   border-radius: 6px;
   padding: 4px 8px;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 200;
   color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -106,15 +124,34 @@
   border-color: var(--accent-primary);
 }
 
-.separator {
-  color: var(--text-tertiary);
+.versionText {
+  font-size: 13px;
+  font-weight: 200;
+  color: var(--text-secondary);
+  font-family: 'Inter Tight', sans-serif;
 }
 
-.pillsContainer {
+.separator {
+  color: var(--text-tertiary);
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 200;
+}
+
+.draftPill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #bbf7d0;
+  font-size: 12px;
+  font-weight: 200;
+  font-family: 'Inter Tight', sans-serif;
+}
+
+/* pills row */
+.pillsRow {
   display: flex;
-  justify-content: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
 }
 
 .pill {
@@ -129,26 +166,97 @@
 
 .pillLabel {
   font-size: 13px;
+  font-weight: 200;
   color: var(--text-secondary);
-  font-weight: 500;
+  font-family: 'Inter Tight', sans-serif;
 }
 
 .pillValue {
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 200;
   color: var(--text-primary);
-  font-weight: 500;
+  font-family: 'Inter Tight', sans-serif;
 }
 
+/* right side: status + actions */
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.draftBadge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 200;
+}
+
+.saveVersionBtn,
+.downloadBtn,
+.historyBtn,
+.generateRoadmapBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 200;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Inter Tight', sans-serif;
+  white-space: nowrap;
+}
+
+.saveVersionBtn:hover,
+.downloadBtn:hover,
+.historyBtn:hover,
+.generateRoadmapBtn:hover {
+  background: var(--bg-soft);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.saveVersionBtn:disabled,
+.downloadBtn:disabled,
+.historyBtn:disabled,
+.generateRoadmapBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.generateRoadmapBtn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* responsive */
 @media (max-width: 768px) {
-  .title {
-    font-size: 26px;
+  .headerContent {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .subtitle {
-    font-size: 13px;
+  .rightColumn {
+    align-items: flex-start;
   }
 
-  .pillsContainer {
+  .blueprintTitle {
+    font-size: 32px;
+  }
+
+  .pillsRow {
     flex-direction: column;
     align-items: stretch;
   }

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { runAivoryPipeline } from "@/lib/aivoryClient";
-import type { AivoryPipelineResponse } from "@/lib/aivoryPipelineSchema";
+import { runAivoryPipeline } from "@/src/lib/aivoryClient";
+import type { AivoryPipelineResponse } from "@/src/lib/aivoryPipelineSchema";
 
 export default function AivoryTestPage() {
   const [data, setData] = useState<AivoryPipelineResponse | null>(null);

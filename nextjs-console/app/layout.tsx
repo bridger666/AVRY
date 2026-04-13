@@ -35,7 +35,7 @@ export default function RootLayout({
           <ModeProvider>
             <RouterProvider>
               <Sidebar />
-              <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+              <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
                 {children}
               </main>
               <ClientShell />
