@@ -104,7 +104,7 @@ function ConnectModal({ app, existingId, onClose, onSaved }: ConnectModalProps) 
         </div>
 
         <p className={styles.securityNote}>
-          🔒 {t("securityNote")}
+          {t("securityNote")}
         </p>
 
         {!isReconnect && (

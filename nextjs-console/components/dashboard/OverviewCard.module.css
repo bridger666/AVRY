@@ -215,10 +215,10 @@
 }
 
 .ctaBtn:hover {
-  background: rgba(0, 229, 158, 0.07);
-  border-color: rgba(0, 229, 158, 0.25);
-  color: #00e59e;
-  box-shadow: 0 0 16px rgba(0, 229, 158, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #666864;
+  color: var(--text-primary);
+  box-shadow: 0 0 16px rgba(102, 104, 100, 0.1);
   transform: translateY(-1px);
 }
 
@@ -227,15 +227,15 @@
 }
 
 .ctaBtnPrimary {
-  background: rgba(0, 229, 158, 0.08);
-  border-color: rgba(0, 229, 158, 0.2);
-  color: #00e59e;
+  background: #353532;
+  border-color: #666864;
+  color: var(--text-secondary);
 }
 
 .ctaBtnPrimary:hover {
-  background: rgba(0, 229, 158, 0.14);
-  border-color: rgba(0, 229, 158, 0.35);
-  box-shadow: 0 0 20px rgba(0, 229, 158, 0.12);
+  background: #444440;
+  border-color: #7a7a78;
+  box-shadow: 0 0 20px rgba(102, 104, 100, 0.15);
 }
 
 .ctaIcon {

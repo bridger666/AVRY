@@ -220,6 +220,21 @@ export function reactFlowToN8n(
  * @param workflowId optional workflow ID for template lookup
  * @returns WorkflowNodeData for visual rendering
  */
+/**
+ * Convert a raw n8n type string like "@n8n/n8n-nodes-langchain.agent"
+ * or "n8n-nodes-base.emailSend" into a readable label like "Agent" or "Email Send".
+ */
+function humanizeN8nType(type: string): string {
+  if (!type) return 'Step';
+  // Extract the part after the last dot: "n8n-nodes-base.emailSend" → "emailSend"
+  const afterDot = type.includes('.') ? type.split('.').pop()! : type;
+  // Split camelCase into words: "emailSend" → "Email Send"
+  return afterDot
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/^./, (c) => c.toUpperCase())
+    .trim() || 'Step';
+}
+
 function mapN8nNodeToWorkflowData(
   n8nNode: N8nNode,
   workflowId?: string
@@ -239,12 +254,12 @@ function mapN8nNodeToWorkflowData(
   const icon = getCategoryIcon(category);
 
   const data: WorkflowNodeData = {
-    label: stepMeta?.title || n8nNode.name || n8nNode.type,
-    title: stepMeta?.title || n8nNode.name || n8nNode.type,
+    label: stepMeta?.title || n8nNode.name || humanizeN8nType(n8nNode.type),
+    title: stepMeta?.title || n8nNode.name || humanizeN8nType(n8nNode.type),
     subtitle: stepMeta?.subtitle,
     description: stepMeta?.description,
     category,
-    icon,
+    // Don't pass icon — WorkflowNode derives its own Lucide icon from category
     rawN8n: n8nNode,
   };
 

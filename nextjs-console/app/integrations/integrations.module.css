@@ -96,7 +96,6 @@
   color: #ffffff;
 }
 
-/* Brand color icons - preserve original colors */
 .tableAppIcon img[data-brand="slack"],
 .tableAppIcon img[data-brand="airtable"],
 .tableAppIcon img[data-brand="hubspot"],
@@ -106,7 +105,6 @@
   filter: none;
 }
 
-/* Monochrome/dark icons - convert to white */
 .tableAppIcon img[data-brand="github"],
 .tableAppIcon img[data-brand="openai"],
 .tableAppIcon img[data-brand="notion"],
@@ -188,13 +186,13 @@
 }
 
 .statusConnected {
-  background: rgba(0, 229, 158, 0.08);
-  color: #00e59e;
-  border: 1px solid rgba(0, 229, 158, 0.15);
+  background: #282827;
+  color: #dddac5;
+  border: 1px solid #666864;
 }
 
 .statusConnected::before {
-  background: #00e59e;
+  background: #dddac5;
 }
 
 .statusRevoked {
@@ -220,37 +218,43 @@
 /* ── App Grid ── */
 .appGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 9px;
 }
 
+/* FIX: padding lebih lega, gap antar elemen lebih proporsional */
 .appCard {
-  background: var(--bg-main, #353531);
-  border: 1px solid #1e1e1e;
-  border-radius: 10px;
-  padding: 16px;
+  background: #353532;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 9px;
+  padding: 20px 16px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
   transition: border-color 0.15s;
+  aspect-ratio: 1 / 1;
+  justify-content: center;
 }
 
 .appCard:hover {
-  border-color: #2a2a2a;
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .appCardTop {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .appIcon {
-  width: 34px;
-  height: 34px;
+  width: 48px;
+  height: 48px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -260,12 +264,11 @@
 }
 
 .appIcon img {
-  width: 100%;
-  height: 100%;
+  width: 36px;
+  height: 36px;
   object-fit: contain;
 }
 
-/* Brand color icons - preserve original colors */
 .appIcon img[data-brand="slack"],
 .appIcon img[data-brand="airtable"],
 .appIcon img[data-brand="hubspot"],
@@ -275,7 +278,6 @@
   filter: none;
 }
 
-/* Monochrome/dark icons - convert to white */
 .appIcon img[data-brand="github"],
 .appIcon img[data-brand="openai"],
 .appIcon img[data-brand="notion"],
@@ -285,44 +287,47 @@
 }
 
 .appName {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: #e0e0e0;
+  color: #f0ede9;
   margin: 0;
 }
 
 .appCategory {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: #a1a1aa;
   text-transform: capitalize;
   margin: 0;
+  display: none;
 }
 
+/* FIX: font-size naik dari 9px → 12px, readable */
 .appDesc {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #a1a1aa;
-  line-height: 1.45;
-  flex: 1;
+  line-height: 1.5;
+  flex: 0;
   margin: 0;
 }
 
+/* FIX: margin-top: auto dorong button selalu nempel ke bawah */
 .connectBtn {
-  margin-top: 4px;
-  padding: 6px 12px;
+  margin-top: 6px;
+  padding: 6px 14px;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
   border-radius: 6px;
-  border: 1px solid #2dd4bf;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   background: transparent;
-  color: #2dd4bf;
+  color: #a1a1aa;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  align-self: flex-start;
+  transition: background 0.15s, border-color 0.15s;
+  align-self: center;
 }
 
 .connectBtn:hover {
-  background: #2dd4bf;
-  color: #0a0a0a;
+  background: #3a3d3a;
+  border-color: #7a7a78;
 }
 
 /* ── Modal ── */
@@ -360,7 +365,6 @@
   color: #ffffff;
 }
 
-/* Brand color icons - preserve original colors */
 .modalAppIcon img[data-brand="slack"],
 .modalAppIcon img[data-brand="airtable"],
 .modalAppIcon img[data-brand="hubspot"],
@@ -370,7 +374,6 @@
   filter: none;
 }
 
-/* Monochrome/dark icons - convert to white */
 .modalAppIcon img[data-brand="github"],
 .modalAppIcon img[data-brand="openai"],
 .modalAppIcon img[data-brand="notion"],

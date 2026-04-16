@@ -1,8 +1,9 @@
 /* =============================================================================
-   CANONICAL WORKFLOW NODE STYLES — v2
+   CANONICAL WORKFLOW NODE STYLES — v2.1 (CACHE BUST: 2026-04-14)
    Single source of truth for all canvas node visuals.
    Imported globally by: app/layout.tsx
    DO NOT add inline style overrides in node components — edit here instead.
+   UPDATED: Background #696d6b, Font Inter Tight 400
    ============================================================================= */
 
 /* ── React Flow outer wrapper: strip default chrome, let CSS drive size ── */
@@ -47,22 +48,32 @@
 /* Keep overflow visible on all nodes so handles + add-btn are not clipped */
 .react-flow__node {
   overflow: visible !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 
 /* ── Canonical card ── */
 .workflow-node {
   width: 100%;
   height: auto;
-  min-height: 72px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  background: rgba(255, 255, 255, 0.045);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.18);
+  min-height: 56px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  background: #3a3a37;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   box-sizing: border-box;
   cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, transform 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
   overflow: visible;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-nunito), 'Nunito', sans-serif;
+  font-weight: 500;
 }
 
 .workflow-node:hover {
@@ -74,9 +85,8 @@
 
 /* ── Selected state ── */
 .workflow-node[data-selected='true'] {
-  border-color: rgba(0, 229, 158, 0.4) !important;
-  background: rgba(0, 229, 158, 0.055) !important;
-  box-shadow: 0 0 0 2px rgba(0, 229, 158, 0.12), 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  border-color: rgba(0, 229, 158, 0.5) !important;
+  box-shadow: 0 0 0 2px rgba(0, 229, 158, 0.15), 0 4px 16px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* ── Category accent borders ── */
@@ -96,9 +106,9 @@
 .workflow-node-header {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 0;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
 }
 
 /* ── Icon container ── */
@@ -107,13 +117,11 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  /* Default: muted outline color at 80% opacity */
-  color: rgba(168, 166, 162, 0.82);
-  margin-top: 1px;
+  width: 36px;
+  height: 36px;
+  border-radius: 0;
+  background: transparent;
+  color: #f59e0b;
   transition: color 0.15s ease, filter 0.15s ease;
 }
 
@@ -122,17 +130,17 @@
   filter: brightness(1.25);
 }
 
-/* Category icon colors — outline tint at ~85% opacity, no fill */
-.node-icon[data-category='trigger']   { color: rgba(251, 191, 36, 0.85);  background: rgba(251, 191, 36, 0.08); }
-.node-icon[data-category='logic']     { color: rgba(139, 92, 246, 0.85);  background: rgba(139, 92, 246, 0.08); }
-.node-icon[data-category='transform'] { color: rgba(59, 130, 246, 0.85);  background: rgba(59, 130, 246, 0.08); }
-.node-icon[data-category='ai']        { color: rgba(0, 229, 158, 0.85);   background: rgba(0, 229, 158, 0.08); }
-.node-icon[data-category='agent']     { color: rgba(0, 229, 158, 0.85);   background: rgba(0, 229, 158, 0.08); }
-.node-icon[data-category='condition'] { color: rgba(251, 191, 36, 0.85);  background: rgba(251, 191, 36, 0.08); }
-.node-icon[data-category='channel']   { color: rgba(59, 130, 246, 0.85);  background: rgba(59, 130, 246, 0.08); }
-.node-icon[data-category='system']    { color: rgba(139, 92, 246, 0.85);  background: rgba(139, 92, 246, 0.08); }
-.node-icon[data-category='app']       { color: rgba(129, 140, 248, 0.85); background: rgba(129, 140, 248, 0.08); }
-.node-icon[data-category='action']    { color: rgba(168, 166, 162, 0.82); background: rgba(255, 255, 255, 0.05); }
+/* Category icon colors — outline tint, no background */
+.node-icon[data-category='trigger']   { color: rgba(251, 191, 36, 0.85); }
+.node-icon[data-category='logic']     { color: rgba(139, 92, 246, 0.85); }
+.node-icon[data-category='transform'] { color: rgba(59, 130, 246, 0.85); }
+.node-icon[data-category='ai']        { color: rgba(0, 229, 158, 0.85); }
+.node-icon[data-category='agent']     { color: rgba(0, 229, 158, 0.85); }
+.node-icon[data-category='condition'] { color: rgba(251, 191, 36, 0.85); }
+.node-icon[data-category='channel']   { color: rgba(59, 130, 246, 0.85); }
+.node-icon[data-category='system']    { color: rgba(139, 92, 246, 0.85); }
+.node-icon[data-category='app']       { color: rgba(129, 140, 248, 0.85); }
+.node-icon[data-category='action']    { color: rgba(168, 166, 162, 0.82); }
 
 /* ── Text column ── */
 .workflow-node-text {
@@ -145,14 +153,26 @@
 
 /* ── Primary title ── */
 .workflow-node .node-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #e8e6e1;
-  line-height: 1.35;
-  white-space: normal;
-  overflow-wrap: break-word;
-  word-break: break-word;
-  hyphens: auto;
+  font-family: var(--font-nunito), 'Nunito', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #ffffff;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Subtitle ── */
+.workflow-node .node-subtitle {
+  font-family: var(--font-nunito), 'Nunito', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
 }
 
 /* ── Secondary description ── */
@@ -171,7 +191,7 @@
 /* ── Optional step label ── */
 .workflow-node .node-step {
   font-size: 10px;
-  font-weight: 500;
+  font-weight: 400;
   color: #a1a1aa;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -180,17 +200,17 @@
 
 /* ── Connection handles (global) ── */
 .react-flow__handle {
-  width: 8px;
-  height: 8px;
-  background: rgba(0, 229, 158, 0.35);
-  border: 2px solid rgba(0, 229, 158, 0.55);
+  width: 12px;
+  height: 12px;
+  background: #00e59e;
+  border: 2px solid #1a1a18;
   border-radius: 50%;
   transition: all 0.15s ease;
 }
 
 .react-flow__handle:hover {
-  background: #00e59e;
-  border-color: #00f5b0;
+  background: #06e59f;
+  border-color: #06e59f;
   width: 10px;
   height: 10px;
 }

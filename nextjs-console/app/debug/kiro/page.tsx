@@ -90,7 +90,7 @@ export default function DebugKiroPage() {
       {response && (
         <div style={{ marginTop: 24 }}>
           <h3 style={{ fontSize: 14, color: '#10b981', marginBottom: 8 }}>Response from Zeroclaw</h3>
-          <pre style={{ background: '#1a1a1a', border: '1px solid #10b981', borderRadius: 8, padding: 16, fontSize: 12, overflow: 'auto', color: '#d6d6c9' }}>
+          <pre style={{ background: '#1a1a1a', border: '1px solid #10b981', borderRadius: 8, padding: 16, fontSize: 12, overflow: 'auto', color: '#f7f7f7' }}>
             {response}
           </pre>
         </div>

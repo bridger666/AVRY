@@ -58,7 +58,7 @@
 .maturityBadge {
   background: var(--bg-soft);
   border: 1px solid var(--border-soft);
-  border-radius: 12px;
+  border-radius: 20px;
   padding: 10px 20px;
   font-size: 15px;
   font-weight: 500;
@@ -82,7 +82,7 @@
 .ctaButton {
   background: #3b3a35;
   border: none;
-  border-radius: 14px;
+  border-radius: 20px;
   padding: 14px 32px;
   font-size: 15px;
   font-weight: 500;

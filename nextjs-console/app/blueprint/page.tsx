@@ -1010,9 +1010,9 @@ export default function BlueprintPage() {
                     </span>
                   </div>
                   <div className={styles.versionActions}>
-                    <button className={styles.versionLoadBtn} onClick={() => handleLoadVersion(v)}>{t("load")}</button>
-                    <button className={styles.versionCompareBtn} disabled title={t("compare")}>{t("compare")}</button>
-                    <button className={styles.versionDeleteBtn} onClick={() => handleDeleteVersion(v.version)}>{t("deleteVersion")}</button>
+                    <button className={`${styles.versionLoadBtn} btn-style-a`} onClick={() => handleLoadVersion(v)}>{t("load")}</button>
+                    <button className={`${styles.versionCompareBtn} btn-style-b`} disabled title={t("compare")}>{t("compare")}</button>
+                    <button className={`${styles.versionDeleteBtn} btn-style-a`} onClick={() => handleDeleteVersion(v.version)}>{t("deleteVersion")}</button>
                   </div>
                 </div>
               ))}
@@ -1056,9 +1056,9 @@ export default function BlueprintPage() {
               placeholder={t("saveVersionPlaceholder")}
             />
             <div className={styles.modalActions}>
-              <button className={styles.modalCancel} onClick={() => setShowSaveModal(false)}>{tCommon("cancel")}</button>
+              <button className={`${styles.modalCancel} btn-style-a`} onClick={() => setShowSaveModal(false)}>{tCommon("cancel")}</button>
               <button
-                className={styles.modalSave}
+                className={`${styles.modalSave} btn-style-b`}
                 onClick={handleSaveVersion}
                 disabled={!saveVersionName.trim()}
               >

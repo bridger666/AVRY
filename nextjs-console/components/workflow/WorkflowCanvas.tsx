@@ -27,6 +27,7 @@ import { WorkflowAiraRefineModal } from './WorkflowAiraRefineModal';
 import { AddWithAiraPanel } from './AddWithAiraPanel';
 import { ExplainPathModal } from './ExplainPathModal';
 import { AgentConfigPanel } from './AgentConfigPanel';
+import { WorkflowNode } from './WorkflowNode';
 import AppNode from './AppNode';
 import TriggerNode from './TriggerNode';
 import StandardNode from './StandardNode';
@@ -70,9 +71,9 @@ const pillStyle = (active: boolean): React.CSSProperties => ({
   fontSize: 11,
   fontWeight: 500,
   cursor: active ? 'pointer' : 'default',
-  background: active ? 'rgba(0,229,158,0.1)' : 'rgba(255,255,255,0.04)',
-  color: active ? '#00e59e' : '#a8a6a2',
-  border: `1px solid ${active ? 'rgba(0,229,158,0.25)' : 'rgba(255,255,255,0.06)'}`,
+  background: active ? '#282827' : 'rgba(255,255,255,0.04)',
+  color: active ? '#dddac5' : '#a8a6a2',
+  border: `1px solid ${active ? '#666864' : 'rgba(255,255,255,0.06)'}`,
   transition: 'all 0.15s',
   fontFamily: 'inherit',
   whiteSpace: 'nowrap' as const,
@@ -85,6 +86,52 @@ function normalizeEdges(edges: Edge[], nodes?: Node[]): Edge[] {
     type: 'n8nAdaptive',
     animated: false,
     markerEnd: (e.markerEnd as any) || { type: MarkerType.ArrowClosed, width: 12, height: 12, color: '#9ca3af' },
+  }));
+}
+
+/**
+ * Re-attach callback functions to nodes loaded from persistence (localStorage / backend).
+ * Functions like onAddStep are stripped during JSON serialization — this restores them.
+ */
+function rehydrateNodeCallbacks(
+  nodes: Node[],
+  setAiraSourceStepId: (id: string) => void,
+  setShowAddWithAiraPanel: (show: boolean) => void,
+  setAgentConfigNodeId: (id: string) => void,
+  setShowAgentConfigPanel: (show: boolean) => void,
+  setExplainTargetStep: (step: WorkflowStep) => void,
+  setShowExplainModal: (show: boolean) => void,
+): Node[] {
+  return nodes.map((n) => ({
+    ...n,
+    data: {
+      ...n.data,
+      onAddStep: () => {
+        setAiraSourceStepId(n.id);
+        setShowAddWithAiraPanel(true);
+      },
+      ...((n.data as any)?.category === 'agent' ? {
+        onConfigureAgent: () => {
+          setAgentConfigNodeId(n.id);
+          setShowAgentConfigPanel(true);
+        },
+      } : {}),
+      ...((n.type === 'appNode') ? {
+        onExplainPath: () => {
+          const step: WorkflowStep = {
+            id: n.id,
+            appId: (n.data as any)?.appId || '',
+            actionId: '',
+            connectionId: '',
+            inputs: {},
+            position: { x: 0, y: 0 },
+            type: 'action',
+          };
+          setExplainTargetStep(step);
+          setShowExplainModal(true);
+        },
+      } : {}),
+    },
   }));
 }
 
@@ -117,6 +164,19 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
   const [showAgentConfigPanel, setShowAgentConfigPanel] = useState(false);
   const [agentConfigNodeId, setAgentConfigNodeId] = useState<string | null>(null);
 
+  /** Re-attach callbacks lost during JSON serialization (localStorage / backend). */
+  const rehydrate = useCallback((loadedNodes: Node[]): Node<WorkflowNodeData>[] => {
+    return rehydrateNodeCallbacks(
+      loadedNodes,
+      setAiraSourceStepId,
+      setShowAddWithAiraPanel,
+      setAgentConfigNodeId,
+      setShowAgentConfigPanel,
+      setExplainTargetStep,
+      setShowExplainModal,
+    ) as Node<WorkflowNodeData>[];
+  }, []);
+
   // ── Listen for edit-node events from BaseWorkflowNode edit button ──
   useEffect(() => {
     const handler = (e: Event) => {
@@ -148,7 +208,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
           ...n,
           position: { x: 0, y: offsetY + i * 160 },
         })) as Node<WorkflowNodeData>[];
-        return [...nds, ...positioned];
+        return [...nds, ...rehydrate(positioned)];
       });
       setEdges((eds) => [...eds, ...normalizeEdges(newEdges)]);
       setIsEmpty(false);
@@ -186,7 +246,6 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
               position,
               data: {
                 label: nodeDef.label,
-                icon: nodeDef.icon,
                 category: 'agent',
                 title: nodeDef.label,
                 agentId: undefined,
@@ -275,30 +334,36 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
 
         // Extract app name - handle both direct name and nested structure
         const appName = app.name || app.title || 'App';
-        const appIcon = app.icon || app.iconPath || '';
+        const appIcon = app.icon || '';
+        const iconPath = app.iconPath || '';
         const appId = app.id || `app-${Date.now()}`;
+
+        // FIXED: Capture node ID at creation time to use in callbacks
+        const nodeId = `app-${Date.now()}`;
 
         // Create new app node with workflow builder
         const newNode: Node<WorkflowNodeData> = {
-          id: `app-${Date.now()}`,
+          id: nodeId,
           type: 'appNode',
           position,
           data: {
             title: appName,
+            label: appName,
             category: 'app',
             appName: appName,
             appIcon: appIcon,
+            iconPath: iconPath,
             appId: appId,
             action: undefined,
             connectionId: undefined,
             connectionName: undefined,
             onAddStep: () => {
-              setAiraSourceStepId(`app-${Date.now()}`);
+              setAiraSourceStepId(nodeId);
               setShowAddWithAiraPanel(true);
             },
             onExplainPath: () => {
               const step: WorkflowStep = {
-                id: `app-${Date.now()}`,
+                id: nodeId,
                 appId: appId,
                 actionId: '',
                 connectionId: '',
@@ -351,7 +416,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
         type: 'n8nAdaptive' as const,
         markerEnd: { type: MarkerType.ArrowClosed, width: 12, height: 12, color: '#9ca3af' },
       }));
-      setNodes(rfNodes);
+      setNodes(rehydrate(rfNodes));
       setEdges(normalizeEdges(rfEdges, rfNodes));
       setIsEmpty(false);
     } else {
@@ -359,7 +424,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
     }
     setSyncState('idle');
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setNodes, setEdges]);
+  }, [setNodes, setEdges, rehydrate]);
 
   useEffect(() => {
     if (!isActive) {
@@ -368,7 +433,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
       const loadLocal = () => {
         const persisted = loadCanvasState(workflowId);
         if (persisted && persisted.nodes.length > 0) {
-          setNodes(persisted.nodes as Node<WorkflowNodeData>[]);
+          setNodes(rehydrate(persisted.nodes) as Node<WorkflowNodeData>[]);
           setEdges(normalizeEdges(persisted.edges, persisted.nodes));
           setIsEmpty(false);
           setSyncState('idle');
@@ -383,7 +448,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
       fetchCanvasState(workflowId).then((remote) => {
         if (cancelled) return;
         if (remote && remote.nodes.length > 0) {
-          setNodes(remote.nodes as Node<WorkflowNodeData>[]);
+          setNodes(rehydrate(remote.nodes) as Node<WorkflowNodeData>[]);
           setEdges(normalizeEdges(remote.edges, remote.nodes));
           setIsEmpty(false);
           setSyncState('idle');
@@ -422,7 +487,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
           setNodes([]); setEdges([]); setIsEmpty(true); setSyncState('idle'); return;
         }
         const { nodes: rfNodes, edges: rfEdges } = n8nToReactFlow(wf);
-        setNodes(rfNodes); setEdges(normalizeEdges(rfEdges, rfNodes)); setIsEmpty(false); setSyncState('idle');
+        setNodes(rehydrate(rfNodes) as any); setEdges(normalizeEdges(rfEdges, rfNodes)); setIsEmpty(false); setSyncState('idle');
       } catch (err: any) {
         if (!cancelled) { setErrorMsg(err?.message ?? 'Failed to load workflow'); setSyncState('error'); }
       }
@@ -488,7 +553,17 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
     }
   }, [n8nWorkflowId, workflowId]);
 
-  const nodeTypes = useMemo(() => ({ appNode: AppNode as any, triggerNode: TriggerNode as any, standardNode: StandardNode as any, agent: AgentNode as any }), []);
+  const nodeTypes = useMemo(() => ({
+    standardNode:  WorkflowNode as any,
+    appNode:       WorkflowNode as any,
+    agentNode:     WorkflowNode as any,
+    workflowStep:  WorkflowNode as any,
+    triggerNode:   WorkflowNode as any,
+    agent:         WorkflowNode as any,
+    // Legacy fallbacks
+    appNodeLegacy: AppNode as any,
+    standardNodeLegacy: StandardNode as any,
+  }), []);
   const defaultEdgeOptions = useMemo(() => ({
     type: 'n8nAdaptive' as const,
     animated: false,
@@ -513,7 +588,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
   const syncLabel =
     syncState === 'loading' ? 'Loading…' :
     syncState === 'saving'  ? 'Saving…' :
-    syncState === 'saved'   ? 'Saved ✓' :
+    syncState === 'saved'   ? 'Saved' :
     syncState === 'error'   ? `Error: ${errorMsg}` : '';
 
   return (
@@ -523,7 +598,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
           {/* Sync status */}
           {syncLabel && (
-            <span style={{ fontSize: 11, color: syncState === 'error' ? '#f87171' : syncState === 'saved' ? '#00e59e' : '#5a5a58', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 11, color: syncState === 'error' ? '#f87171' : syncState === 'saved' ? '#dddac5' : '#5a5a58', whiteSpace: 'nowrap' }}>
               {syncLabel}
             </span>
           )}
@@ -582,9 +657,9 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
                 }}
                 disabled={airaLoading || isEmpty}
                 style={{
-                  borderRadius: 7, background: 'rgba(0,229,158,0.1)', padding: '5px 14px',
-                  fontSize: 11, fontWeight: 600, color: '#00e59e',
-                  border: '1px solid rgba(0,229,158,0.3)', cursor: airaLoading || isEmpty ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                  borderRadius: 7, background: '#282827', padding: '5px 14px',
+                  fontSize: 11, fontWeight: 600, color: '#dddac5',
+                  border: '1px solid #666864', cursor: airaLoading || isEmpty ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                   opacity: (airaLoading || isEmpty) ? 0.5 : 1,
                   transition: 'all 0.15s',
                 }}
@@ -597,9 +672,9 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
                 onClick={handleSave}
                 disabled={syncState === 'saving' || syncState === 'loading'}
                 style={{
-                  borderRadius: 7, background: 'rgba(0,229,158,0.1)', padding: '5px 14px',
-                  fontSize: 11, fontWeight: 600, color: '#00e59e',
-                  border: '1px solid rgba(0,229,158,0.3)', cursor: 'pointer', fontFamily: 'inherit',
+                  borderRadius: 7, background: '#282827', padding: '5px 14px',
+                  fontSize: 11, fontWeight: 600, color: '#dddac5',
+                  border: '1px solid #666864', cursor: 'pointer', fontFamily: 'inherit',
                   opacity: (syncState === 'saving' || syncState === 'loading') ? 0.5 : 1,
                   transition: 'all 0.15s',
                 }}
@@ -746,9 +821,9 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
                         <td style={{ padding: '7px 12px' }}>
                           <span style={{
                             display: 'inline-block', borderRadius: 5, padding: '2px 8px', fontSize: 10, fontWeight: 600,
-                            background: exec.status === 'success' ? 'rgba(0,229,158,0.1)' : exec.status === 'error' ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.1)',
-                            color: exec.status === 'success' ? '#00e59e' : exec.status === 'error' ? '#f87171' : '#fbbf24',
-                            border: `1px solid ${exec.status === 'success' ? 'rgba(0,229,158,0.2)' : exec.status === 'error' ? 'rgba(248,113,113,0.2)' : 'rgba(251,191,36,0.2)'}`,
+                            background: exec.status === 'success' ? '#282827' : exec.status === 'error' ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.1)',
+                            color: exec.status === 'success' ? '#dddac5' : exec.status === 'error' ? '#f87171' : '#fbbf24',
+                            border: `1px solid ${exec.status === 'success' ? '#666864' : exec.status === 'error' ? 'rgba(248,113,113,0.2)' : 'rgba(251,191,36,0.2)'}`,
                           }}>
                             {exec.status}
                           </span>
@@ -819,7 +894,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
       )}
 
       {/* ── Add with AIRA Panel ── */}
-      {showAddWithAiraPanel && airaSourceStepId && (
+      {showAddWithAiraPanel && airaSourceStepId && nodes.find(n => n.id === airaSourceStepId) && (
         <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} onClick={() => setShowAddWithAiraPanel(false)} />
           <div style={{ position: 'relative', zIndex: 1001 }}>

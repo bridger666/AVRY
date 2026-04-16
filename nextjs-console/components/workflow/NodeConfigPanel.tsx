@@ -108,7 +108,7 @@ const NodeConfigPanel = memo(
                 </select>
               ) : (
                 <div className={styles.warning}>
-                  ⚠ No connections available
+                  No connections available
                   <a href="/integrations" target="_blank" rel="noopener noreferrer">
                     Connect App
                   </a>

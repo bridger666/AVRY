@@ -1,33 +1,34 @@
 .pill {
   display: flex;
   align-items: center;
-  background: var(--bg-elevated);
-  border-radius: 8px;
-  padding: 2px;
+  background: #4a4a47;
+  border-radius: 8.4px;
+  padding: 2.8px;
   margin: 0 0.5rem;
-  gap: 2px;
+  gap: 0;
 }
 
 .segment {
   flex: 1;
-  padding: 6px 12px;
+  padding: 5.6px 11.2px;
   border: none;
-  border-radius: 6px;
+  border-radius: 7px;
   background: transparent;
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 600;
+  color: #e0e0e0;
+  font-size: 9.1px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   text-align: center;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.21px;
 }
 
 .segment:hover {
-  color: var(--text-primary);
+  color: #ffffff;
 }
 
 .segment.active {
-  background: #00e59e;
-  color: #0a0a0a;
+  background: #5a5a57;
+  color: #ffffff;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }

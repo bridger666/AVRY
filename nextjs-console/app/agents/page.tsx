@@ -38,7 +38,7 @@ export default function AgentsPage() {
           </div>
           <Link
             href="/agents/new"
-            className="px-4 py-2 bg-[#00e59e] text-black font-semibold rounded-lg hover:bg-[#00f5b0] transition-colors"
+            className="btn-style-a"
           >
             + New Agent
           </Link>
@@ -77,7 +77,7 @@ export default function AgentsPage() {
             <p className="text-zinc-400 mb-4">No agents yet</p>
             <Link
               href="/agents/new"
-              className="inline-block px-4 py-2 bg-[#00e59e] text-black font-semibold rounded-lg hover:bg-[#00f5b0] transition-colors"
+              className="inline-block btn-style-b"
             >
               Create your first agent
             </Link>

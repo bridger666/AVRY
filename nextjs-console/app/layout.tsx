@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Inter_Tight } from "next/font/google"
+import { Inter_Tight, Nunito } from "next/font/google"
 import Sidebar from "@/components/shared/Sidebar"
 import ClientShell from "@/components/ClientShell"
 import LocaleWrapper from "@/components/LocaleWrapper"
@@ -13,6 +13,13 @@ const interTight = Inter_Tight({
   weight: ["300", "400", "500", "600"],
   display: "swap",
   variable: "--font-inter-tight",
+})
+
+const nunito = Nunito({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  display: "swap",
+  variable: "--font-nunito",
 })
 
 export const metadata: Metadata = {
@@ -29,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={interTight.variable}>
+    <html lang="en" className={`${interTight.variable} ${nunito.variable}`}>
       <body className={`flex h-screen bg-[#353531] overflow-hidden ${interTight.className}`}>
         <LocaleWrapper>
           <ModeProvider>

@@ -85,12 +85,12 @@ export function WorkflowAiraRefineModal({
 
   const handleApplyMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
     const btn = e.currentTarget
-    btn.style.background = '#00f5b0'
+    btn.style.background = '#444440'
   }
 
   const handleApplyMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
     const btn = e.currentTarget
-    btn.style.background = '#00e59e'
+    btn.style.background = '#353532'
   }
 
   return (
@@ -205,11 +205,11 @@ export function WorkflowAiraRefineModal({
                 onClick={handleRefine}
                 disabled={loading || !instruction.trim()}
                 style={{
-                  background: '#00e59e',
-                  border: 'none',
-                  borderRadius: 8,
+                  background: '#353532',
+                  border: '1px solid #666864',
+                  borderRadius: 20,
                   padding: '8px 16px',
-                  color: '#0a0a0a',
+                  color: '#f7f7f7',
                   cursor: loading || !instruction.trim() ? 'not-allowed' : 'pointer',
                   fontSize: 13,
                   fontWeight: 600,
@@ -280,11 +280,11 @@ export function WorkflowAiraRefineModal({
               <button
                 onClick={handleApply}
                 style={{
-                  background: '#00e59e',
-                  border: 'none',
-                  borderRadius: 8,
+                  background: '#353532',
+                  border: '1px solid #666864',
+                  borderRadius: 20,
                   padding: '8px 16px',
-                  color: '#0a0a0a',
+                  color: '#f7f7f7',
                   cursor: 'pointer',
                   fontSize: 13,
                   fontWeight: 600,

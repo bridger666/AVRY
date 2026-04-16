@@ -15,7 +15,7 @@ export default function LanguagePill() {
         aria-checked={locale === "en"}
         aria-label="English"
       >
-        EN
+        ENG
       </button>
       <button
         className={`${styles.segment} ${locale === "id" ? styles.active : ""}`}
@@ -24,7 +24,7 @@ export default function LanguagePill() {
         aria-checked={locale === "id"}
         aria-label="Bahasa Indonesia"
       >
-        ID
+        IDN
       </button>
     </div>
   )

@@ -61,39 +61,11 @@
 }
 
 .resumeButton {
-  background: rgba(0, 229, 158, 0.1);
-  color: #00e59e;
-  border: 1px solid rgba(0, 229, 158, 0.25);
-  border-radius: 8px;
-  padding: 6px 16px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  font-family: 'Inter Tight', sans-serif;
-  cursor: pointer;
-  transition: all 0.18s ease;
-}
-
-.resumeButton:hover {
-  background: rgba(0, 229, 158, 0.18);
-  border-color: rgba(0, 229, 158, 0.4);
-  box-shadow: 0 0 16px rgba(0, 229, 158, 0.1);
+  /* Styles now in globals.css .btn-style-a */
 }
 
 .startFreshBannerButton {
-  background: transparent;
-  color: rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  padding: 6px 16px;
-  font-size: 0.875rem;
-  font-family: 'Inter Tight', sans-serif;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.startFreshBannerButton:hover {
-  color: #f5f5f4;
-  border-color: rgba(255, 255, 255, 0.18);
+  /* Styles now in globals.css .btn-style-b */
 }
 
 .warningBanner {
@@ -150,69 +122,15 @@
 }
 
 .prevButton {
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-size: 0.9rem;
-  font-family: 'Inter Tight', sans-serif;
-  cursor: pointer;
-  transition: all 0.18s ease;
-}
-
-.prevButton:hover:not(:disabled) {
-  color: #f5f5f4;
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.prevButton:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
+  /* Styles now in globals.css .btn-style-a */
 }
 
 .startFreshButton {
-  background: transparent;
-  color: rgba(255, 255, 255, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-size: 0.9rem;
-  font-family: 'Inter Tight', sans-serif;
-  cursor: pointer;
-  transition: all 0.18s ease;
-}
-
-.startFreshButton:hover {
-  color: #f87171;
-  border-color: rgba(248, 113, 113, 0.3);
+  /* Styles now in globals.css .btn-style-b */
 }
 
 .nextButton {
-  background: rgba(0, 229, 158, 0.1);
-  color: #00e59e;
-  border: 1px solid rgba(0, 229, 158, 0.25);
-  border-radius: 10px;
-  padding: 10px 24px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  font-family: 'Inter Tight', sans-serif;
-  cursor: pointer;
-  transition: all 0.18s ease;
-}
-
-.nextButton:hover:not(:disabled) {
-  background: rgba(0, 229, 158, 0.18);
-  border-color: rgba(0, 229, 158, 0.4);
-  box-shadow: 0 0 16px rgba(0, 229, 158, 0.1);
-  transform: translateY(-1px);
-}
-
-.nextButton:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
+  /* Styles now in globals.css .btn-style-a */
 }
 
 /* ── Responsive ──────────────────────────────────────────── */

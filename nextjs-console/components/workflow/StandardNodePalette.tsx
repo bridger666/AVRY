@@ -79,13 +79,8 @@ const Icons: Record<string, React.ReactNode> = {
     </svg>
   ),
   agent: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="1" />
-      <path d="M12 1v6m0 6v6" />
-      <path d="M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24" />
-      <path d="M1 12h6m6 0h6" />
-      <path d="M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src="/icons/ai-agent.svg" alt="AI Agent" width={15} height={15} style={{ objectFit: 'contain' }} />
   ),
 };
 

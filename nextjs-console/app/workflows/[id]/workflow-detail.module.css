@@ -58,7 +58,7 @@
 .backButton {
   background: #3b3a35;
   border: none;
-  border-radius: 14px;
+  border-radius: 20px;
   padding: 12px 28px;
   font-size: 14px;
   font-weight: 500;
@@ -322,7 +322,7 @@
   gap: 8px;
   background: #3b3a35;
   border: none;
-  border-radius: 12px;
+  border-radius: 20px;
   padding: 12px 20px;
   font-size: 14px;
   font-weight: 500;
@@ -343,7 +343,7 @@
 .secondaryActionButton {
   background: transparent;
   border: 1px solid var(--border-soft);
-  border-radius: 12px;
+  border-radius: 20px;
   padding: 12px 20px;
   font-size: 14px;
   font-weight: 500;

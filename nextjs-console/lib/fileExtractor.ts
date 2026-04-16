@@ -25,6 +25,15 @@ export async function extractTextFromFile(file: File): Promise<string> {
       text = await extractFromPDF(file)
     } else if (ext === 'docx' || ext === 'doc') {
       text = await extractFromDOCX(file)
+    } else if (file.type.startsWith('image/')) {
+      // Return base64 data URL for images — never call file.text() on binary
+      text = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      console.log(`[fileExtractor] image read as data URL: ${text.length} chars`)
     } else {
       // Plain text: txt, csv, md, json
       text = await file.text()

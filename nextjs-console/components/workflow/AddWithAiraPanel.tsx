@@ -36,7 +36,7 @@ export const AddWithAiraPanel: React.FC<AddWithAiraPanelProps> = ({
 }) => {
   const { result, loading, error, extendWorkflow, clearExtension } = useWorkflowExtend()
   const [instruction, setInstruction] = useState(
-    `Add a follow-up step after this ${sourceStep.appId} step`
+    `Add a follow-up step after this ${sourceStep?.appId ?? sourceStep?.id ?? 'step'} step`
   )
 
   const handleAskAira = useCallback(async () => {

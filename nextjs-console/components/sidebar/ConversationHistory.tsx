@@ -32,7 +32,14 @@ export default function ConversationHistory({ collapsed }: ConversationHistoryPr
   return (
     <div className="flex flex-col h-full">
       <SearchBar value={searchQuery} onChange={setSearchQuery} />
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/[0.08]">
+      <div
+        className="flex-1 overflow-y-auto scrollbar-invisible"
+        style={{
+          maxHeight: 'calc(5 * 44px)',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
+      >
         <PinnedChats
           chats={pinnedConversations}
           onUnpin={unpinConversation}

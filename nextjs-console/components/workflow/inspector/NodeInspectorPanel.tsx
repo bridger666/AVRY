@@ -12,6 +12,7 @@ import AiStepForm from './forms/AiStepForm';
 import IfForm from './forms/IfForm';
 import EditFieldsForm from './forms/EditFieldsForm';
 import HttpResponseForm from './forms/HttpResponseForm';
+import AgentForm from './forms/AgentForm';
 import GenericNodeForm from './forms/GenericNodeForm';
 
 type Tab = 'configure' | 'advanced' | 'output';
@@ -54,7 +55,6 @@ export default function NodeInspectorPanel({ selectedNode, onChange, onDelete, o
       setActiveTab('output');
     } finally { setTesting(false); }
   }, [config, nodeId, onChange]);
-  const handleDelete = useCallback(() => { onDelete(nodeId); }, [nodeId, onDelete]);
 
   // ── Empty state: panel open but no node selected ──
   if (!selectedNode || !data || !config) {
@@ -72,7 +72,7 @@ export default function NodeInspectorPanel({ selectedNode, onChange, onDelete, o
         </div>
         <div className={styles.body} style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
           <div style={{ color: 'var(--text-tertiary, #5a5a58)', fontSize: 12, lineHeight: 1.6 }}>
-            <p style={{ fontSize: 20, marginBottom: 8, opacity: 0.4 }}>⬡</p>
+            <p style={{ fontSize: 20, marginBottom: 8, opacity: 0.4 }}></p>
             <p>Select a node to inspect</p>
             <p style={{ fontSize: 11, marginTop: 4, opacity: 0.7 }}>Double-click a node or use the edit button</p>
           </div>
@@ -82,7 +82,7 @@ export default function NodeInspectorPanel({ selectedNode, onChange, onDelete, o
   }
 
   const iconMap: Record<string, string> = {
-    trigger: '⚡', action: '→', ai: '✦', condition: '◇', channel: '📡', system: '⚙', app: '□',
+    trigger: '', action: '', ai: '', condition: '', channel: '', system: '', app: '',
   };
   const icon = iconMap[data.category] ?? '□';
   return (
@@ -136,6 +136,7 @@ function ConfigureTab({ config, onChange, errors }: { config: NodeConfig; onChan
     case 'ifCondition':   return <IfForm config={config} onChange={onChange} errors={errors} />;
     case 'editFields':    return <EditFieldsForm config={config} onChange={onChange} errors={errors} />;
     case 'httpResponse':  return <HttpResponseForm config={config} onChange={onChange} errors={errors} />;
+    case 'agent':         return <AgentForm config={config} onChange={onChange} errors={errors} />;
     case 'generic':       return <GenericNodeForm config={config} onChange={onChange} errors={errors} />;
     default:              return <p style={{ color: '#5a5a58', fontSize: 12 }}>No configuration available.</p>;
   }

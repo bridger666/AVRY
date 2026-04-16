@@ -1,187 +1,136 @@
-/* Agent Node Styling — AI agent step card with metadata display */
+/* ============================================================
+   AgentNode — expandable canvas node card
+   Collapsed: icon + title only (~72px)
+   Expanded: top (icon+title) + bottom (mint pastel content)
+   ============================================================ */
 
-/* Base Node Styling with scoped CSS variables */
 .agentNode {
-  /* CSS Variables scoped to this class */
-  --agent-bg-default: rgba(129, 140, 248, 0.06);
-  --agent-border-default: rgba(129, 140, 248, 0.28);
-  --agent-bg-selected: rgba(0, 229, 158, 0.055);
-  --agent-border-selected: rgba(0, 229, 158, 0.4);
-  --agent-bg-running: rgba(0, 229, 158, 0.08);
-  --agent-border-running: rgba(0, 229, 158, 0.6);
-  --agent-bg-error: rgba(248, 113, 113, 0.05);
-  --agent-border-error: rgba(248, 113, 113, 0.4);
-  --agent-text-primary: #e8e6e1;
-  --agent-text-secondary: #a8a6a2;
-  --agent-text-tertiary: #8b8985;
-  --agent-node-width: 260px;
-  --agent-node-min-height: 150px;
-  --agent-node-padding: 14px 16px;
-  --agent-node-gap: 8px;
-  --agent-icon-size: 32px;
-  --agent-border-radius: 12px;
+  width: 260px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
 
-  width: 100%;
-  height: auto;
-  min-height: var(--agent-node-min-height);
-  background: var(--agent-bg-default);
-  border: 1px solid var(--agent-border-default);
-  border-radius: var(--agent-border-radius);
-  padding: var(--agent-node-padding);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.18);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, transform 0.15s ease;
+/* ── TOP SECTION (always visible) ── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  min-height: 72px;
+  background: #696d6b;
+  border: 1px solid #929390;
+  border-radius: 14px;
   position: relative;
   box-sizing: border-box;
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: var(--agent-node-gap);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
-.agentNode:hover {
-  border-color: rgba(129, 140, 248, 0.45);
-  background: rgba(129, 140, 248, 0.09);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.32);
-  transform: translateY(-1px);
+.header.headerExpanded {
+  border-radius: 14px 14px 0 0;
+  border-bottom-color: transparent;
 }
 
-/* State Variations */
-
-/* Default State */
-.agentNode.default {
-  background: var(--agent-bg-default);
-  border-color: var(--agent-border-default);
+.agentNode.selected .header {
+  border-color: rgba(6, 229, 159, 0.5);
+  box-shadow: 0 0 0 2px rgba(6, 229, 159, 0.15);
 }
 
-/* Selected State */
-.agentNode.selected {
-  border-color: var(--agent-border-selected);
-  background: var(--agent-bg-selected);
-  box-shadow: 0 0 0 2px rgba(0, 229, 158, 0.12), 0 4px 16px rgba(0, 0, 0, 0.3);
-}
-
-/* Running State */
-.agentNode.running {
-  background: var(--agent-bg-running);
-  border-color: var(--agent-border-running);
-  animation: agentPulse 1.5s ease-in-out infinite;
-}
-
-@keyframes agentPulse {
-  0%, 100% {
-    border-color: rgba(0, 229, 158, 0.6);
-    box-shadow: 0 0 0 0 rgba(0, 229, 158, 0.2), 0 2px 10px rgba(0, 0, 0, 0.28);
-  }
-  50% {
-    border-color: rgba(0, 229, 158, 0.8);
-    box-shadow: 0 0 0 4px rgba(0, 229, 158, 0.1), 0 4px 16px rgba(0, 0, 0, 0.32);
-  }
-}
-
-/* Error State */
-.agentNode.error {
-  background: var(--agent-bg-error);
-  border-color: var(--agent-border-error);
-}
-
-/* Disabled State */
-.agentNode.disabled {
-  background: rgba(129, 140, 248, 0.03);
-  border-color: rgba(129, 140, 248, 0.15);
-  opacity: 0.6;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.agentNode.connecting {
-  border-color: rgba(0, 229, 158, 0.5);
-  background: rgba(0, 229, 158, 0.05);
-}
-
-/* Header Section */
-.header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.headerContent {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  flex: 1;
-  min-width: 0;
-}
-
+/* ── Icon ── */
 .iconContainer {
-  width: var(--agent-icon-size);
-  height: var(--agent-icon-size);
-  border-radius: 8px;
-  background: rgba(129, 140, 248, 0.08);
-  color: rgba(129, 140, 248, 0.85);
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: filter 0.15s ease;
-}
-
-.agentNode:hover .iconContainer {
-  filter: brightness(1.25);
+  color: #ffffff;
 }
 
 .icon {
-  width: 100%;
-  height: 100%;
-  border-radius: 6px;
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
   object-fit: contain;
 }
 
-.headerText {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+/* ── Title ── */
+.agentName {
+  font-size: 15px;
+  font-weight: 400;
+  font-family: 'Inter Tight', sans-serif;
+  color: #ffffff;
+  line-height: 1.3;
   flex: 1;
   min-width: 0;
-}
-
-.agentName {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--agent-text-primary);
-  line-height: 1.35;
-  white-space: normal;
   overflow-wrap: break-word;
   word-break: break-word;
 }
 
-.badge {
-  font-size: 10px;
-  font-weight: 600;
-  color: #00e59e;
-  background: rgba(0, 229, 158, 0.1);
-  border: 1px solid rgba(0, 229, 158, 0.2);
-  border-radius: 4px;
-  padding: 2px 6px;
-  width: fit-content;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+/* ── Chevron ── */
+.expandChevron {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  transition: transform 0.2s ease, color 0.15s ease;
+  z-index: 2;
+}
+
+.expandChevron:hover {
+  color: #ffffff;
+}
+
+.expandChevron.expanded {
+  transform: rotate(180deg);
+}
+
+/* ── BOTTOM SECTION (only in DOM when expanded) ── */
+.expandedContent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #b8f5e0;
+  border: 1px solid #929390;
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  color: #000000;
+  font-size: 13px;
+  line-height: 1.5;
+  box-sizing: border-box;
 }
 
 /* Meta Row */
 .metaRow {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.25);
   border-radius: 6px;
 }
 
 .metaLine {
   font-size: 11px;
-  color: var(--agent-text-secondary);
+  color: #000000;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -189,111 +138,96 @@
 }
 
 .metaLabel {
-  font-weight: 600;
-  color: var(--agent-text-secondary);
+  font-weight: 700;
+  color: #2a2a2a;
   text-transform: uppercase;
   letter-spacing: 0.3px;
+  font-size: 10px;
 }
 
 .metaValue {
-  color: var(--agent-text-secondary);
+  color: #000000;
 }
 
 .metaSeparator {
-  color: var(--agent-text-tertiary);
+  color: #555;
   font-size: 9px;
 }
 
-/* Description Section */
+/* Description */
 .description {
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
 .promptSummary {
-  font-size: 11px;
-  color: var(--agent-text-tertiary);
-  line-height: 1.4;
+  font-size: 13px;
+  color: #000000;
+  line-height: 1.5;
   font-style: italic;
-  white-space: normal;
   overflow-wrap: break-word;
   word-break: break-word;
-  cursor: help;
 }
 
-/* Input/Output Chips */
+/* Chips */
 .chipsContainer {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .chipsRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   font-size: 10px;
-  padding: 4px 8px;
-  background: rgba(0, 229, 158, 0.08);
-  border: 1px solid rgba(0, 229, 158, 0.2);
+  padding: 3px 7px;
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 4px;
-  color: #00e59e;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: all 0.15s ease;
-}
-
-.chip:hover {
-  background: rgba(0, 229, 158, 0.12);
-  border-color: rgba(0, 229, 158, 0.3);
+  color: #000000;
 }
 
 .chipLabel {
-  font-weight: 600;
-  color: var(--agent-text-secondary);
+  font-weight: 700;
+  color: #2a2a2a;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 
 .chipValue {
-  color: #00e59e;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #000000;
 }
 
-/* Error Message */
+/* Error */
 .errorMessage {
-  font-size: 10px;
-  color: #f87171;
+  font-size: 11px;
+  color: #c62828;
   padding: 4px 8px;
-  background: rgba(248, 113, 113, 0.05);
+  background: rgba(255, 200, 200, 0.25);
   border-radius: 4px;
-  border-left: 2px solid #f87171;
-  white-space: normal;
+  border-left: 2px solid #c62828;
   overflow-wrap: break-word;
   word-break: break-word;
 }
 
-/* Info Button */
+/* ── Hover-reveal action buttons ── */
 .infoButton {
   position: absolute;
-  top: 4px;
-  right: 52px;
+  top: 6px;
+  right: 56px;
   width: 20px;
   height: 20px;
   border-radius: 4px;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.25);
   color: #3b82f6;
-  font-size: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -309,22 +243,20 @@
 }
 
 .infoButton:hover {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.25);
 }
 
-/* Add Button */
 .addButton {
   position: absolute;
-  top: 4px;
-  right: 28px;
+  top: 6px;
+  right: 30px;
   width: 20px;
   height: 20px;
   border-radius: 4px;
-  background: rgba(0, 229, 158, 0.1);
-  border: 1px solid rgba(0, 229, 158, 0.2);
-  color: #00e59e;
-  font-size: 12px;
+  background: rgba(6, 229, 159, 0.12);
+  border: 1px solid rgba(6, 229, 159, 0.22);
+  color: #06e59f;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -341,22 +273,19 @@
 }
 
 .addButton:hover {
-  background: rgba(0, 229, 158, 0.2);
-  border-color: rgba(0, 229, 158, 0.4);
+  background: rgba(6, 229, 159, 0.25);
 }
 
-/* Delete Button */
 .deleteButton {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 6px;
+  right: 6px;
   width: 20px;
   height: 20px;
   border-radius: 4px;
-  background: rgba(248, 113, 113, 0.1);
-  border: 1px solid rgba(248, 113, 113, 0.2);
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.22);
   color: #f87171;
-  font-size: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -372,23 +301,21 @@
 }
 
 .deleteButton:hover {
-  background: rgba(248, 113, 113, 0.2);
-  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.25);
 }
 
-/* Handles */
+/* ── Handles ── */
 .handle {
-  width: 8px;
-  height: 8px;
-  background: rgba(0, 229, 158, 0.3);
-  border: 2px solid rgba(0, 229, 158, 0.5);
+  width: 10px;
+  height: 10px;
+  background: rgba(6, 229, 159, 0.3);
+  border: 2px solid #06e59f;
   border-radius: 50%;
   transition: all 0.15s ease;
 }
 
 .handle:hover {
-  background: #00e59e;
-  border-color: #00f5b0;
-  width: 10px;
-  height: 10px;
+  background: #06e59f;
+  width: 12px;
+  height: 12px;
 }

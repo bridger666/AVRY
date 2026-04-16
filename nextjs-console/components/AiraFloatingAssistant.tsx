@@ -317,7 +317,7 @@ export default function AiraFloatingAssistant() {
         <div
           ref={panelRef}
           className="fixed bottom-20 right-6 z-50 w-[520px] rounded-2xl overflow-hidden flex flex-col bg-[#3a3a35] animate-in fade-in-0 zoom-in-95 duration-200 ease-out"
-          style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.55)', maxHeight: 'calc(100vh - 120px)' }}
+          style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.55)', maxHeight: 'calc(100vh - 90px)' }}
           role="dialog"
           aria-modal="true"
           aria-label="Aivory assistant"
@@ -343,7 +343,7 @@ export default function AiraFloatingAssistant() {
             </div>
           </div>
 
-          <div ref={chatAreaRef} className="flex-1 overflow-y-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-h-[300px]">
+          <div ref={chatAreaRef} className="flex-1 overflow-y-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-h-[340px]">
             {messages.length > 0 && messages.map(m => (
               <ChatMessage
                 key={m.id}
@@ -396,7 +396,7 @@ export default function AiraFloatingAssistant() {
               <button
                 onClick={() => { if (hasContent && !isLoading) handleSend(input, []) }}
                 disabled={!hasContent || isLoading}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${hasContent ? 'bg-teal-400 text-white' : 'bg-[#555550] text-white/60'}`}
+                className={`w-8 h-8 rounded-[20px] flex items-center justify-center transition-all ${hasContent ? 'bg-[#353532] text-white border border-[#666864] hover:bg-[#444440]' : 'bg-[#555550] text-white/60'}`}
                 aria-label="Send"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -427,10 +427,10 @@ export default function AiraFloatingAssistant() {
         ref={fabRef}
         className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full shadow-lg hover:scale-105 transition-transform duration-200 flex items-center justify-center flex-shrink-0 focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-3"
         style={{
-          background: 'rgba(0,229,158,0.15)',
+          background: 'rgba(53,53,50,0.85)',
           backdropFilter: 'blur(8px)',
           WebkitBackdropFilter: 'blur(8px)',
-          border: '1px solid rgba(0,229,158,0.3)',
+          border: '1px solid #666864',
         }}
         onClick={() => setOpen(o => !o)}
         aria-label={open ? "Close Aivory assistant" : "Open Aivory assistant"}

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, KeyboardEvent, ChangeEvent } from "react"
 import UploadMenu, { Attachment } from "./UploadMenu"
 import ContextToolbar from "./input/ContextToolbar"
+import { AttachmentCard } from "./AttachmentCard"
 
 interface ChatInputProps {
   onSend: (message: string, attachments: Attachment[]) => void
@@ -11,11 +12,13 @@ interface ChatInputProps {
   hasPendingFiles?: boolean
   pendingAttachments?: Attachment[]
   onClearPendingAttachments?: () => void
+  onRemoveAttachment?: (index: number) => void
 }
 
 export default function ChatInput({ onSend, disabled = false, prefill, hasPendingFiles = false,
   pendingAttachments = [],
   onClearPendingAttachments,
+  onRemoveAttachment,
 }: ChatInputProps) {
   const [message, setMessage] = useState(prefill ?? "")
   const [activeTool, setActiveTool] = useState<string | null>(null)
@@ -96,20 +99,23 @@ export default function ChatInput({ onSend, disabled = false, prefill, hasPendin
       <ContextToolbar onToolSelect={handleToolSelect} />
 
       {/* Pending attachments from drag & drop */}
-      {pendingAttachments.map((att, i) => (
-        <div key={i} className="mb-3 p-2 bg-zinc-800 border border-zinc-700 rounded-lg inline-flex items-center gap-2">
-          <span className="text-sm text-zinc-300">{att.filename}</span>
-          <button
-            className="text-zinc-400 hover:text-zinc-200 transition-colors"
-            onClick={() => onClearPendingAttachments?.()}
-            aria-label="Remove attachment"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 6L6 18M6 6l12 12"/>
-            </svg>
-          </button>
+      {pendingAttachments.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {pendingAttachments.map((att, i) => (
+            <AttachmentCard
+              key={i}
+              attachment={att}
+              onRemove={() => {
+                if (onRemoveAttachment) {
+                  onRemoveAttachment(i)
+                } else {
+                  onClearPendingAttachments?.()
+                }
+              }}
+            />
+          ))}
         </div>
-      ))}
+      )}
 
       {/* Attachment chip */}
       {(attachment || extracting) && (
@@ -142,7 +148,7 @@ export default function ChatInput({ onSend, disabled = false, prefill, hasPendin
           onKeyDown={handleKeyDown}
           disabled={disabled}
           rows={1}
-          className="w-full bg-transparent px-4 pt-3.5 pb-2 text-base text-zinc-100 placeholder:text-[#a1a1aa] focus:outline-none resize-none"
+          className="w-full bg-transparent px-4 pt-3.5 pb-2 text-base text-zinc-100 placeholder:text-[#a1a1aa] focus:outline-none resize-none text-left"
         />
 
         {/* Bottom toolbar row: icons left, send right */}
@@ -175,7 +181,7 @@ export default function ChatInput({ onSend, disabled = false, prefill, hasPendin
 
           {/* Send button */}
           <button
-            className="w-8 h-8 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-zinc-600 disabled:text-zinc-400 transition-colors flex items-center justify-center"
+            className="w-8 h-8 rounded-[20px] bg-[#353532] text-white border border-[#666864] hover:bg-[#444440] disabled:bg-zinc-600 disabled:text-zinc-400 disabled:border-transparent transition-colors flex items-center justify-center"
             onClick={handleSend}
             disabled={!canSend}
             aria-label="Send"
