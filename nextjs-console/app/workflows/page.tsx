@@ -200,9 +200,9 @@ function ModeBadge({ wf }: { wf: SavedWorkflow }) {
       borderRadius: 4,
       whiteSpace: 'nowrap',
       letterSpacing: '0.2px',
-      background: active ? 'rgba(0,229,158,0.12)' : 'rgba(255,255,255,0.04)',
-      color: active ? '#00e59e' : '#a8a6a2',
-      border: `1px solid ${active ? 'rgba(0,229,158,0.2)' : 'rgba(255,255,255,0.07)'}`,
+      background: active ? '#282827' : 'rgba(255,255,255,0.04)',
+      color: active ? '#a8a6a2' : '#a8a6a2',
+      border: `1px solid ${active ? '#666864' : 'rgba(255,255,255,0.07)'}`,
     }}>
       {active ? 'Active' : 'Preview'}
     </span>
@@ -340,7 +340,7 @@ function RightPanel({
       JSON.parse(value)
       setJsonError('')
     } catch {
-      setJsonError('⚠ Format JSON tidak valid')
+      setJsonError('Format JSON tidak valid')
     }
   }
 
@@ -608,8 +608,8 @@ function SaveWorkflowModal({
           onKeyDown={e => { if (e.key === 'Enter' && name.trim()) onSave(name.trim()) }}
         />
         <div className={styles.saveModalActions}>
-          <button className={styles.saveModalCancel} onClick={onClose}>Cancel</button>
-          <button className={styles.saveModalConfirm} onClick={() => name.trim() && onSave(name.trim())}>Save</button>
+          <button className={`${styles.saveModalCancel} btn-style-a`} onClick={onClose}>Cancel</button>
+          <button className={`${styles.saveModalConfirm} btn-style-b`} onClick={() => name.trim() && onSave(name.trim())}>Save</button>
         </div>
       </div>
     </div>
@@ -642,7 +642,6 @@ function WorkflowsPageInner() {
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
   const [showActivateDropdown, setShowActivateDropdown] = useState(false)
   const [isWorkflowListCollapsed, setIsWorkflowListCollapsed] = useState(false) // default expanded
-  const [isIntegrationsCollapsed, setIsIntegrationsCollapsed] = useState(true)
   const [rightPanelOpen, setRightPanelOpen] = useState(false)
   const [showGenerationModal, setShowGenerationModal] = useState(false)
   const [generationPrompt, setGenerationPrompt] = useState<string | null>(null)
@@ -941,7 +940,7 @@ function WorkflowsPageInner() {
         const spec = apiWorkflows.find(aw => aw.id === selected.workflow_id)
         const updated = await activateWorkflow(selected.workflow_id, spec)
         await refreshWorkflows()
-        showToast('Workflow activated and deployed to n8n ✓', 'success')
+        showToast('Workflow activated and deployed to n8n', 'success')
       } else {
         // Legacy localStorage workflow — use old activate route
         const res = await fetch('/api/workflows/activate', {
@@ -958,7 +957,7 @@ function WorkflowsPageInner() {
           n8nWebhookPath: data.n8nWebhookUrl || null,
         })
         setLocalWorkflows(loadWorkflows())
-        showToast('Workflow activated ✓', 'success')
+        showToast('Workflow activated', 'success')
       }
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to activate workflow.', 'error')
@@ -1073,7 +1072,7 @@ function WorkflowsPageInner() {
       body: JSON.stringify({ nodes: rfNodes, edges: rfEdges }),
     }).catch(() => {})
 
-    showToast('New workflow created from Aivory suggestion ✓', 'success')
+    showToast('New workflow created from Aivory suggestion', 'success')
   }
 
   // ── Generation apply handler ─────────────────────────────
@@ -1133,7 +1132,7 @@ function WorkflowsPageInner() {
       body: JSON.stringify({ nodes, edges }),
     }).catch(() => {})
 
-    showToast('New workflow generated ✓', 'success')
+    showToast('New workflow generated', 'success')
     setShowGenerationModal(false)
   }
 
@@ -1417,14 +1416,14 @@ function WorkflowsPageInner() {
               </select>
 
               {/* Save Workflow */}
-              <button className={styles.saveBtn} onClick={() => setShowSaveModal(true)}>
+              <button className={`${styles.saveBtn} btn-style-a`} onClick={() => setShowSaveModal(true)}>
                 {Icons.save}
                 {t('save')}
               </button>
 
               {/* Generate workflow */}
               <button
-                className={styles.generateBtn}
+                className={`${styles.generateBtn} btn-style-b`}
                 onClick={() => setShowGenerationModal(true)}
                 title={t('generateFromNL')}
               >
@@ -1433,7 +1432,7 @@ function WorkflowsPageInner() {
 
               {/* Undo */}
               <button
-                className={styles.undoBtn}
+                className={`${styles.undoBtn} btn-style-a`}
                 onClick={handleUndo}
                 disabled={!undoStack.length}
                 title={t('undoLastChange')}
@@ -1473,7 +1472,7 @@ function WorkflowsPageInner() {
                   // Active workflow — show deactivate button
                   <>
                     <button
-                      className={styles.activateDropdownBtn}
+                      className={`${styles.activateDropdownBtn} btn-style-b`}
                       onClick={() => setShowActivateDropdown(v => !v)}
                       disabled={activating}
                       aria-label="Workflow options"
@@ -1513,7 +1512,7 @@ function WorkflowsPageInner() {
                 ) : (
                   // Preview workflow — Activate button
                   <button
-                    className={styles.activateDropdownBtn}
+                    className={`${styles.activateDropdownBtn} btn-style-a`}
                     onClick={handleActivate}
                     disabled={activating}
                     title={t('deployToN8n')}
@@ -1599,48 +1598,7 @@ function WorkflowsPageInner() {
             </button>
           </div>
 
-          {/* ── Integrations collapsible bar ── */}
-          {selected.integrations.length > 0 && (
-            <div className={`${styles.integrationsBar} ${isIntegrationsCollapsed ? styles.integrationsBarCollapsed : styles.integrationsBarExpanded}`}>
-              <div
-                className={styles.integrationsBarStrip}
-                onClick={() => setIsIntegrationsCollapsed(v => !v)}
-                role="button"
-                tabIndex={0}
-                aria-expanded={!isIntegrationsCollapsed}
-                aria-label="Toggle integrations"
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setIsIntegrationsCollapsed(v => !v) }}
-              >
-                <span className={styles.integrationsBarLabel}>{t('integrations')}</span>
-                <div className={styles.integrationsBarIcons}>
-                  {selected.integrations.slice(0, 4).map((int, i) => (
-                    <span key={i} className={styles.integrationsBarIcon} title={int}>
-                      {int.slice(0, 2).toUpperCase()}
-                    </span>
-                  ))}
-                </div>
-                {selected.integrations.length > 4 && (
-                  <span className={styles.integrationsBarBadge}>+{selected.integrations.length - 4}</span>
-                )}
-                <svg
-                  className={`${styles.integrationsBarChevron} ${!isIntegrationsCollapsed ? styles.integrationsBarChevronOpen : ''}`}
-                  width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-                >
-                  <polyline points="18 15 12 9 6 15"/>
-                </svg>
-              </div>
-              {!isIntegrationsCollapsed && (
-                <div className={styles.integrationsBarContent}>
-                  {selected.integrations.map((int, i) => (
-                    <span key={i} className={styles.integrationTag}>{int}</span>
-                  ))}
-                  {selected.estimated_time && (
-                    <span className={styles.integrationTag}>{Icons.clock} {selected.estimated_time.replace(/minutes per client/g, 'min/client').replace(/minutes/g, 'min')}</span>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+
         </div>
       )}
 

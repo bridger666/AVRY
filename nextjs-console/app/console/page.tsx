@@ -9,72 +9,92 @@ import ConsoleTopBar from "@/components/console/ConsoleTopBar"
 import { CopilotTogglePanel } from "@/components/workflow/CopilotTogglePanel"
 import FollowUpChips from "@/components/chat/FollowUpChips"
 import { RoutingSuggestBanner } from "@/components/chat/RoutingSuggestBanner"
-import { getSessionId, clearSession, generateSessionId, saveSession } from "@/lib/session"
-import { streamConsoleResponse, typewriterStream, validateFileSize } from "@/lib/streaming"
-import { extractTextFromFile } from "@/lib/fileExtractor"
-import { saveSessionMessages, loadSessionMessages, listSessions, ChatStorageError } from "@/lib/chatPersistence"
-import { normalizeAssistantText } from "@/lib/normalizeAssistantText"
 import { useAgenticStream } from "@/hooks/useAgenticStream"
 import { useIntentRouter } from "@/hooks/useIntentRouter"
+import { useFileUpload } from "@/hooks/useFileUpload"
+import { useChat } from "@/hooks/useChat"
+import { listConnections, APP_CATALOG } from "@/lib/integrations/store"
+import UploadMenu from "@/components/UploadMenu"
 import type { Attachment } from "@/components/UploadMenu"
+import { AttachmentCard } from "@/components/AttachmentCard"
 
-interface Message { id: string; role: "user" | "assistant"; content: string; isStreaming?: boolean }
-interface ChatSession { id: string; title: string; messages: Message[]; createdAt: number; pinned?: boolean }
 interface Toast { id: string; type: "success" | "error"; message: string }
 
-const QUICK_TEMPLATES = [
-  "Generate onboarding workflow", "Check compliance gap", "Summarize my diagnostics",
-  "Suggest automation opportunities", "Review my AI readiness",
+interface ChipOption {
+  text: string
+  action: "assist" | "redirect"
+  tab?: string
+}
+
+interface ChipData {
+  id: string
+  label: string
+  options: ChipOption[]
+}
+
+const CHIPS: ChipData[] = [
+  {
+    id: "deep-diagnostic",
+    label: "Deep Diagnostic",
+    options: [
+      { text: "Assist me with AI readiness deep diagnostic within the console", action: "assist" },
+      { text: "Direct me to deep diagnostic tab", action: "redirect", tab: "/diagnostics/deep" },
+    ],
+  },
+  {
+    id: "blueprint",
+    label: "Blueprint",
+    options: [
+      { text: "Help me build an AI system blueprint in the console", action: "assist" },
+      { text: "Direct me to blueprint tab", action: "redirect", tab: "/blueprint" },
+    ],
+  },
+  {
+    id: "integration",
+    label: "Integration",
+    options: [
+      { text: "Guide me through connecting a new integration", action: "assist" },
+      { text: "Direct me to integrations tab", action: "redirect", tab: "/integrations" },
+    ],
+  },
+  {
+    id: "workflow",
+    label: "Workflow",
+    options: [
+      { text: "Help me design or optimise a workflow here", action: "assist" },
+      { text: "Direct me to workflow tab", action: "redirect", tab: "/workflows" },
+    ],
+  },
+  {
+    id: "agents",
+    label: "Agents",
+    options: [
+      { text: "Help me configure or deploy an agent", action: "assist" },
+      { text: "Direct me to agents tab", action: "redirect", tab: "/agents" },
+    ],
+  },
 ]
-const DEFAULT_SUGGESTIONS = [
-  "Can you elaborate on that?",
-  "Show me an example",
-  "What are the tradeoffs?",
-]
-const ALLOWED_TYPES = [
-  "text/plain", "text/csv", "text/markdown", "application/json", "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "image/png", "image/jpeg", "image/gif", "image/webp",
-]
+
+const MAX_VISIBLE_INTEGRATIONS = 4
 
 export default function ConsolePage() {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [sessions, setSessions] = useState<ChatSession[]>([])
   const router = useRouter()
-  const [currentSessionId, setCurrentSessionId] = useState<string>("")
+
+  // UI-only state
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [isStreaming, setIsStreaming] = useState(false)
-  const [attachments, setAttachments] = useState<Attachment[]>([])
   const [toasts, setToasts] = useState<Toast[]>([])
-  const [isDragging, setIsDragging] = useState(false)
-  const [followUpSuggestions, setFollowUpSuggestions] = useState<string[]>([])
-  const { agenticState, processEvent, reset: resetAgentic } = useAgenticStream()
+  const [activeChip, setActiveChip] = useState<string | null>(null)
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 })
+  const [inputValue, setInputValue] = useState("")
+  const [connectorsOpen, setConnectorsOpen] = useState(false)
+  const [uploadMenuOpen, setUploadMenuOpen] = useState(false)
+
+  // Refs
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  // auto-scroll disabled
-  const { pendingRoute, triggerClassification, dismissRoute, acceptRoute } = useIntentRouter()
-
-  const messagesRef = useRef<Message[]>([])
-
-  // Keep ref in sync with state so handleSend can read current messages without stale closure
-  useEffect(() => {
-    messagesRef.current = messages
-  }, [messages])
-
-  useEffect(() => {
-    const sid = getSessionId() || generateSessionId()
-    saveSession(sid)
-    setCurrentSessionId(sid)
-    // Load persisted messages for this session
-    const restored = loadSessionMessages(sid)
-    console.log('[INIT] restored messages count:', restored.length)
-    if (restored.length > 0) setMessages(restored)
-    // Load all sessions for sidebar
-    setSessions(listSessions())
-  }, [])
-
-  // Auto-scroll is now handled by useAutoScroll hook via scrollContainerRef
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const chipsWrapRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const addToast = useCallback((type: Toast["type"], message: string) => {
     const id = Math.random().toString(36).slice(2)
@@ -82,175 +102,103 @@ export default function ConsolePage() {
     setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 4000)
   }, [])
 
-  const handleSend = useCallback(async (text: string, atts: Attachment[]) => {
-    console.log('[PAGE DEBUG] onSend called, text:', text, 'attachments:', atts.length)
-    if (!text.trim() && atts.length === 0) {
-      console.log('[PAGE DEBUG] early return: empty text and no attachments')
+  // Hooks that stay in page.tsx (return values used in JSX)
+  const { agenticState, processEvent, reset: resetAgentic } = useAgenticStream()
+  const { pendingRoute, triggerClassification, dismissRoute, acceptRoute } = useIntentRouter()
+
+  // Extracted hooks
+  const { attachments, setAttachments, isDragging, handleFileSelect } = useFileUpload(addToast)
+  const {
+    messages,
+    sessions,
+    currentSessionId,
+    isStreaming,
+    followUpSuggestions,
+    setFollowUpSuggestions,
+    handleSend,
+    handleNewChat,
+    switchSession,
+  } = useChat({
+    attachments,
+    clearAttachments: () => setAttachments([]),
+    processEvent,
+    resetAgentic,
+    triggerClassification,
+    addToast,
+  })
+
+  // Fetch connected integrations from store
+  const connectedIntegrations = listConnections("default")
+    .filter(conn => conn.status === "connected")
+    .map(conn => {
+      const app = APP_CATALOG.find(a => a.id === conn.appId)
+      return {
+        id: conn.id,
+        name: conn.displayName || conn.appName,
+        iconPath: app?.iconPath || "",
+        appId: conn.appId,
+      }
+    })
+
+  const fallbackIcons = APP_CATALOG.slice(0, MAX_VISIBLE_INTEGRATIONS).map(app => ({
+    id: app.id,
+    name: app.name,
+    iconPath: app.iconPath || "",
+    appId: app.id,
+  }))
+
+  const displayIntegrations = connectedIntegrations.length > 0
+    ? connectedIntegrations.slice(0, MAX_VISIBLE_INTEGRATIONS)
+    : fallbackIcons
+
+  const overflowCount = connectedIntegrations.length > MAX_VISIBLE_INTEGRATIONS
+    ? connectedIntegrations.length - MAX_VISIBLE_INTEGRATIONS
+    : 0
+
+  const openChip = (chipId: string, chipEl: HTMLButtonElement) => {
+    if (!chipsWrapRef.current) return
+    if (activeChip === chipId) {
+      setActiveChip(null)
       return
     }
-    setFollowUpSuggestions([])
-    
-    // FIXED: Inject attachment content into user message
-    const attachmentText = atts
-      .filter(a => a.content)
-      .map(a => `[Attached file: ${a.filename}]\n${a.content}`)
-      .join('\n\n')
-    const userContent = attachmentText ? `${text}\n\n${attachmentText}` : text
-    
-    const userMsg: Message = { id: Date.now().toString(), role: "user", content: userContent }
-    const assistantId = (Date.now() + 1).toString()
-    
-    // Build allMessages BEFORE state updates using the ref (always current)
-    const allMessages = [...messagesRef.current, userMsg].map(m => ({
-      role: m.role,
-      content: m.content,
-    }))
-    
-    // FIX: Add both messages in a single state update to avoid batching issues
-    setMessages(p => [
-      ...p, 
-      userMsg,
-      { id: assistantId, role: "assistant", content: "", isStreaming: true }
-    ])
-    setAttachments([])
-    setIsStreaming(true)
-    
-    let finalContent = ""
-    let streamError = false
-    try {
-      console.log('[PAGE DEBUG] allMessages count:', allMessages.length)
-      console.log('[PAGE DEBUG] calling streamConsoleResponse')
-      const baseStream = streamConsoleResponse("/api/console/stream", {
-        session_id: currentSessionId,
-        organization_id: "default",
-        messages: allMessages,
+    const chipRect = chipEl.getBoundingClientRect()
+    const wrapRect = chipsWrapRef.current.getBoundingClientRect()
+    setDropdownPos({
+      top: chipRect.bottom - wrapRect.top + 10,
+      left: chipRect.left - wrapRect.left + chipRect.width / 2,
+    })
+    setActiveChip(chipId)
+  }
+
+  const handleChipOption = (option: ChipOption) => {
+    if (option.action === "assist") {
+      setInputValue(option.text)
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "auto"
+          textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 180)}px`
+          textareaRef.current.focus()
+        }
       })
-      console.log('[PAGE DEBUG] wrapping with typewriterStream')
-      const stream = typewriterStream(baseStream)
-      console.log('[STREAM DEBUG] start streaming')
-      for await (const chunk of stream) {
-        console.log('[STREAM DEBUG] got chunk', chunk)
-        processEvent(chunk as any)
-        if (chunk.type === "chunk" && chunk.content) {
-          // FIXED: /bridge/console returns full text in each chunk, not deltas.
-          // Use the chunk content directly as the authoritative full text.
-          finalContent = chunk.content
-          setMessages(p => p.map(m => m.id === assistantId ? { ...m, content: finalContent } : m))
-        } else if (chunk.type === "done") {
-          console.log('[STREAM DEBUG] done')
-          // Apply tone normalization before finalizing
-          const normalized = normalizeAssistantText(finalContent)
-          finalContent = normalized
-          // Set follow-up suggestions after the last AI message completes
-          setFollowUpSuggestions(DEFAULT_SUGGESTIONS)
-          // Trigger intent classification after AI stream ends
-          triggerClassification(text, normalized)
-        } else if (chunk.type === "error") {
-          console.log('[STREAM DEBUG] error', chunk.error)
-          addToast("error", chunk.error || "Something went wrong.")
-          setMessages(p => p.filter(m => m.id !== assistantId))
-          streamError = true
-          break
-        }
-      }
-      console.log('[STREAM DEBUG] loop finished')
-    } catch (error) {
-      console.error('[PAGE DEBUG] catch block error:', error)
-      addToast("error", "Something went wrong. Please try again.")
-      setMessages(p => p.filter(m => m.id !== assistantId))
-      streamError = true
-    } finally {
-      setIsStreaming(false)
-      // Persist messages after streaming completes successfully
-      if (!streamError) {
-        try {
-          setMessages(prev => {
-            const updated = prev.map(m =>
-              m.id === assistantId
-                ? { ...m, content: finalContent, isStreaming: false }
-                : m
-            )
-            saveSessionMessages(currentSessionId, updated)
-            setSessions(listSessions())
-            return updated
-          })
-        } catch (e) {
-          if (e instanceof ChatStorageError) {
-            addToast("error", "Chat history storage is full. Messages may not be saved.")
-          }
-        }
-      }
     }
-  }, [currentSessionId, addToast, processEvent, triggerClassification])
-
-  const handleNewChat = useCallback(() => {
-    // Save current session before clearing
-    if (messages.length > 0) {
-      try {
-        saveSessionMessages(currentSessionId, messages)
-      } catch (e) {
-        if (e instanceof ChatStorageError) {
-          addToast("error", "Chat history storage is full.")
-        }
-      }
+    if (option.action === "redirect" && option.tab) {
+      router.push(option.tab)
     }
-    clearSession()
-    const sid = generateSessionId()
-    saveSession(sid)
-    setCurrentSessionId(sid)
-    setMessages([])
-    resetAgentic()
-    setSessions(listSessions())
-  }, [currentSessionId, messages, addToast, resetAgentic])
+    setActiveChip(null)
+  }
 
-  const handleFileSelect = useCallback(async (files: FileList | null) => {
-    if (!files) return
-    for (const file of Array.from(files)) {
-      if (!ALLOWED_TYPES.includes(file.type)) { addToast("error", `Unsupported file: ${file.name}`); continue }
-      const err = validateFileSize(file.size, file.name)
-      if (err) { addToast("error", err); continue }
-      const text = await extractTextFromFile(file)
-      const attType: Attachment["type"] = file.type.startsWith("image/") ? "image" : "file"
-      setAttachments(p => [...p, { type: attType, label: file.name, filename: file.name, content: text }])
-    }
-  }, [addToast])
-
-  // Global drop handler — captures file from anywhere on the page
   useEffect(() => {
-    const handleGlobalDrop = (e: DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setIsDragging(false)
-      const files = e.dataTransfer?.files
-      if (files && files.length > 0) {
-        handleFileSelect(files)
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as Node
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
+        setActiveChip(null)
       }
     }
-    const handleGlobalDragOver = (e: DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setIsDragging(true)
-    }
-    const handleGlobalDragLeave = (e: DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setIsDragging(false)
-    }
-    window.addEventListener('drop', handleGlobalDrop)
-    window.addEventListener('dragover', handleGlobalDragOver)
-    window.addEventListener('dragleave', handleGlobalDragLeave)
-    return () => {
-      window.removeEventListener('drop', handleGlobalDrop)
-      window.removeEventListener('dragover', handleGlobalDragOver)
-      window.removeEventListener('dragleave', handleGlobalDragLeave)
-    }
-  }, [handleFileSelect])
+    document.addEventListener("mousedown", handleOutsideClick)
+    return () => document.removeEventListener("mousedown", handleOutsideClick)
+  }, [])
 
-  // FIX 5: Add visible debug state temporarily
-  console.log('[RENDER] messages.length =', messages.length, 'ids:', messages.map(m => m.id))
-
-  // FIX 1: Debug JSX render branch
-  console.log('[JSX] messages at render time:', messages.length)
+  const activeChipData = CHIPS.find((chip) => chip.id === activeChip)
 
   return (
     <div className="flex flex-col h-full bg-[#353531]">
@@ -258,36 +206,241 @@ export default function ConsolePage() {
 
       <div className="flex-1 flex flex-col overflow-hidden h-full">
         {messages.length === 0 ? (
-          // Empty state: centered layout
-          <div className="flex-1 flex flex-col items-center justify-center px-6">
-            <div className="max-w-[800px] mx-auto text-center">
-              <div className="w-16 h-16 flex items-center justify-center mx-auto mb-6">
-                <Image
+          <div className="flex min-h-full items-start justify-center px-6 pt-[12vh]">
+            <div className="flex w-full max-w-[800px] flex-col items-center">
+              <div
+                className="mb-8 flex items-center gap-4 [animation:fadeUp_0.55s_0s_cubic-bezier(0.22,1,0.36,1)_both]"
+                style={{ alignItems: 'center' }}
+              >
+                <img
                   src="/Aivory_Avatar.svg"
                   alt="Aivory"
-                  width={40}
-                  height={40}
+                  width={44}
+                  height={44}
+                  style={{ display: 'block', width: 44, height: 44, flexShrink: 0, marginTop: 8 }}
                 />
+                <h1
+                  className="font-light"
+                  style={{
+                    fontSize: "clamp(26px, 4.5vw, 42px)",
+                    letterSpacing: "-0.025em",
+                    color: "rgba(255,255,255,0.92)",
+                    lineHeight: 1,
+                    margin: 0,
+                  }}
+                >
+                  what can i do for you?
+                </h1>
               </div>
-              <h1 className="text-2xl font-semibold text-white mb-2">
-                What can I do for you today?
-              </h1>
-              <p className="text-sm text-[#d6d6c9] leading-relaxed">
-                Ask Aivory about your business goals, diagnostics, or AI System Blueprint, then turn them into workflows and automation.
-              </p>
+
+              <div className="mb-2 flex w-full flex-wrap justify-center gap-2 [animation:fadeUp_0.55s_0.07s_cubic-bezier(0.22,1,0.36,1)_both]">
+                <button className="console-pill inline-flex items-center gap-1.5">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                  </svg>
+                  Attach Context
+                </button>
+                <button className="console-pill inline-flex items-center gap-1.5">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6"/>
+                    <line x1="8" y1="12" x2="21" y2="12"/>
+                    <line x1="8" y1="18" x2="21" y2="18"/>
+                    <line x1="3" y1="6" x2="3.01" y2="6"/>
+                    <line x1="3" y1="12" x2="3.01" y2="12"/>
+                    <line x1="3" y1="18" x2="3.01" y2="18"/>
+                  </svg>
+                  Execution Log
+                </button>
+                <button className="console-pill inline-flex items-center gap-1.5">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="3"/>
+                    <path d="M9 9h6M9 12h6M9 15h4"/>
+                  </svg>
+                  Blueprint Mode
+                </button>
+                <button
+                  className="console-pill inline-flex items-center gap-1.5"
+                  onClick={() => setUploadMenuOpen(o => !o)}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  Upload File
+                </button>
+              </div>
+
+              <div className="relative w-full [animation:fadeUp_0.55s_0.13s_cubic-bezier(0.22,1,0.36,1)_both]">
+                <div className="console-input-card w-full overflow-hidden">
+                {/* Attachment cards from drag & drop */}
+                {attachments.length > 0 && (
+                  <div className="flex flex-wrap gap-2 px-5 pt-3">
+                    {attachments.map((att, i) => (
+                      <AttachmentCard
+                        key={i}
+                        attachment={att}
+                        onRemove={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))}
+                      />
+                    ))}
+                  </div>
+                )}
+                <div className="px-5 pt-[14px] pb-1">
+                  <textarea
+                    ref={textareaRef}
+                    rows={2}
+                    value={inputValue}
+                    onChange={(e) => {
+                      setInputValue(e.target.value)
+                      e.target.style.height = "auto"
+                      e.target.style.height = `${Math.min(e.target.scrollHeight, 180)}px`
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault()
+                        if (inputValue.trim() || attachments.length > 0) {
+                          handleSend(inputValue, attachments)
+                          setInputValue("")
+                          if (textareaRef.current) textareaRef.current.style.height = "auto"
+                        }
+                      }
+                    }}
+                    placeholder="Send Message to Aivory..."
+                    className="console-textarea w-full"
+                    disabled={isStreaming}
+                  />
+                </div>
+                <div className="flex items-center justify-between px-3 pt-1 pb-3">
+                  <div className="flex items-center gap-[6px]">
+                    <button className="console-icon-btn" title="More">
+                      +
+                    </button>
+                    <button
+                      className="console-icon-btn"
+                      title="Attach"
+                      onClick={() => setUploadMenuOpen(o => !o)}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (inputValue.trim() || attachments.length > 0) {
+                        handleSend(inputValue, attachments)
+                        setInputValue("")
+                        if (textareaRef.current) textareaRef.current.style.height = "auto"
+                      }
+                    }}
+                    className="console-send-btn"
+                    aria-label="Send"
+                    disabled={isStreaming}
+                  >
+                    ↑
+                  </button>
+                </div>
+                <button 
+                  onClick={() => setConnectorsOpen(true)}
+                  className="console-connect-banner flex items-center justify-between px-[18px] py-[10px] w-full cursor-pointer transition-opacity hover:opacity-80"
+                >
+                  <div
+                    className="flex items-center gap-[7px] text-[12.5px]"
+                    style={{ color: "rgba(255,255,255,0.28)" }}
+                  >
+                    <span>connect your tools to</span>
+                    <Image 
+                      src="/Aivory_logo_2026.svg" 
+                      alt="Aivory" 
+                      width={48} 
+                      height={12} 
+                      className="object-contain opacity-50" 
+                    />
+                    <div className="flex items-center gap-[5px]">
+                      {displayIntegrations.map((integration) => (
+                        <div
+                          key={integration.id}
+                          title={integration.name}
+                          className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-full transition-transform duration-150 hover:scale-110 overflow-hidden"
+                          style={{ background: "#42423f" }}
+                        >
+                          {integration.iconPath && (
+                            <Image
+                              src={integration.iconPath}
+                              alt={integration.name}
+                              width={16}
+                              height={16}
+                            />
+                          )}
+                        </div>
+                      ))}
+                      {overflowCount > 0 && (
+                        <div className="console-overflow-pill">+{overflowCount}</div>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              </div>
+              <UploadMenu
+                isOpen={uploadMenuOpen}
+                onClose={() => setUploadMenuOpen(false)}
+                onAttach={(attachment) => {
+                  setAttachments(prev => [...prev, attachment])
+                  setUploadMenuOpen(false)
+                }}
+                onToast={(msg) => addToast("error", msg)}
+              />
             </div>
 
-            <div className="w-full max-w-[800px] mt-6">
-              <ChatInput
-                onSend={(text: string, atts: Attachment[]) => handleSend(text, atts)}
-                disabled={isStreaming}
-                pendingAttachments={attachments}
-                onClearPendingAttachments={() => setAttachments([])}
-              />
+            <div
+              ref={chipsWrapRef}
+              className="relative mt-3 flex w-full flex-wrap justify-center gap-2 [animation:fadeUp_0.55s_0.20s_cubic-bezier(0.22,1,0.36,1)_both]"
+            >
+                {CHIPS.map((chip) => (
+                  <button
+                    key={chip.id}
+                    onClick={(e) => openChip(chip.id, e.currentTarget)}
+                    className={`console-chip ${activeChip === chip.id ? "console-chip--active" : ""}`}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+                {activeChipData && (
+                  <div
+                    ref={dropdownRef}
+                    className="console-dropdown [animation:dropIn_0.18s_cubic-bezier(0.22,1,0.36,1)_both]"
+                    style={{
+                      top: dropdownPos.top,
+                      left: dropdownPos.left,
+                      transform: "translateX(-50%)",
+                    }}
+                  >
+                    <div className="flex items-center justify-between border-b border-white/10 px-4 py-[13px]">
+                      <div className="text-[13.5px] font-medium text-white/90">
+                        {activeChipData.label}
+                      </div>
+                      <button
+                        onClick={() => setActiveChip(null)}
+                        className="flex h-[22px] w-[22px] items-center justify-center rounded-full text-white/45 transition hover:bg-white/10 hover:text-white/90"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {activeChipData.options.map((option, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleChipOption(option)}
+                        className={`console-dropdown-item ${index > 0 ? "border-t border-white/10" : ""}`}
+                      >
+                        {option.text}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ) : (
-          // Has messages: chat fills top, input floats at bottom
           <>
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-8 py-8 pb-44">
               <div className="max-w-[800px] mx-auto gap-0 flex flex-col">
@@ -297,6 +450,7 @@ export default function ConsolePage() {
                       role={m.role} 
                       content={m.content} 
                       isStreaming={m.isStreaming} 
+                      attachments={m.attachments}
                       agenticState={m.role === 'assistant' && m.id === messages[messages.length - 1]?.id ? agenticState : undefined}
                       onAcceptRoute={acceptRoute}
                       onDismissRoute={dismissRoute}
@@ -304,7 +458,6 @@ export default function ConsolePage() {
                   </div>
                 ))}
                 <div ref={messagesEndRef} />
-                {/* Intent routing banner - rendered at page level, independent of message renderer */}
                 {pendingRoute && messages.length > 0 && messages[messages.length - 1]?.role === 'assistant' && !messages[messages.length - 1]?.isStreaming && (
                   <div className="mt-2">
                     <RoutingSuggestBanner 
@@ -314,7 +467,6 @@ export default function ConsolePage() {
                     />
                   </div>
                 )}
-                {/* Follow-up chips - only show after the last AI message */}
                 {messages.length > 0 && messages[messages.length - 1].role === "assistant" && followUpSuggestions.length > 0 && (
                   <FollowUpChips
                     suggestions={followUpSuggestions}
@@ -326,7 +478,6 @@ export default function ConsolePage() {
                 )}
               </div>
             </div>
-            {/* Floating input bar — sticky at bottom, content scrolls behind it */}
             <div className="sticky bottom-0 z-10 px-8 pt-2 pb-4" style={{ background: 'linear-gradient(to bottom, transparent, #353531 24px)' }}>
               <div className="max-w-[800px] mx-auto">
                 <ChatInput
@@ -334,6 +485,7 @@ export default function ConsolePage() {
                   disabled={isStreaming}
                   pendingAttachments={attachments}
                   onClearPendingAttachments={() => setAttachments([])}
+                  onRemoveAttachment={(i) => setAttachments(prev => prev.filter((_, idx) => idx !== i))}
                 />
               </div>
             </div>
@@ -386,13 +538,7 @@ export default function ConsolePage() {
                   className={`px-4 py-3 cursor-pointer text-sm text-text-secondary transition-colors duration-150 rounded-lg mx-2 ${isActive ? "bg-[rgba(0,229,158,0.08)] border-l-2 border-accent text-text-primary" : "hover:bg-[rgba(255,255,255,0.04)]"}`}
                   onClick={() => {
                     if (s.id === currentSessionId) return
-                    if (messages.length > 0) {
-                      try { saveSessionMessages(currentSessionId, messages) } catch {}
-                    }
-                    const loaded = loadSessionMessages(s.id)
-                    setMessages(loaded)
-                    setCurrentSessionId(s.id)
-                    setSessions(listSessions())
+                    switchSession(s.id)
                   }}
                 >
                   <div className="truncate text-sm font-medium">
@@ -413,10 +559,85 @@ export default function ConsolePage() {
         </div>
       )}
 
-      <input ref={fileInputRef} type="file" multiple hidden accept={ALLOWED_TYPES.join(",")}
-        onChange={e => handleFileSelect(e.target.files)} />
+      {connectorsOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setConnectorsOpen(false)}
+        >
+          <div 
+            className="relative w-full max-w-[680px] rounded-2xl border border-white/10 p-8 shadow-2xl"
+            style={{ background: "#42423f" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setConnectorsOpen(false)}
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-white/50 transition hover:bg-white/10 hover:text-white/90"
+            >
+              ✕
+            </button>
 
-      {/* Aivory Copilot toggle panel */}
+            <h2 className="mb-2 text-2xl font-semibold text-white/95">Connectors</h2>
+            <p className="mb-6 text-sm text-white/50">
+              Connect your tools and services to Aivory
+            </p>
+
+            <div className="grid grid-cols-3 gap-3 max-h-[420px] overflow-y-auto pr-2">
+              {APP_CATALOG.map((app) => {
+                const connection = connectedIntegrations.find(c => c.appId === app.id)
+                const isConnected = !!connection
+                return (
+                  <button
+                    key={app.id}
+                    onClick={() => {
+                      setConnectorsOpen(false)
+                      router.push("/integrations")
+                    }}
+                    className="group relative flex flex-col items-center gap-3 rounded-xl border border-white/10 bg-[#353531] p-4 transition hover:border-white/20 hover:bg-[#3a3a36]"
+                  >
+                    {isConnected && (
+                      <div className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20">
+                        <div className="h-2 w-2 rounded-full bg-emerald-400"></div>
+                      </div>
+                    )}
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/5">
+                      {app.iconPath ? (
+                        <Image
+                          src={app.iconPath}
+                          alt={app.name}
+                          width={28}
+                          height={28}
+                          className="object-contain"
+                        />
+                      ) : (
+                        <span className="text-2xl">{app.icon}</span>
+                      )}
+                    </div>
+                    <div className="text-center">
+                      <div className="text-sm font-medium text-white/90">{app.name}</div>
+                      <div className="mt-1 text-xs text-white/40 line-clamp-2">
+                        {app.description}
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => {
+                  setConnectorsOpen(false)
+                  router.push("/integrations")
+                }}
+                className="rounded-[20px] bg-[#353532] px-5 py-2.5 text-sm font-medium text-[#f7f7f7] border border-[#666864] transition hover:bg-[#444440]"
+              >
+                Manage Integrations
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="relative">
         <CopilotTogglePanel currentSpec={null} />
       </div>

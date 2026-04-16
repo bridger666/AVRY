@@ -83,7 +83,7 @@ export function CopilotTogglePanel({
 function CopilotBarCollapsed({ onClick }: { onClick: () => void }) {
   return (
     <button
-      className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#2d2d2a] border border-white/10 text-[#e4e4e7] text-sm font-medium cursor-pointer shadow-lg hover:border-[#2dd4a0]/40 hover:shadow-xl transition-all duration-150 select-none"
+      className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#2d2d2a] border border-white/10 text-[#f7f7f7] text-sm font-medium cursor-pointer shadow-lg hover:border-[#666864] hover:shadow-xl transition-all duration-150 select-none"
       onClick={onClick}
       aria-label="Open Aivory Copilot"
     >
@@ -217,7 +217,7 @@ function CopilotPanelExpanded({
       {/* ── Body — greeting or chat ── */}
       {!hasMessages ? (
         <div className="flex items-center justify-center px-6 py-8 shrink-0 min-h-[140px]">
-          <p className="text-[22px] font-normal text-white/85 text-center tracking-tight">
+          <p className="text-[22px] font-normal text-[#f7f7f7] text-center tracking-tight">
             What do you want to automate?
           </p>
         </div>
@@ -231,16 +231,16 @@ function CopilotPanelExpanded({
                 </div>
               )}
               <div className={`flex flex-col gap-1 max-w-[85%] ${msg.role === 'user' ? 'items-end' : ''}`}>
-                <p className={`text-xs leading-relaxed m-0 px-3 py-2 rounded-[10px] whitespace-pre-wrap break-words ${
+                <p className={`text-xs leading-relaxed m-0 px-3 py-2 rounded-[10px] whitespace-pre-wrap break-words text-left ${
                   msg.role === 'user'
-                    ? 'bg-[#282825] border border-white/5 text-white/85 rounded-br-[2px]'
-                    : 'bg-white/[0.04] border border-white/5 text-white/85 rounded-bl-[2px]'
+                    ? 'bg-[#282825] border border-white/5 text-[#f7f7f7] rounded-br-[2px]'
+                    : 'bg-white/[0.04] border border-white/5 text-[#f7f7f7] rounded-bl-[2px]'
                 }`}>
                   {msg.content}
                 </p>
                 {msg.suggestion && onApplySuggestion && (
                   <button
-                    className="text-xs font-semibold px-3 py-1.5 rounded-md border border-[#2dd4a0]/35 bg-[#2dd4a0]/10 text-[#2dd4a0] cursor-pointer hover:bg-[#2dd4a0]/20 transition-colors duration-150"
+                    className="text-xs font-semibold px-3 py-1.5 rounded-md border border-[#666864] bg-[#353532] text-[#f7f7f7] cursor-pointer hover:bg-[#444440] transition-colors duration-150"
                     onClick={() => onApplySuggestion(msg.suggestion!)}
                   >
                     Apply to canvas
@@ -272,10 +272,10 @@ function CopilotPanelExpanded({
 
       {/* ── Suggestion banner ── */}
       {lastSuggestion && onApplySuggestion && (
-        <div className="flex items-center justify-between px-4 py-2 bg-[#2dd4a0]/[0.06] border-t border-[#2dd4a0]/20 shrink-0">
-          <span className="text-xs text-[#2dd4a0] font-medium">Workflow ready — {lastSuggestion.steps.length} steps</span>
+        <div className="flex items-center justify-between px-4 py-2 bg-[#353532]/40 border-t border-[#666864]/40 shrink-0">
+          <span className="text-xs text-[#f7f7f7] font-medium">Workflow ready — {lastSuggestion.steps.length} steps</span>
           <button
-            className="text-xs font-semibold px-3 py-1 rounded-md border border-[#2dd4a0]/35 bg-[#2dd4a0]/10 text-[#2dd4a0] cursor-pointer hover:bg-[#2dd4a0]/20 transition-colors duration-150"
+            className="text-xs font-semibold px-3 py-1 rounded-md border border-[#666864] bg-[#353532] text-[#f7f7f7] cursor-pointer hover:bg-[#444440] transition-colors duration-150"
             onClick={() => onApplySuggestion(lastSuggestion)}
           >
             Apply to canvas
@@ -322,7 +322,7 @@ function CopilotPanelExpanded({
         {/* Textarea */}
         <textarea
           ref={textareaRef}
-          className="flex-1 bg-transparent border-none outline-none resize-none text-white/85 text-sm leading-relaxed placeholder:text-white/30 min-h-[22px] max-h-[180px] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden caret-teal-400 disabled:opacity-50"
+          className="flex-1 bg-transparent border-none outline-none resize-none text-[#f7f7f7] text-sm leading-relaxed placeholder:text-white/30 min-h-[22px] max-h-[180px] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden caret-teal-400 disabled:opacity-50 text-left"
           rows={1}
           value={input}
           onChange={handleInputChange}
@@ -348,7 +348,7 @@ function CopilotPanelExpanded({
         {/* Send button */}
         <button
           id="copilotSend"
-          className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors shrink-0 ${hasContent ? 'bg-teal-400' : 'bg-[#555552]'}`}
+          className={`w-9 h-9 rounded-[20px] flex items-center justify-center transition-colors shrink-0 ${hasContent ? 'bg-[#353532] border border-[#666864] hover:bg-[#444440]' : 'bg-[#555552]'}`}
           onClick={handleSend}
           disabled={!hasContent || loading}
           aria-label="Send"

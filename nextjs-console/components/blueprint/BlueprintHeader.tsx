@@ -54,7 +54,7 @@ export default function BlueprintHeader(props: BlueprintHeaderProps) {
     <div className={styles.headerContainer}>
       {showSampleBanner && (
         <div className={styles.sampleBanner}>
-          <span className={styles.bannerIcon}>ℹ️</span>
+          <span className={styles.bannerIcon}>i</span>
           <span className={styles.bannerText}>
             This is a sample AI System Blueprint. In the next phase, this will be generated from your diagnostic.
           </span>
@@ -109,17 +109,17 @@ export default function BlueprintHeader(props: BlueprintHeaderProps) {
           <div className={styles.actionRow}>
             <span className={styles.draftBadge}>{status}</span>
             {onSaveVersion && (
-              <button onClick={onSaveVersion} className={styles.saveVersionBtn} title="Save this version">
+              <button onClick={onSaveVersion} className={`${styles.saveVersionBtn} btn-style-a`} title="Save this version">
                 Save Version
               </button>
             )}
             {onDownloadPDF || onDownloadDOCX ? (
-              <button onClick={onDownloadPDF} className={styles.downloadBtn} title="Download blueprint">
+              <button onClick={onDownloadPDF} className={`${styles.downloadBtn} btn-style-b`} title="Download blueprint">
                 Download ↓
               </button>
             ) : null}
             {onShowHistory && (
-              <button onClick={onShowHistory} className={styles.historyBtn} title="View version history">
+              <button onClick={onShowHistory} className={`${styles.historyBtn} btn-style-a`} title="View version history">
                 History ({versionsCount})
               </button>
             )}
@@ -128,7 +128,7 @@ export default function BlueprintHeader(props: BlueprintHeaderProps) {
           {onGenerateRoadmap && (
             <button 
               onClick={onGenerateRoadmap} 
-              className={styles.generateRoadmapBtn}
+              className={`${styles.generateRoadmapBtn} btn-style-b`}
               disabled={generatingRoadmap}
               title="Generate roadmap from this blueprint"
             >

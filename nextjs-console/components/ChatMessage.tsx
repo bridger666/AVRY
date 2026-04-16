@@ -8,6 +8,8 @@ import type { AgenticWorkflowState } from '@/types/agenticWorkflow'
 import WorkflowContainer from '@/components/console/WorkflowContainer'
 import MessageActions from './chat/MessageActions'
 import { RoutingSuggestBanner } from './chat/RoutingSuggestBanner'
+import { AttachmentCard } from '@/components/AttachmentCard'
+import type { Attachment } from '@/components/UploadMenu'
 import type { ClassifiedIntent } from '@/lib/intentClassifier'
 
 interface ChatMessageProps {
@@ -20,6 +22,7 @@ interface ChatMessageProps {
   pendingRoute?: ClassifiedIntent
   onAcceptRoute?: () => void
   onDismissRoute?: () => void
+  attachments?: Attachment[]
 }
 
 /**
@@ -97,7 +100,7 @@ function CodeBlock({ inline, className, children, ...props }: CodeBlockProps) {
         <span className="text-xs text-[#a1a1aa] font-mono uppercase tracking-wider">{language || 'code'}</span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[#a1a1aa] hover:text-[#d6d6c9] hover:bg-white/5 transition-all duration-150 text-xs"
+          className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[#a1a1aa] hover:text-[#f7f7f7] hover:bg-white/5 transition-all duration-150 text-xs"
           aria-label="Copy code"
         >
           {copied ? (
@@ -170,14 +173,14 @@ const markdownComponents = {
     </h3>
   ),
   h4: ({ children }: any) => (
-    <h4 className="text-[1rem] font-semibold text-[#d6d6c9] mt-4 mb-2 leading-snug first:mt-0">
+    <h4 className="text-[1rem] font-semibold text-[#f7f7f7] mt-4 mb-2 leading-snug first:mt-0">
       {children}
     </h4>
   ),
 
   // Body: 1rem (16px), line-height 1.6, paragraph gap mb-4
   p: ({ children }: any) => (
-    <p className="text-base leading-[1.6] mb-4 text-[#d6d6c9] last:mb-0">
+    <p className="text-base leading-[1.6] mb-4 text-[#f7f7f7] last:mb-0">
       {children}
     </p>
   ),
@@ -187,7 +190,7 @@ const markdownComponents = {
   ),
 
   em: ({ children }: any) => (
-    <em className="italic text-[#d6d6c9]">{children}</em>
+    <em className="italic text-[#f7f7f7]">{children}</em>
   ),
 
   a: ({ href, children }: any) => (
@@ -210,7 +213,7 @@ const markdownComponents = {
   li: ({ children }: any) => {
     const listType = React.useContext(ListTypeContext)
     return (
-      <li className="mb-2 text-base text-[#d6d6c9] leading-[1.6] flex items-start gap-2.5">
+      <li className="mb-2 text-base text-[#f7f7f7] leading-[1.6] flex items-start gap-2.5">
         {listType === 'ul' && <span className="text-[#a1a1aa] mt-[9px] shrink-0 text-[6px]">●</span>}
         <span className="flex-1">{children}</span>
       </li>
@@ -242,7 +245,7 @@ const markdownComponents = {
     </th>
   ),
   td: ({ children }: any) => (
-    <td className="px-4 py-3 text-[0.875rem] text-[#d6d6c9] border-b border-[#E5E7EB]/5">
+    <td className="px-4 py-3 text-[0.875rem] text-[#f7f7f7] border-b border-[#E5E7EB]/5">
       {children}
     </td>
   ),
@@ -254,7 +257,7 @@ const markdownComponents = {
 
 /* ── Main component ────────────────────────────────────────────────────────── */
 
-export default function ChatMessage({ role, content, isStreaming = false, agenticState, onRegenerate, onEdit, pendingRoute, onAcceptRoute, onDismissRoute }: ChatMessageProps) {
+export default function ChatMessage({ role, content, isStreaming = false, agenticState, onRegenerate, onEdit, pendingRoute, onAcceptRoute, onDismissRoute, attachments }: ChatMessageProps) {
   const noop = useCallback(() => {}, [])
   const hasAgenticPhases = !!(agenticState && agenticState.phases.length > 0)
   const hasTextContent = !!content
@@ -265,7 +268,19 @@ export default function ChatMessage({ role, content, isStreaming = false, agenti
       {role === 'user' ? (
         /* USER BUBBLE — right-aligned, subtle container */
         <div className="flex justify-end group relative">
-          <div className="max-w-[80%] bg-[#282825] rounded-2xl px-5 py-3.5 text-base text-white leading-[1.6] border border-[#E5E7EB]/5 shadow-[0_1px_3px_0_rgb(0_0_0/0.1),0_1px_2px_-1px_rgb(0_0_0/0.1)]">
+          <div className="max-w-[80%] bg-[#282825] rounded-2xl px-5 py-3.5 text-base text-white leading-[1.6] border border-[#E5E7EB]/5 shadow-[0_1px_3px_0_rgb(0_0_0/0.1),0_1px_2px_-1px_rgb(0_0_0/0.1)] text-left">
+            {attachments && attachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {attachments.map((att, i) => (
+                  <AttachmentCard
+                    key={i}
+                    attachment={att}
+                    onRemove={() => {}}
+                    readOnly={true}
+                  />
+                ))}
+              </div>
+            )}
             {content}
           </div>
           <MessageActions role="user" content={content} onEdit={onEdit} />
@@ -285,7 +300,7 @@ export default function ChatMessage({ role, content, isStreaming = false, agenti
           </div>
 
           {/* Message content — max-w-[800px] for readability */}
-          <div className="flex-1 px-1 py-1 text-base text-[#d6d6c9] leading-[1.6] min-w-0 max-w-[800px]">
+          <div className="flex-1 px-1 py-1 text-base text-[#f7f7f7] leading-[1.6] min-w-0 max-w-[800px] text-left">
             {/* Thinking indicator */}
             {isStreaming && !content && !hasAgenticPhases && (
               <div className="flex items-center gap-2">

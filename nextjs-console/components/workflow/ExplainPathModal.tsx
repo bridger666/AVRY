@@ -28,7 +28,7 @@ export const ExplainPathModal: React.FC<ExplainPathModalProps> = ({
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.title}>
-            <span className={styles.icon}>ℹ️</span>
+            <span className={styles.icon}>i</span>
             Explain Path to {targetStep.appId}
           </div>
           <button className={styles.closeBtn} onClick={onClose} title="Close">

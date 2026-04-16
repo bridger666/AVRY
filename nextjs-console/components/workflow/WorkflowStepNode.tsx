@@ -80,48 +80,21 @@ function WorkflowStepNodeBase({ data, selected }: NodeProps & { data: WorkflowNo
   return (
     <div
       className="workflow-node"
-      style={{
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        background: 'rgba(255,255,255,0.055)',
-        borderTop: `1px solid ${selected ? 'rgba(0,229,158,0.45)' : 'rgba(255,255,255,0.09)'}`,
-        borderRight: `1px solid ${selected ? 'rgba(0,229,158,0.45)' : 'rgba(255,255,255,0.09)'}`,
-        borderBottom: `1px solid ${selected ? 'rgba(0,229,158,0.45)' : 'rgba(255,255,255,0.09)'}`,
-        borderLeft: `3px solid ${cfg.accent}`,
-        boxShadow: selected
-          ? '0 0 0 2px rgba(0,229,158,0.15), 0 4px 20px rgba(0,0,0,0.4)'
-          : '0 2px 12px rgba(0,0,0,0.35)',
-        backdropFilter: 'blur(4px)',
-        padding: 0,
-        gap: 0,
-        position: 'relative',
-      }}
+      data-selected={selected ? 'true' : undefined}
+      data-category={cat}
+      style={{ position: 'relative' }}
     >
       {/* Input handle — left */}
       <Handle type="target" position={Position.Left} id="in-main" style={{ ...handleStyle, left: -5, top: '50%', transform: 'translateY(-50%)' }} />
 
       {/* Top bar: icon + category label */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 7,
-        padding: '10px 12px 8px',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-      }}>
-        <span style={{ color: cfg.labelColor, display: 'flex', alignItems: 'center' }}>{iconEl}</span>
-        <span style={{
-          fontSize: 9,
-          fontWeight: 200,
-          textTransform: 'uppercase',
-          letterSpacing: '0.07em',
-          color: cfg.labelColor,
-        }}>
-          {cfg.label}
-        </span>
+      <div className="workflow-node-header">
+        <span className="node-icon" data-category={cat}>{iconEl}</span>
+        <span className="node-subtitle">{cfg.label}</span>
       </div>
 
-      {/* Body: title + subtitle */}
-      <div style={{ padding: '10px 12px 12px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+      {/* Body: title */}
+      <div className="workflow-node-text">
         {data.iconPath && (
           <img
             src={data.iconPath}
@@ -129,17 +102,33 @@ function WorkflowStepNodeBase({ data, selected }: NodeProps & { data: WorkflowNo
             style={{ width: 20, height: 20, flexShrink: 0, marginTop: 2 }}
           />
         )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 0 }}>
-          <div className="node-title">
-            {data.title}
-          </div>
-          {data.subtitle && (
-            <div className="node-description">
-              {data.subtitle}
-            </div>
-          )}
+        <div className="node-title">
+          {data.title}
         </div>
       </div>
+
+      {/* Expanded description panel */}
+      {(data.subtitle || data.description) && (
+        <div
+          style={{
+            marginTop: 6,
+            borderRadius: 12,
+            padding: '10px 16px',
+            background: selected ? '#22c55e' : '#ccc9c0',
+            color: '#000000',
+            fontFamily: "var(--font-nunito), 'Nunito', sans-serif",
+            fontWeight: 500,
+            fontSize: 13,
+            lineHeight: 1.45,
+            minWidth: 180,
+            maxWidth: '100%',
+            boxSizing: 'border-box',
+            transition: 'background 0.15s ease',
+          }}
+        >
+          {data.subtitle || data.description}
+        </div>
+      )}
 
       {/* Single output — right */}
       {!hasMultiOut && (

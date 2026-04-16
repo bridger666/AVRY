@@ -150,7 +150,7 @@ interface InfoBoxProps {
 
 export const InspectorInfoBox = memo(({ message, variant = 'info' }: InfoBoxProps) => (
   <div className={`${styles.infoBox} ${variant === 'warning' ? styles.infoBoxWarning : ''}`}>
-    <span className={styles.infoIcon}>{variant === 'warning' ? '⚠' : 'ℹ'}</span>
+    <span className={styles.infoIcon}>{variant === 'warning' ? '!' : 'i'}</span>
     <span>{message}</span>
   </div>
 ));

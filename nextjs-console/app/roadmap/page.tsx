@@ -15,16 +15,16 @@ const T = {
   cardSolid:    '#242320',
   cardHover:    'rgba(255,255,255,0.05)',
   border:       'rgba(255,255,255,0.07)',
-  borderGreen:  'rgba(16,185,129,0.35)',
-  green:        '#10b981',
-  greenDim:     'rgba(16,185,129,0.1)',
-  greenGlow:    'rgba(16,185,129,0.25)',
-  purple:       '#a5b4fc',
-  purpleDim:    'rgba(165,180,252,0.08)',
-  purpleBorder: 'rgba(165,180,252,0.2)',
+  borderGreen:  '#666864',
+  green:        '#00e59e',
+  greenDim:     '#282827',
+  greenGlow:    'rgba(255,255,255,0.08)',
+  purple:       '#00e59e',
+  purpleDim:    '#282827',
+  purpleBorder: '#666864',
   text:         '#f0ede9',
-  textSub:      '#9ca3af',
-  textMuted:    '#4b5563',
+  textSub:      '#dddac5',
+  textMuted:    '#dddac5',
   red:          '#f87171',
   redDim:       'rgba(248,113,113,0.08)',
 };
@@ -79,13 +79,13 @@ function RoadmapTimeline({ phases, activeIdx, onNodeClick }: {
 }) {
   return (
     <div style={{
-      background: 'linear-gradient(135deg, rgba(16,185,129,0.04) 0%, rgba(255,255,255,0.015) 100%)',
+      background: 'rgba(255,255,255,0.02)',
       backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
       border: `1px solid ${T.borderGreen}`,
       borderRadius: 16,
       padding: '24px 28px 20px',
       overflowX: 'auto',
-      boxShadow: '0 1px 0 rgba(16,185,129,0.06) inset, 0 8px 32px rgba(0,0,0,0.35)',
+      boxShadow: '0 1px 0 rgba(255,255,255,0.03) inset, 0 8px 32px rgba(0,0,0,0.35)',
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', position: 'relative', minWidth: 480 }}>
         {phases.map((phase, i) => {
@@ -102,7 +102,7 @@ function RoadmapTimeline({ phases, activeIdx, onNodeClick }: {
                   right: 'calc(-50% + 17px)',
                   height: 2,
                   background: i < activeIdx
-                    ? `linear-gradient(to right, ${T.green}, rgba(16,185,129,0.4))`
+                    ? `linear-gradient(to right, ${T.green}, #666864)`
                     : 'rgba(255,255,255,0.06)',
                   zIndex: 0,
                 }} />
@@ -115,12 +115,12 @@ function RoadmapTimeline({ phases, activeIdx, onNodeClick }: {
                   width: isActive ? 38 : 34,
                   height: isActive ? 38 : 34,
                   borderRadius: '50%',
-                  background: isActive ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)',
+                  background: isActive ? '#282827' : 'rgba(255,255,255,0.04)',
                   border: `2px solid ${isActive ? T.green : 'rgba(255,255,255,0.12)'}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   position: 'relative', zIndex: 1, flexShrink: 0,
                   cursor: 'pointer', padding: 0, fontFamily: 'inherit',
-                  boxShadow: isActive ? `0 0 0 5px rgba(16,185,129,0.12), 0 0 16px rgba(16,185,129,0.2)` : 'none',
+                  boxShadow: isActive ? `0 0 0 5px rgba(255,255,255,0.06), 0 0 16px rgba(0,0,0,0.2)` : 'none',
                   transition: 'all 0.2s',
                 }}
               >
@@ -174,8 +174,8 @@ function MilestoneRow({ m, checked, onToggle, onWorkflow }: {
             {m.linkedWorkflowIds.map(id => (
               <button key={id} onClick={() => onWorkflow(id)} style={{
                 fontSize: 11, padding: '2px 9px', borderRadius: 20,
-                background: 'rgba(99,102,241,0.08)', color: '#a5b4fc',
-                border: '1px solid rgba(99,102,241,0.18)', cursor: 'pointer', fontFamily: 'inherit',
+                background: '#282827', color: '#dddac5',
+                border: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer', fontFamily: 'inherit',
               }}>{id}</button>
             ))}
           </div>
@@ -189,7 +189,7 @@ function MilestoneRow({ m, checked, onToggle, onWorkflow }: {
 function KpiCard({ kpi }: { kpi: AiryRoadmapKpi }) {
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.03)', border: `1px solid rgba(16,185,129,0.12)`,
+      background: 'rgba(255,255,255,0.03)', border: `1px solid rgba(255,255,255,0.06)`,
       borderRadius: 10, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 5,
     }}>
       <span style={{ fontSize: '0.68rem', color: T.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
@@ -251,8 +251,8 @@ function PhaseSection({ phase, index, open, phaseRef, onToggle, onWorkflow }: {
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{
             width: 40, height: 40, borderRadius: 11, flexShrink: 0,
-            background: complete ? 'rgba(16,185,129,0.15)' : T.greenDim,
-            border: `1px solid ${complete ? 'rgba(16,185,129,0.4)' : T.borderGreen}`,
+            background: complete ? '#282827' : T.greenDim,
+            border: `1px solid ${complete ? '#666864' : T.borderGreen}`,
             color: T.green, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>{icon}</span>
           <div>
@@ -283,7 +283,7 @@ function PhaseSection({ phase, index, open, phaseRef, onToggle, onWorkflow }: {
       <div style={{ height: 3, background: 'rgba(255,255,255,0.04)' }}>
         <div style={{
           height: '100%', width: `${pct}%`,
-          background: `linear-gradient(to right, ${T.green}, #059669)`,
+          background: `linear-gradient(to right, ${T.green}, #555553)`,
           transition: 'width 0.4s ease', borderRadius: '0 2px 2px 0',
         }} />
       </div>
@@ -365,8 +365,8 @@ function BtnAira({ onClick, children }: { onClick: () => void; children: React.R
     <button onClick={onClick} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
       style={{
         fontSize: 12, fontWeight: 500, padding: '7px 14px', borderRadius: 8,
-        border: `1px solid ${h ? 'rgba(165,180,252,0.4)' : T.purpleBorder}`,
-        background: h ? 'rgba(165,180,252,0.12)' : T.purpleDim,
+        border: `1px solid ${h ? '#666864' : T.purpleBorder}`,
+        background: h ? 'rgba(255,255,255,0.06)' : T.purpleDim,
         color: T.purple, cursor: 'pointer', fontFamily: 'inherit',
         transition: 'all 0.15s', whiteSpace: 'nowrap',
       }}>{children}</button>
@@ -395,7 +395,7 @@ function BtnPrimary({ onClick, disabled, loading, children }: {
     <button onClick={onClick} disabled={disabled}
       onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
       style={{
-        background: h && !disabled ? '#0ea572' : T.green,
+        background: h && !disabled ? '#555553' : T.green,
         color: '#000', border: 'none', borderRadius: 10,
         padding: '13px 32px', fontSize: '0.9375rem', fontWeight: 700,
         fontFamily: 'inherit', cursor: disabled ? 'not-allowed' : 'pointer',
@@ -464,8 +464,8 @@ function EmptyState({ generating, error, onGenerate, router }: {
 
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-        padding: '14px 18px', background: 'rgba(16,185,129,0.03)',
-        border: '1px solid rgba(16,185,129,0.1)', borderRadius: 10,
+        padding: '14px 18px', background: 'rgba(255,255,255,0.02)',
+        border: '1px solid rgba(255,255,255,0.04)', borderRadius: 10,
         maxWidth: 480, width: '100%',
       }}>
         <span style={{ fontSize: '0.8125rem', color: T.textMuted, lineHeight: 1.5 }}>

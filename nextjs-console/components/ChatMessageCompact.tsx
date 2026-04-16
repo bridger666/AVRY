@@ -19,7 +19,7 @@ const ListTypeContext = React.createContext<'ul' | 'ol'>('ul')
 
 const compactMarkdownComponents = {
   p: ({ children }: any) => (
-    <p className="text-[13px] leading-[1.55] mb-2.5 text-[#d6d6c9] last:mb-0">
+    <p className="text-[13px] leading-[1.55] mb-2.5 text-[#f7f7f7] last:mb-0">
       {children}
     </p>
   ),
@@ -36,7 +36,7 @@ const compactMarkdownComponents = {
     <strong className="font-semibold text-zinc-100">{children}</strong>
   ),
   em: ({ children }: any) => (
-    <em className="italic text-[#d6d6c9]">{children}</em>
+    <em className="italic text-[#f7f7f7]">{children}</em>
   ),
   a: ({ href, children }: any) => (
     <a href={href} className="text-[#00e59e] hover:text-[#00e59e]/80 underline underline-offset-2 transition-colors text-[13px]" target="_blank" rel="noopener noreferrer">
@@ -56,7 +56,7 @@ const compactMarkdownComponents = {
   li: ({ children }: any) => {
     const listType = React.useContext(ListTypeContext)
     return (
-      <li className="text-[13px] text-[#d6d6c9] leading-[1.55] flex items-start gap-2">
+      <li className="text-[13px] text-[#f7f7f7] leading-[1.55] flex items-start gap-2">
         {listType === 'ul' && (
           <span className="text-[#a1a1aa] mt-[7px] shrink-0 text-[5px]">●</span>
         )}
@@ -74,7 +74,7 @@ const compactMarkdownComponents = {
     }
     return (
       <pre className="my-2 rounded-lg bg-[#1e1e1e] border border-white/10 p-3 overflow-x-auto">
-        <code className="text-[12px] font-mono text-[#d6d6c9] leading-relaxed">
+        <code className="text-[12px] font-mono text-[#f7f7f7] leading-relaxed">
           {String(children).replace(/\n$/, '')}
         </code>
       </pre>
@@ -125,7 +125,7 @@ export default function ChatMessageCompact({
             {content && (
               <div>
                 {isStreaming ? (
-                  <p className="text-[13px] leading-[1.55] text-[#d6d6c9] whitespace-pre-wrap">
+                  <p className="text-[13px] leading-[1.55] text-[#f7f7f7] whitespace-pre-wrap">
                     {content}
                     <span
                       className="inline-block w-[2px] h-[13px] bg-[#00e59e] ml-0.5 align-middle rounded-sm"

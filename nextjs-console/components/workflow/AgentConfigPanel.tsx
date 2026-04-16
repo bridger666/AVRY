@@ -284,10 +284,10 @@ export function AgentConfigPanel({
             style={{
               flex: 1,
               padding: '8px 16px',
-              background: selectedAgentId ? '#00e59e' : 'rgba(0,229,158,0.3)',
-              color: selectedAgentId ? '#000' : '#5a5a58',
-              border: 'none',
-              borderRadius: 8,
+              background: selectedAgentId ? '#353532' : 'rgba(53,53,50,0.5)',
+              color: selectedAgentId ? '#f7f7f7' : '#5a5a58',
+              border: '1px solid #666864',
+              borderRadius: 20,
               fontSize: 13,
               fontWeight: 600,
               cursor: selectedAgentId ? 'pointer' : 'not-allowed',
@@ -295,12 +295,12 @@ export function AgentConfigPanel({
             }}
             onMouseEnter={(e) => {
               if (selectedAgentId) {
-                e.currentTarget.style.background = '#00f5b0';
+                e.currentTarget.style.background = '#444440';
               }
             }}
             onMouseLeave={(e) => {
               if (selectedAgentId) {
-                e.currentTarget.style.background = '#00e59e';
+                e.currentTarget.style.background = '#353532';
               }
             }}
           >

@@ -199,10 +199,10 @@ export default function DeepDiagnosticPage() {
             {DEEP_DIAGNOSTIC_PHASES.find(p => p.id === savedProgress.currentPhase)?.title}
           </span>
           <div className={styles.resumeActions}>
-            <button className={styles.resumeButton} onClick={handleResume}>
+            <button className={`${styles.resumeButton} btn-style-a`} onClick={handleResume}>
               Resume
             </button>
-            <button className={styles.startFreshBannerButton} onClick={handleStartFresh}>
+            <button className={`${styles.startFreshBannerButton} btn-style-b`} onClick={handleStartFresh}>
               Start Fresh
             </button>
           </div>
@@ -272,7 +272,7 @@ export default function DeepDiagnosticPage() {
           {/* Bottom navigation */}
           <nav className={styles.bottomNav} aria-label="Phase navigation">
             <button
-              className={styles.prevButton}
+              className={`${styles.prevButton} btn-style-a`}
               onClick={handlePrevious}
               disabled={isFirstPhase}
               aria-disabled={isFirstPhase}
@@ -281,7 +281,7 @@ export default function DeepDiagnosticPage() {
             </button>
 
             <button
-              className={styles.startFreshButton}
+              className={`${styles.startFreshButton} btn-style-b`}
               onClick={handleStartFresh}
               type="button"
             >
@@ -289,7 +289,7 @@ export default function DeepDiagnosticPage() {
             </button>
 
             <button
-              className={styles.nextButton}
+              className={`${styles.nextButton} btn-style-a`}
               onClick={handleNext}
               type="button"
             >

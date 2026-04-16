@@ -89,7 +89,7 @@ export default function UploadMenu({ isOpen, onClose, onAttach, onToast, onExtra
         const parsed = JSON.parse(reader.result as string)
         onAttach({
           type: 'json_schema',
-          label: `📄 ${file.name}`,
+          label: `${file.name}`,
           filename: file.name,
           content: JSON.stringify(parsed),
         })
@@ -122,7 +122,7 @@ export default function UploadMenu({ isOpen, onClose, onAttach, onToast, onExtra
       const text = await extractTextFromFile(file)
       onAttach({
         type: 'file',
-        label: `📎 ${file.name}`,
+        label: `${file.name}`,
         filename: file.name,
         content: text,
       })
@@ -147,7 +147,7 @@ export default function UploadMenu({ isOpen, onClose, onAttach, onToast, onExtra
       const b64 = (reader.result as string).split(',')[1] ?? ''
       onAttach({
         type: 'image',
-        label: `🖼️ ${file.name}`,
+        label: `${file.name}`,
         filename: file.name,
         base64: b64,
       })
@@ -179,7 +179,7 @@ export default function UploadMenu({ isOpen, onClose, onAttach, onToast, onExtra
   const handleBlueprintPick = (v: BlueprintVersion) => {
     onAttach({
       type: 'blueprint',
-      label: `📋 Blueprint ${v.version} — ${v.company_name}`,
+      label: `Blueprint ${v.version} — ${v.company_name}`,
       version: v.version,
       data: v.blueprint_data,
     })
