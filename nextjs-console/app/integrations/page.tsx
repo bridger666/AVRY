@@ -1,11 +1,14 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import styles from './integrations.module.css'
 import type { AivoryApp, AivoryConnection, CreateConnectionPayload } from '@/types/integrations'
 import { useRouterContext } from '@/contexts/RouterContext'
 import { ContinuedFromConsole } from '@/components/routing/ContinuedFromConsole'
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'
 
 // ── Helpers ──────────────────────────────────────────────
 
@@ -18,6 +21,55 @@ function relativeTime(iso: string | null): string {
   const hrs = Math.floor(mins / 60)
   if (hrs < 24) return `${hrs}h ago`
   return `${Math.floor(hrs / 24)}d ago`
+}
+
+// ── ProviderButton (Task 7.1) ────────────────────────────
+
+interface ProviderButtonProps {
+  app: AivoryApp & { providerEnabled?: boolean }
+  onPopupOpened?: (appId: string) => void
+}
+
+function ProviderButton({ app, onPopupOpened }: ProviderButtonProps) {
+  const [loading, setLoading] = useState(false)
+
+  const handleClick = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`${BACKEND_URL}/auth/${app.oauthProvider}?appId=${encodeURIComponent(app.id)}`)
+      if (!res.ok) throw new Error('Failed to initiate OAuth')
+      const { authUrl } = await res.json()
+
+      const width = 600
+      const height = 700
+      const left = Math.round(window.screenX + (window.outerWidth - width) / 2)
+      const top = Math.round(window.screenY + (window.outerHeight - height) / 2)
+      const popup = window.open(
+        authUrl,
+        '_blank',
+        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+      )
+      if (!popup || popup.closed) {
+        window.location.href = authUrl
+      }
+      // Start polling for connection success
+      onPopupOpened?.(app.id)
+    } catch (err) {
+      console.error('[ProviderButton] Error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <button
+      className={styles.providerBtn}
+      onClick={handleClick}
+      disabled={loading}
+    >
+      {loading ? 'Connecting...' : (app.connectLabel ?? `Connect ${app.name}`)}
+    </button>
+  )
 }
 
 // ── Connect / Reconnect Modal ────────────────────────────
@@ -160,15 +212,20 @@ function StatusBadge({ status }: { status: AivoryConnection['status'] }) {
   return <span className={`${styles.statusBadge} ${cls}`}>{label}</span>
 }
 
+
 // ── Main Page ────────────────────────────────────────────
 
+type AppWithEnabled = AivoryApp & { providerEnabled?: boolean }
+
 export default function IntegrationsPage() {
-  const [apps, setApps] = useState<AivoryApp[]>([])
+  const searchParams = useSearchParams()
+  const [apps, setApps] = useState<AppWithEnabled[]>([])
   const [connections, setConnections] = useState<AivoryConnection[]>([])
   const [connectingApp, setConnectingApp] = useState<AivoryApp | null>(null)
   const [reconnectTarget, setReconnectTarget] = useState<{ app: AivoryApp; connId: string } | null>(null)
   const [loadingApps, setLoadingApps] = useState(true)
   const [loadingConns, setLoadingConns] = useState(true)
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const t = useTranslations("integrations")
   const tCommon = useTranslations("common")
 
@@ -183,6 +240,31 @@ export default function IntegrationsPage() {
     clearPendingContext()
   }, [pendingContext, clearPendingContext])
 
+  // Handle ?connected= and ?error= query params from Express OAuth redirect
+  useEffect(() => {
+    if (!searchParams) return
+    const connected = searchParams.get('connected')
+    const error = searchParams.get('error')
+    const provider = searchParams.get('provider')
+
+    if (connected) {
+      setFeedback({ type: 'success', message: `Successfully connected ${connected}` })
+      // Auto-dismiss after 5s
+      const timer = setTimeout(() => setFeedback(null), 5000)
+      return () => clearTimeout(timer)
+    }
+    if (error) {
+      const errorMessages: Record<string, string> = {
+        invalid_state: 'OAuth session expired or invalid. Please try again.',
+        access_denied: `Access was denied${provider ? ` by ${provider}` : ''}. Please try again.`,
+        token_exchange_failed: `Token exchange failed${provider ? ` for ${provider}` : ''}. Please try again.`,
+      }
+      setFeedback({ type: 'error', message: errorMessages[error] || `OAuth error: ${error}` })
+      const timer = setTimeout(() => setFeedback(null), 8000)
+      return () => clearTimeout(timer)
+    }
+  }, [searchParams])
+
   const fetchApps = useCallback(async () => {
     try {
       const res = await fetch('/api/integrations/apps')
@@ -194,8 +276,17 @@ export default function IntegrationsPage() {
 
   const fetchConnections = useCallback(async () => {
     try {
-      const res = await fetch('/api/integrations/connections')
-      if (res.ok) setConnections(await res.json())
+      // Fetch OAuth connections from Express backend
+      const oauthRes = await fetch(`${BACKEND_URL}/auth/status`)
+      const oauthConns = oauthRes.ok ? await oauthRes.json() : []
+
+      // Fetch manual (API key/basic) connections from Next.js API
+      const manualRes = await fetch('/api/integrations/connections')
+      const manualConns = manualRes.ok ? await manualRes.json() : []
+
+      // Merge: manual connections + OAuth connections from Express
+      const manualOnly = manualConns.filter((c: AivoryConnection) => c.authType !== 'oauth')
+      setConnections([...manualOnly, ...oauthConns])
     } finally {
       setLoadingConns(false)
     }
@@ -206,15 +297,92 @@ export default function IntegrationsPage() {
     fetchConnections()
   }, [fetchApps, fetchConnections])
 
-  const handleRevoke = async (id: string, displayName: string) => {
-    if (!confirm(`Revoke "${displayName}"? Workflows using this connection will stop working.`)) return
-    await fetch(`/api/integrations/connections/${id}`, { method: 'DELETE' })
+  // ── OAuth Connection Polling ───────────────────────────
+  // After opening a Nango popup, poll /auth/status every 2s
+  // until connection appears or 120s timeout
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const startConnectionPolling = useCallback((targetAppId: string) => {
+    // Stop any existing poll
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+
+    const startTime = Date.now()
+    const POLL_INTERVAL = 2000
+    const POLL_TIMEOUT = 120000
+
+    pollTimerRef.current = setInterval(async () => {
+      if (Date.now() - startTime > POLL_TIMEOUT) {
+        if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+        pollTimerRef.current = null
+        return
+      }
+
+      try {
+        const res = await fetch(`${BACKEND_URL}/auth/status`)
+        if (res.ok) {
+          const conns: AivoryConnection[] = await res.json()
+          const found = conns.find(c => c.appId === targetAppId && c.status === 'connected')
+          if (found) {
+            if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+            pollTimerRef.current = null
+            setFeedback({ type: 'success', message: `Successfully connected ${found.appName}` })
+            fetchConnections()
+          }
+        }
+      } catch { /* ignore poll errors */ }
+    }, POLL_INTERVAL)
+  }, [fetchConnections])
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+    }
+  }, [])
+
+  // Revoke: OAuth connections use Express backend, manual use Next.js API
+  const handleRevoke = async (conn: AivoryConnection) => {
+    if (!confirm(`Revoke "${conn.displayName}"? Workflows using this connection will stop working.`)) return
+
+    if (conn.authType === 'oauth' && conn.oauthProvider) {
+      await fetch(`${BACKEND_URL}/auth/${conn.oauthProvider}/revoke/${conn.id}`, { method: 'POST' })
+    } else {
+      await fetch(`/api/integrations/connections/${conn.id}`, { method: 'DELETE' })
+    }
     fetchConnections()
   }
 
-  const handleReconnect = (conn: AivoryConnection) => {
-    const app = apps.find(a => a.id === conn.appId)
-    if (app) setReconnectTarget({ app, connId: conn.id })
+  // Reconnect: OAuth uses Nango JSON flow, manual uses credential modal
+  const handleReconnect = async (conn: AivoryConnection) => {
+    const app = apps.find(a => a.id === conn.appId) as AppWithEnabled | undefined
+    if (!app) return
+
+    if (conn.authType === 'oauth' && app.oauthProvider) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/auth/${app.oauthProvider}?appId=${encodeURIComponent(app.id)}`)
+        if (!res.ok) throw new Error('Failed to initiate OAuth')
+        const { authUrl } = await res.json()
+
+        const width = 600
+        const height = 700
+        const left = Math.round(window.screenX + (window.outerWidth - width) / 2)
+        const top = Math.round(window.screenY + (window.outerHeight - height) / 2)
+        const popup = window.open(
+          authUrl,
+          '_blank',
+          `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+        )
+        if (!popup || popup.closed) {
+          window.location.href = authUrl
+        }
+        // Start polling for reconnection success
+        startConnectionPolling(app.id)
+      } catch (err) {
+        console.error('[Reconnect] Error:', err)
+      }
+    } else {
+      setReconnectTarget({ app, connId: conn.id })
+    }
   }
 
   const connectedAppIds = new Set(
@@ -225,6 +393,28 @@ export default function IntegrationsPage() {
     <div className={styles.page}>
       {routingNotice !== null && (
         <ContinuedFromConsole summary={routingNotice} onDismiss={() => setRoutingNotice(null)} />
+      )}
+      {feedback && (
+        <div style={{
+          padding: '10px 16px',
+          marginBottom: 16,
+          borderRadius: 8,
+          fontSize: '0.875rem',
+          background: feedback.type === 'success' ? 'rgba(45,212,191,0.1)' : 'rgba(248,113,113,0.1)',
+          border: `1px solid ${feedback.type === 'success' ? 'rgba(45,212,191,0.3)' : 'rgba(248,113,113,0.3)'}`,
+          color: feedback.type === 'success' ? '#2dd4bf' : '#f87171',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <span>{feedback.message}</span>
+          <button
+            onClick={() => setFeedback(null)}
+            style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1rem', padding: '0 4px' }}
+          >
+            ×
+          </button>
+        </div>
       )}
       <div className={styles.header}>
         <h1 className={styles.title}>{t("title")}</h1>
@@ -259,7 +449,14 @@ export default function IntegrationsPage() {
                     )}
                     <span className={styles.tableAppName}>{conn.appName}</span>
                   </span>
-                  <span className={styles.tableDisplayName}>{conn.displayName}</span>
+                  {/* Task 7.6: Show accountIdentifier for OAuth, displayName for manual */}
+                  <span className={styles.tableDisplayName}>
+                    {conn.authType === 'oauth' && conn.accountIdentifier ? (
+                      <span className={styles.accountIdentifier}>{conn.accountIdentifier}</span>
+                    ) : (
+                      conn.displayName
+                    )}
+                  </span>
                   <span><StatusBadge status={conn.status} /></span>
                   <span className={styles.tableLastUsed}>{relativeTime(conn.lastUsedAt)}</span>
                   <span className={styles.tableActions}>
@@ -272,7 +469,7 @@ export default function IntegrationsPage() {
                     </button>
                     <button
                       className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
-                      onClick={() => handleRevoke(conn.id, conn.displayName)}
+                      onClick={() => handleRevoke(conn)}
                       title={t("revoke")}
                     >
                       {t("revoke")}
@@ -308,12 +505,17 @@ export default function IntegrationsPage() {
                   </div>
                 </div>
                 <p className={styles.appDesc}>{app.description}</p>
-                <button
-                  className={styles.connectBtn}
-                  onClick={() => setConnectingApp(app)}
-                >
-                  {connectedAppIds.has(app.id) ? t("addAnother") : t("connect")}
-                </button>
+                {/* OAuth apps always show ProviderButton, manual apps show ConnectModal */}
+                {app.authType === 'oauth' ? (
+                  <ProviderButton app={app} onPopupOpened={startConnectionPolling} />
+                ) : (
+                  <button
+                    className={styles.connectBtn}
+                    onClick={() => setConnectingApp(app)}
+                  >
+                    {connectedAppIds.has(app.id) ? t("addAnother") : t("connect")}
+                  </button>
+                )}
               </div>
             ))}
           </div>
