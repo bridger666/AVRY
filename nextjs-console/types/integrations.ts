@@ -1,5 +1,15 @@
-export type AuthType = 'apiKey' | 'basic'
+export type AuthType = 'apiKey' | 'basic' | 'oauth'
 export type ConnectionStatus = 'connected' | 'revoked' | 'needs_reauth'
+
+export interface OAuthProviderConfig {
+  provider: string           // e.g. 'google', 'slack', 'github'
+  connectLabel: string       // e.g. 'Sign in with Google'
+  scopes: string[]           // e.g. ['openid', 'email', 'https://mail.google.com/']
+  authorizationUrl: string   // provider's authorize endpoint
+  tokenUrl: string           // provider's token endpoint
+  userinfoUrl?: string       // provider's userinfo endpoint
+  revocationUrl?: string     // provider's token revocation endpoint
+}
 
 export interface AivoryApp {
   id: string
@@ -11,6 +21,10 @@ export interface AivoryApp {
   categories: string[]
   defaultAction?: string  // default action name for canvas nodes
   fields: AppField[]
+  // OAuth-specific (present when authType === 'oauth')
+  oauthProvider?: string
+  connectLabel?: string
+  oauthScopes?: string[]
 }
 
 export interface AppField {
@@ -35,6 +49,9 @@ export interface AivoryConnection {
   createdAt: string
   updatedAt: string
   lastUsedAt: string | null
+  // OAuth-specific extensions
+  accountIdentifier?: string | null
+  oauthProvider?: string | null
 }
 
 /** What the client sends to create/update a connection */

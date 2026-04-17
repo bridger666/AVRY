@@ -1,32 +1,16 @@
 /**
- * In-memory credential vault + connection store.
+ * App Catalog
  *
- * Security contract:
- *  - Credentials are stored in a separate Map keyed by storageRef (opaque UUID).
- *  - AivoryConnection objects NEVER contain credential data.
- *  - GET responses only return AivoryConnection (metadata only).
- *  - Credentials are only accessible server-side via getCredentials().
- *
- * In production: replace the vault Map with AWS Secrets Manager / Vault / encrypted DB column.
+ * Registry of all AVRY integration apps.
+ * Ported from nextjs-console/lib/integrations/store.ts APP_CATALOG.
  */
 
-import { randomUUID } from 'crypto'
-import type {
-  AivoryApp,
-  AivoryConnection,
-  ConnectionStatus,
-  CreateConnectionPayload,
-} from '@/types/integrations'
-
-// ── App Catalog ──────────────────────────────────────────
-
-export const APP_CATALOG: AivoryApp[] = [
+const APP_CATALOG = [
   {
     id: 'slack',
     name: 'Slack',
     description: 'Send messages and notifications to Slack channels.',
     icon: '',
-    iconPath: '/integrations/icons/slack.svg',
     authType: 'oauth',
     categories: ['Communication'],
     defaultAction: 'Send Message',
@@ -40,33 +24,26 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'OpenAI',
     description: 'Use GPT models for text generation and analysis.',
     icon: '',
-    iconPath: '/integrations/icons/OpenAi%20Icon.svg',
     authType: 'apiKey',
     categories: ['AI'],
     defaultAction: 'Generate Text',
-    fields: [
-      { key: 'apiKey', label: 'API Key', type: 'password', placeholder: 'sk-...', required: true },
-    ],
+    fields: [{ key: 'apiKey', label: 'API Key', type: 'password', placeholder: 'sk-...', required: true }],
   },
   {
     id: 'sendgrid',
     name: 'SendGrid',
     description: 'Send transactional and marketing emails.',
     icon: '',
-    iconPath: '/integrations/icons/sendgrid.svg',
     authType: 'apiKey',
     categories: ['Communication'],
     defaultAction: 'Send Email',
-    fields: [
-      { key: 'apiKey', label: 'API Key', type: 'password', placeholder: 'SG.xxx', required: true },
-    ],
+    fields: [{ key: 'apiKey', label: 'API Key', type: 'password', placeholder: 'SG.xxx', required: true }],
   },
   {
     id: 'notion',
     name: 'Notion',
     description: 'Read and write Notion databases and pages.',
     icon: '',
-    iconPath: '/integrations/icons/notion.svg',
     authType: 'oauth',
     categories: ['Databases'],
     defaultAction: 'Create Page',
@@ -80,7 +57,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'HubSpot',
     description: 'Sync contacts, deals, and CRM data.',
     icon: '',
-    iconPath: '/integrations/icons/hubspot-svgrepo-com.svg',
     authType: 'oauth',
     categories: ['CRM'],
     defaultAction: 'Create Contact',
@@ -94,7 +70,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Airtable',
     description: 'Read and write Airtable bases and tables.',
     icon: '',
-    iconPath: '/integrations/icons/airtable.svg',
     authType: 'oauth',
     categories: ['Databases'],
     defaultAction: 'Create Record',
@@ -108,7 +83,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'GitHub',
     description: 'Automate GitHub issues, PRs, and repos.',
     icon: '',
-    iconPath: '/integrations/icons/github.svg',
     authType: 'oauth',
     categories: ['DevTools'],
     defaultAction: 'Create Issue',
@@ -122,7 +96,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Jira',
     description: 'Create and update Jira issues and projects.',
     icon: '',
-    iconPath: '/integrations/icons/jira.svg',
     authType: 'basic',
     categories: ['DevTools'],
     defaultAction: 'Create Issue',
@@ -137,7 +110,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Salesforce',
     description: 'Sync leads, contacts, and opportunities.',
     icon: '',
-    iconPath: '/integrations/icons/salesforce.svg',
     authType: 'oauth',
     categories: ['CRM'],
     defaultAction: 'Create Lead',
@@ -151,7 +123,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'HTTP / Custom API',
     description: 'Connect to any REST API with an API key.',
     icon: '',
-    iconPath: '/integrations/icons/http-api.svg',
     authType: 'apiKey',
     categories: ['Custom API'],
     defaultAction: 'HTTP Request',
@@ -165,7 +136,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Gmail',
     description: 'Send and receive emails via Gmail.',
     icon: '',
-    iconPath: '/integrations/icons/gmail.svg',
     authType: 'oauth',
     categories: ['Communication'],
     defaultAction: 'Send Email',
@@ -179,7 +149,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Google Drive',
     description: 'Read and write files in Google Drive.',
     icon: '',
-    iconPath: '/integrations/icons/google-drive.svg',
     authType: 'oauth',
     categories: ['Storage'],
     defaultAction: 'Upload File',
@@ -193,7 +162,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Google Sheets',
     description: 'Read and write data in Google Sheets.',
     icon: '',
-    iconPath: '/integrations/icons/Google%20sheets.svg',
     authType: 'oauth',
     categories: ['Databases'],
     defaultAction: 'Write Data',
@@ -207,7 +175,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Google Calendar',
     description: 'Create and manage calendar events.',
     icon: '',
-    iconPath: '/integrations/icons/google-calendar.svg',
     authType: 'oauth',
     categories: ['Productivity'],
     defaultAction: 'Create Event',
@@ -221,33 +188,26 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Telegram',
     description: 'Send messages and notifications via Telegram bot.',
     icon: '',
-    iconPath: '/integrations/icons/telegram.svg',
     authType: 'apiKey',
     categories: ['Communication'],
     defaultAction: 'Send Message',
-    fields: [
-      { key: 'apiKey', label: 'Bot Token', type: 'password', placeholder: '123456:ABC-DEF...', required: true },
-    ],
+    fields: [{ key: 'apiKey', label: 'Bot Token', type: 'password', placeholder: '123456:ABC-DEF...', required: true }],
   },
   {
     id: 'whatsapp',
     name: 'WhatsApp',
     description: 'Send WhatsApp messages via Twilio or Meta API.',
     icon: '',
-    iconPath: '/integrations/icons/whatsapp.svg',
     authType: 'apiKey',
     categories: ['Communication'],
     defaultAction: 'Send Message',
-    fields: [
-      { key: 'apiKey', label: 'API Key', type: 'password', placeholder: 'Bearer ...', required: true },
-    ],
+    fields: [{ key: 'apiKey', label: 'API Key', type: 'password', placeholder: 'Bearer ...', required: true }],
   },
   {
     id: 'discord',
     name: 'Discord',
     description: 'Send messages and notifications to Discord channels.',
     icon: '',
-    iconPath: '/integrations/icons/discord.svg',
     authType: 'oauth',
     categories: ['Communication'],
     defaultAction: 'Send Message',
@@ -261,7 +221,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Microsoft Teams',
     description: 'Send messages to Microsoft Teams channels.',
     icon: '',
-    iconPath: '/integrations/icons/microsoft-teams.svg',
     authType: 'oauth',
     categories: ['Communication'],
     defaultAction: 'Send Message',
@@ -275,7 +234,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Outlook',
     description: 'Send and manage emails via Microsoft Outlook.',
     icon: '',
-    iconPath: '/integrations/icons/outlook.svg',
     authType: 'oauth',
     categories: ['Communication'],
     defaultAction: 'Send Email',
@@ -289,20 +247,16 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Stripe',
     description: 'Process payments and manage subscriptions.',
     icon: '',
-    iconPath: '/integrations/icons/stripe-v2-svgrepo-com.svg',
     authType: 'apiKey',
     categories: ['Finance'],
     defaultAction: 'Create Payment',
-    fields: [
-      { key: 'apiKey', label: 'Secret API Key', type: 'password', placeholder: 'sk_live_...', required: true },
-    ],
+    fields: [{ key: 'apiKey', label: 'Secret API Key', type: 'password', placeholder: 'sk_live_...', required: true }],
   },
   {
     id: 'mailchimp',
     name: 'Mailchimp',
     description: 'Manage email marketing campaigns and audiences.',
     icon: '',
-    iconPath: '/integrations/icons/mailchimp.svg',
     authType: 'oauth',
     categories: ['Marketing'],
     defaultAction: 'Add Subscriber',
@@ -316,7 +270,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Trello',
     description: 'Create and manage Trello boards, lists, and cards.',
     icon: '',
-    iconPath: '/integrations/icons/trello.svg',
     authType: 'oauth',
     categories: ['Productivity'],
     defaultAction: 'Create Card',
@@ -330,7 +283,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Asana',
     description: 'Create and manage tasks and projects in Asana.',
     icon: '',
-    iconPath: '/integrations/icons/Asana%20Icon.svg',
     authType: 'oauth',
     categories: ['Productivity'],
     defaultAction: 'Create Task',
@@ -344,7 +296,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Linear',
     description: 'Create and track issues in Linear.',
     icon: '',
-    iconPath: '/integrations/icons/linear.svg',
     authType: 'oauth',
     categories: ['DevTools'],
     defaultAction: 'Create Issue',
@@ -358,7 +309,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Dropbox',
     description: 'Store and sync files with Dropbox.',
     icon: '',
-    iconPath: '/integrations/icons/dropbox.svg',
     authType: 'oauth',
     categories: ['Storage'],
     defaultAction: 'Upload File',
@@ -372,7 +322,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'AWS S3',
     description: 'Upload and manage files in Amazon S3 buckets.',
     icon: '',
-    iconPath: '/integrations/icons/aws-s3.svg',
     authType: 'apiKey',
     categories: ['Storage'],
     defaultAction: 'Upload File',
@@ -387,7 +336,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Twilio',
     description: 'Send SMS and voice calls via Twilio.',
     icon: '',
-    iconPath: '/integrations/icons/twilio.svg',
     authType: 'apiKey',
     categories: ['Communication'],
     defaultAction: 'Send SMS',
@@ -401,7 +349,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Intercom',
     description: 'Manage customer conversations and support tickets.',
     icon: '',
-    iconPath: '/integrations/icons/intercom.svg',
     authType: 'oauth',
     categories: ['CRM'],
     defaultAction: 'Create Conversation',
@@ -415,7 +362,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Zendesk',
     description: 'Create and manage customer support tickets.',
     icon: '',
-    iconPath: '/integrations/icons/zendesk.svg',
     authType: 'oauth',
     categories: ['CRM'],
     defaultAction: 'Create Ticket',
@@ -429,7 +375,6 @@ export const APP_CATALOG: AivoryApp[] = [
     name: 'Shopify',
     description: 'Manage orders, products, and customers in Shopify.',
     icon: '',
-    iconPath: '/integrations/icons/Shopify%20Bag.svg',
     authType: 'oauth',
     categories: ['E-Commerce'],
     defaultAction: 'Create Order',
@@ -440,119 +385,4 @@ export const APP_CATALOG: AivoryApp[] = [
   },
 ]
 
-// ── Credential Vault ─────────────────────────────────────
-// storageRef → encrypted/opaque credentials blob
-// In production: replace with Secrets Manager / Vault
-
-const credentialVault = new Map<string, Record<string, string>>()
-
-function storeCredentials(credentials: Record<string, string>): string {
-  const ref = `vault:${randomUUID()}`
-  credentialVault.set(ref, credentials)
-  return ref
-}
-
-export function updateCredentials(storageRef: string, credentials: Record<string, string>): void {
-  credentialVault.set(storageRef, credentials)
-}
-
-function purgeCredentials(storageRef: string): void {
-  credentialVault.delete(storageRef)
-}
-
-/** Server-side only — never call this from a GET handler */
-export function getCredentials(storageRef: string): Record<string, string> | undefined {
-  return credentialVault.get(storageRef)
-}
-
-// ── Connection Store ─────────────────────────────────────
-// Map<tenantId, Map<connectionId, AivoryConnection>>
-
-const connectionStore = new Map<string, Map<string, AivoryConnection>>()
-
-function getTenantStore(tenantId: string): Map<string, AivoryConnection> {
-  if (!connectionStore.has(tenantId)) connectionStore.set(tenantId, new Map())
-  return connectionStore.get(tenantId)!
-}
-
-export function listConnections(tenantId: string, appId?: string): AivoryConnection[] {
-  const all = Array.from(getTenantStore(tenantId).values())
-  return appId ? all.filter(c => c.appId === appId) : all
-}
-
-export function getConnection(tenantId: string, id: string): AivoryConnection | undefined {
-  return getTenantStore(tenantId).get(id)
-}
-
-export function createConnection(
-  tenantId: string,
-  payload: CreateConnectionPayload,
-  options?: { accountIdentifier?: string | null; oauthProvider?: string | null }
-): AivoryConnection {
-  const app = APP_CATALOG.find(a => a.id === payload.appId)
-  if (!app) throw new Error(`Unknown app: ${payload.appId}`)
-
-  const now = new Date().toISOString()
-  const storageRef = storeCredentials(payload.credentials)
-
-  const connection: AivoryConnection = {
-    id: randomUUID(),
-    tenantId,
-    appId: payload.appId,
-    appName: app.name,
-    appIcon: app.icon,
-    displayName: payload.displayName,
-    status: 'connected',
-    authType: app.authType,
-    storageRef,
-    createdAt: now,
-    updatedAt: now,
-    lastUsedAt: null,
-    accountIdentifier: options?.accountIdentifier ?? null,
-    oauthProvider: options?.oauthProvider ?? null,
-  }
-
-  getTenantStore(tenantId).set(connection.id, connection)
-  return connection
-}
-
-export function reconnectConnection(
-  tenantId: string,
-  id: string,
-  credentials: Record<string, string>
-): AivoryConnection | null {
-  const conn = getTenantStore(tenantId).get(id)
-  if (!conn) return null
-
-  updateCredentials(conn.storageRef, credentials)
-  const updated: AivoryConnection = {
-    ...conn,
-    status: 'connected',
-    updatedAt: new Date().toISOString(),
-  }
-  getTenantStore(tenantId).set(id, updated)
-  return updated
-}
-
-export function revokeConnection(tenantId: string, id: string): boolean {
-  const conn = getTenantStore(tenantId).get(id)
-  if (!conn) return false
-
-  // Purge credentials from vault
-  purgeCredentials(conn.storageRef)
-
-  const revoked: AivoryConnection = {
-    ...conn,
-    status: 'revoked',
-    updatedAt: new Date().toISOString(),
-  }
-  getTenantStore(tenantId).set(id, revoked)
-  return true
-}
-
-export function touchConnection(tenantId: string, id: string): void {
-  const conn = getTenantStore(tenantId).get(id)
-  if (conn) {
-    getTenantStore(tenantId).set(id, { ...conn, lastUsedAt: new Date().toISOString() })
-  }
-}
+module.exports = { APP_CATALOG }

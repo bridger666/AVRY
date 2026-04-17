@@ -1,0 +1,23 @@
+{
+  "name": "avry-oauth-server",
+  "version": "1.0.0",
+  "description": "AVRY Express OAuth Backend Server",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "jest --verbose"
+  },
+  "dependencies": {
+    "@nangohq/node": "^0.70.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "fast-check": "^3.23.2",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
+}
