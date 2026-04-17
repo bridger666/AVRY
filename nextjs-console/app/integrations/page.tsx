@@ -3,12 +3,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import Nango from '@nangohq/frontend'
 import styles from './integrations.module.css'
 import type { AivoryApp, AivoryConnection, CreateConnectionPayload } from '@/types/integrations'
 import { useRouterContext } from '@/contexts/RouterContext'
 import { ContinuedFromConsole } from '@/components/routing/ContinuedFromConsole'
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'
 
 // ── Helpers ──────────────────────────────────────────────
 
@@ -25,6 +24,31 @@ function relativeTime(iso: string | null): string {
 
 // ── ProviderButton (Task 7.1) ────────────────────────────
 
+// ── Provider config key mapping (must match Nango dashboard) ─
+const NANGO_PROVIDER_MAP: Record<string, string> = {
+  'gmail':           'google-mail',
+  'google-drive':    'google-drive',
+  'google-sheets':   'google-sheet',
+  'google-calendar': 'google-calendar',
+  'microsoft-teams': 'microsoft-teams',
+  'outlook':         'outlook',
+  'slack':           'slack',
+  'github':          'github-getting-started',
+  'discord':         'discord',
+  'dropbox':         'dropbox',
+  'hubspot':         'hubspot',
+  'salesforce':      'salesforce',
+  'notion':          'notion',
+  'trello':          'trello',
+  'asana':           'asana',
+  'linear':          'linear',
+  'airtable':        'airtable',
+  'shopify':         'shopify',
+  'mailchimp':       'mailchimp',
+  'intercom':        'intercom',
+  'zendesk':         'zendesk',
+}
+
 interface ProviderButtonProps {
   app: AivoryApp & { providerEnabled?: boolean }
   onPopupOpened?: (appId: string) => void
@@ -36,26 +60,21 @@ function ProviderButton({ app, onPopupOpened }: ProviderButtonProps) {
   const handleClick = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`${BACKEND_URL}/auth/${app.oauthProvider}?appId=${encodeURIComponent(app.id)}`)
-      if (!res.ok) throw new Error('Failed to initiate OAuth')
-      const { authUrl } = await res.json()
+      // 1. Get a connect session token from our backend
+      const sessionRes = await fetch('/api/integrations/oauth?action=session')
+      if (!sessionRes.ok) throw new Error('Failed to create Nango session')
+      const { token } = await sessionRes.json()
 
-      const width = 600
-      const height = 700
-      const left = Math.round(window.screenX + (window.outerWidth - width) / 2)
-      const top = Math.round(window.screenY + (window.outerHeight - height) / 2)
-      const popup = window.open(
-        authUrl,
-        '_blank',
-        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-      )
-      if (!popup || popup.closed) {
-        window.location.href = authUrl
-      }
-      // Start polling for connection success
+      // 2. Use Nango frontend SDK to trigger OAuth popup
+      const nangoFrontend = new Nango({ connectSessionToken: token })
+      const integrationId = NANGO_PROVIDER_MAP[app.id] || app.oauthProvider || app.id
+
+      await nangoFrontend.auth(integrationId)
+
+      // OAuth completed successfully
       onPopupOpened?.(app.id)
     } catch (err) {
-      console.error('[ProviderButton] Error:', err)
+      console.error('[ProviderButton] OAuth error:', err)
     } finally {
       setLoading(false)
     }
@@ -276,15 +295,15 @@ export default function IntegrationsPage() {
 
   const fetchConnections = useCallback(async () => {
     try {
-      // Fetch OAuth connections from Express backend
-      const oauthRes = await fetch(`${BACKEND_URL}/auth/status`)
+      // Fetch OAuth connections from Next.js API (Nango)
+      const oauthRes = await fetch(`/api/integrations/oauth?action=status`)
       const oauthConns = oauthRes.ok ? await oauthRes.json() : []
 
       // Fetch manual (API key/basic) connections from Next.js API
       const manualRes = await fetch('/api/integrations/connections')
       const manualConns = manualRes.ok ? await manualRes.json() : []
 
-      // Merge: manual connections + OAuth connections from Express
+      // Merge: manual connections + OAuth connections
       const manualOnly = manualConns.filter((c: AivoryConnection) => c.authType !== 'oauth')
       setConnections([...manualOnly, ...oauthConns])
     } finally {
@@ -318,7 +337,7 @@ export default function IntegrationsPage() {
       }
 
       try {
-        const res = await fetch(`${BACKEND_URL}/auth/status`)
+        const res = await fetch(`/api/integrations/oauth?action=status`)
         if (res.ok) {
           const conns: AivoryConnection[] = await res.json()
           const found = conns.find(c => c.appId === targetAppId && c.status === 'connected')
@@ -345,7 +364,11 @@ export default function IntegrationsPage() {
     if (!confirm(`Revoke "${conn.displayName}"? Workflows using this connection will stop working.`)) return
 
     if (conn.authType === 'oauth' && conn.oauthProvider) {
-      await fetch(`${BACKEND_URL}/auth/${conn.oauthProvider}/revoke/${conn.id}`, { method: 'POST' })
+      await fetch('/api/integrations/oauth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'revoke', appId: conn.appId }),
+      })
     } else {
       await fetch(`/api/integrations/connections/${conn.id}`, { method: 'DELETE' })
     }
@@ -359,24 +382,16 @@ export default function IntegrationsPage() {
 
     if (conn.authType === 'oauth' && app.oauthProvider) {
       try {
-        const res = await fetch(`${BACKEND_URL}/auth/${app.oauthProvider}?appId=${encodeURIComponent(app.id)}`)
-        if (!res.ok) throw new Error('Failed to initiate OAuth')
-        const { authUrl } = await res.json()
+        const sessionRes = await fetch('/api/integrations/oauth?action=session')
+        if (!sessionRes.ok) throw new Error('Failed to create Nango session')
+        const { token } = await sessionRes.json()
 
-        const width = 600
-        const height = 700
-        const left = Math.round(window.screenX + (window.outerWidth - width) / 2)
-        const top = Math.round(window.screenY + (window.outerHeight - height) / 2)
-        const popup = window.open(
-          authUrl,
-          '_blank',
-          `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-        )
-        if (!popup || popup.closed) {
-          window.location.href = authUrl
-        }
-        // Start polling for reconnection success
-        startConnectionPolling(app.id)
+        const nangoFrontend = new Nango({ connectSessionToken: token })
+        const integrationId = NANGO_PROVIDER_MAP[app.id] || app.oauthProvider || app.id
+
+        await nangoFrontend.auth(integrationId)
+        setFeedback({ type: 'success', message: `Successfully reconnected ${app.name}` })
+        fetchConnections()
       } catch (err) {
         console.error('[Reconnect] Error:', err)
       }

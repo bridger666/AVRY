@@ -12,13 +12,10 @@ ENV/
 # Markdown docs — never push to public repo
 *.md
 
-# Environment & secrets — never commit
+# ── Environment & Secrets ─────────────────────────────────
+# Unified root .env + all local overrides — never commit
 .env
 .env.*
-.env.local
-.env.development*
-.env.production*
-.envrc
 !.env.example
 *.key
 *.pem
@@ -29,6 +26,12 @@ ENV/
 secrets.*
 credentials.*
 config/local.*
+
+# Per-service env files (migrated to root .env)
+nextjs-console/.env*
+!nextjs-console/.env.example
+vps-bridge/.env*
+!vps-bridge/.env.example
 
 # IDE
 .vscode/
@@ -59,15 +62,3 @@ build/
 node_modules/
 .next/
 coverage/
-# Env and secrets
-.env
-.env.local
-.env.*.local
-nextjs-console/.env*
-vps-bridge/.env*
-
-# Node / build
-node_modules/
-.next/
-dist/
-*.log
