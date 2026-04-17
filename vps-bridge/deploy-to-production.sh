@@ -115,7 +115,7 @@ echo ""
 
 # Test health check
 echo "🏥 Testing health check..."
-HEALTH_CHECK=$(ssh "$PROD_USER@$PROD_SERVER" "curl -s http://localhost:3001/health" || echo "failed")
+HEALTH_CHECK=$(ssh "$PROD_USER@$PROD_SERVER" "curl -s http://localhost:3003/health" || echo "failed")
 
 if echo "$HEALTH_CHECK" | grep -q '"status":"ok"'; then
     echo "✅ Health check passed!"

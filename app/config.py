@@ -6,9 +6,9 @@ from pydantic_settings import BaseSettings
 from pydantic import field_validator, ValidationError
 from dotenv import load_dotenv
 
-# Load .env.local first (takes precedence), then .env
-load_dotenv(".env.local")
-load_dotenv(".env")
+# Load unified .env from project root (covers all services)
+load_dotenv(".env.local")  # legacy — takes precedence if present
+load_dotenv(".env")        # unified config
 
 
 class Settings(BaseSettings):

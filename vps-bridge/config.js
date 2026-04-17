@@ -3,7 +3,12 @@
  * Model routing and environment configuration
  */
 
-require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+// Load unified .env from project root (falls back to local .env if root missing)
+const path = require('path');
+const rootEnv = path.join(__dirname, '..', '.env');
+const localEnv = path.join(__dirname, '.env');
+require('dotenv').config({ path: rootEnv });
+require('dotenv').config({ path: localEnv }); // local overrides (won't overwrite existing)
 
 // ============================================================================
 // MODEL ROUTING CONFIGURATION
@@ -350,9 +355,9 @@ Rules:
 
 const config = {
   // Server
-  port: parseInt(process.env.PORT) || 3001,
-  apiKey: process.env.API_KEY,
-  corsOrigin: process.env.CORS_ORIGIN || '*',
+  port: parseInt(process.env.VPS_BRIDGE_PORT || process.env.PORT) || 3003,
+  apiKey: process.env.VPS_BRIDGE_API_KEY || process.env.API_KEY,
+  corsOrigin: process.env.VPS_BRIDGE_CORS_ORIGIN || process.env.CORS_ORIGIN || '*',
   
   // OpenRouter
   openrouterApiKey: process.env.OPENROUTER_API_KEY,
@@ -377,7 +382,7 @@ const config = {
   zeroclawKiroUrl: process.env.ZEROCLAW_BASE_URL || process.env.ZEROCLAW_KIRO_URL || 'http://127.0.0.1:3010',
   
   // Logging
-  logLevel: process.env.LOG_LEVEL || 'info'
+  logLevel: process.env.VPS_BRIDGE_LOG_LEVEL || process.env.LOG_LEVEL || 'info'
 };
 
 // Validate required configuration
