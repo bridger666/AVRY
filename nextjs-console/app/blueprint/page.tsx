@@ -218,6 +218,78 @@ const BLUEPRINT_INSIGHTS = {
   ],
 }
 
+
+// ── Map VPS Bridge response → BLUEPRINT_INSIGHTS structure ───────────────────
+function mapBlueprintToInsights(bp: any) {
+  if (!bp) return BLUEPRINT_INSIGHTS
+  const score = bp.diagnostic_summary?.ai_readiness_score ?? BLUEPRINT_INSIGHTS.score
+  const maturity = bp.diagnostic_summary?.maturity_level ?? BLUEPRINT_INSIGHTS.maturity
+  const strategic = bp.strategic_objective ?? {}
+  const risk = bp.risk_assessment ?? {}
+  const arch = bp.system_architecture ?? {}
+
+  return {
+    score,
+    maturity,
+    heroDescription: `Your organization scores ${score}/100 at ${maturity} maturity. ${strategic.primary_goal ?? ''}`,
+    levers: [
+      { label: 'Data Sources', text: (arch.data_sources ?? []).join(', ') || BLUEPRINT_INSIGHTS.levers[0].text },
+      { label: 'Processing', text: (arch.processing_layers ?? []).join(', ') || BLUEPRINT_INSIGHTS.levers[1].text },
+      { label: 'Decision Engine', text: arch.decision_engine ?? BLUEPRINT_INSIGHTS.levers[2].text },
+      { label: 'Execution', text: (arch.execution_layer ?? []).join(', ') || BLUEPRINT_INSIGHTS.levers[3].text },
+    ],
+    strategicObjective: {
+      goal: strategic.primary_goal ?? BLUEPRINT_INSIGHTS.strategicObjective.goal,
+      rationale: `Based on your ${maturity} maturity level with a score of ${score}/100, this goal is achievable within the proposed timeline.`,
+    },
+    metrics: (strategic.kpi_targets ?? []).map((k: any) => ({
+      metric: k.metric,
+      current: 'Baseline',
+      target: k.target,
+      impact: k.target,
+    })).concat(BLUEPRINT_INSIGHTS.metrics.slice((strategic.kpi_targets ?? []).length)),
+    currentState: {
+      summary: `${bp.organization?.name ?? 'Your organization'} is at ${maturity} maturity with an AI readiness score of ${score}/100.`,
+      highlights: [
+        ...(bp.diagnostic_summary?.primary_constraints ?? []).map((c: string) => c),
+        ...(risk.data_risks ?? []).slice(0, 2),
+      ],
+    },
+    architecture: {
+      reference: '',
+      stages: [
+        { label: 'Data Sources', icon: 'database', items: arch.data_sources ?? [] },
+        { label: 'Processing', icon: 'settings', items: arch.processing_layers ?? [] },
+        { label: 'Decision Engine', icon: 'cpu', items: [arch.decision_engine ?? ''] },
+        { label: 'Execution', icon: 'zap', items: arch.execution_layer ?? [] },
+      ].filter(s => s.items.length > 0 && s.items[0] !== ''),
+    },
+    workflowModules: BLUEPRINT_INSIGHTS.workflowModules,
+    roadmap: (bp.deployment_plan?.waves ?? []).map((w: any, i: number) => ({
+      name: w.name,
+      timeline: i === 0 ? '0–3 months' : '3–12 months',
+      impact: w.notes ?? '',
+      deliverables: w.included_workflows ?? [],
+      owner: 'Led by AI Champion team',
+    })).concat(BLUEPRINT_INSIGHTS.roadmap.slice((bp.deployment_plan?.waves ?? []).length)),
+    risks: [
+      ...(risk.data_risks ?? []).map((r: string) => ({
+        theme: 'Data Risk',
+        description: r,
+        actions: (risk.mitigation_strategies ?? []).slice(0, 2),
+      })),
+      ...(risk.operational_risks ?? []).map((r: string) => ({
+        theme: 'Operational Risk',
+        description: r,
+        actions: (risk.mitigation_strategies ?? []).slice(0, 2),
+      })),
+    ].slice(0, 3).concat(BLUEPRINT_INSIGHTS.risks.slice(
+      Math.min(3, (risk.data_risks ?? []).length + (risk.operational_risks ?? []).length)
+    )),
+    actions: BLUEPRINT_INSIGHTS.actions,
+  }
+}
+
 // ── BlueprintInsightsSection component ───────────────────────────────────────
 interface InsightsSectionProps {
   workflowModules: BlueprintV1WorkflowModule[]
@@ -231,6 +303,7 @@ interface InsightsSectionProps {
 }
 
 function BlueprintInsightsSection({
+  blueprint,
   workflowModules,
   deploymentPlan,
   generatingWorkflow,
@@ -239,8 +312,8 @@ function BlueprintInsightsSection({
   workflowErrors,
   onGenerateWorkflow,
   onViewWorkflows,
-}: InsightsSectionProps) {
-  const s = BLUEPRINT_INSIGHTS
+}: InsightsSectionProps & { blueprint?: any }) {
+  const s = mapBlueprintToInsights(blueprint)
   // stroke-dashoffset for 55/100: circumference=251.2, offset = 251.2*(1-0.55) = 113.04
   const circumference = 251.2
   const offset = circumference * (1 - s.score / 100)
@@ -1022,6 +1095,7 @@ export default function BlueprintPage() {
 
         {/* ── AI Blueprint Insights ─────────────────────────── */}
         <BlueprintInsightsSection
+          blueprint={blueprint}
           workflowModules={blueprint.workflow_modules ?? []}
           deploymentPlan={blueprint.deployment_plan ?? null}
           generatingWorkflow={generatingWorkflow}
