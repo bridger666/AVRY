@@ -2,13 +2,19 @@
  * Universal workflow node mapping engine.
  * Detects intent from step action text and maps to appropriate n8n node.
  *
- * Intents: email, messaging, http, respond, filter, transform, schedule, ai (default)
+ * Intents: email, messaging, http, respond, filter, transform, schedule,
+ *          compress, ssh, cleanup, ai (default)
  */
 
 export type NodeIntent =
   | 'email'
   | 'messaging'
   | 'http'
+  | 'database'
+  | 'ftp'
+  | 'compress'
+  | 'ssh'
+  | 'cleanup'
   | 'respond'
   | 'filter'
   | 'transform'
@@ -28,12 +34,17 @@ const INTENT_PATTERNS: Record<NodeIntent, RegExp> = {
   schedule: /schedule|cron|daily|hourly|weekly|timer|interval/i,
   http: /\bhttp\b|\bapi\b|request\b|fetch\b|call.*endpoint|webhook.*call|post.*to|get.*from/i,
   transform: /transform|convert|format\b|parse\b|extract\b|set.*value/i,
+  database: /mysql|postgres|postgresql|sql\b|database|db\b|query|insert|select.*from/i,
+  ftp: /ftp|sftp|file.*transfer|upload.*file|download.*file|file.*server/i,
+  compress: /compress|zip\b|tar\b|gzip|rar\b|archive|unzip|extract.*file|decompress/i,
+  ssh: /\bssh\b|\bscp\b|\bexec\b|remote.*command|run.*command|shell\b|execute.*server/i,
+  cleanup: /delete\b|remove\b|cleanup|clean.*up|purge\b|clear\b|truncate|drop\b|erase\b/i,
   ai: /\bai\b|\bllm\b|analyze|process\b|generate\b|summarize|classify|nlp|\bgpt\b|claude|qwen/i,
 }
 
 /**
  * Detect the intent of a workflow step based on action text.
- * Exported for AIRA Copilot preview use.
+ * Exported for Aivory Copilot preview use.
  */
 export function detectNodeIntent(action: string, tool?: string): NodeIntent {
   const text = `${action} ${tool || ''}`.toLowerCase()
@@ -46,6 +57,11 @@ export function detectNodeIntent(action: string, tool?: string): NodeIntent {
   if (INTENT_PATTERNS.filter.test(text)) return 'filter'
   if (INTENT_PATTERNS.schedule.test(text)) return 'schedule'
   if (INTENT_PATTERNS.http.test(text)) return 'http'
+  if (INTENT_PATTERNS.database.test(text)) return 'database'
+  if (INTENT_PATTERNS.ftp.test(text)) return 'ftp'
+  if (INTENT_PATTERNS.compress.test(text)) return 'compress'
+  if (INTENT_PATTERNS.ssh.test(text)) return 'ssh'
+  if (INTENT_PATTERNS.cleanup.test(text)) return 'cleanup'
   if (INTENT_PATTERNS.transform.test(text)) return 'transform'
   if (INTENT_PATTERNS.ai.test(text)) return 'ai'
 
@@ -154,7 +170,28 @@ export function mapIntentToN8nNode(
         // No credentials — user assigns SMTP credential in n8n side panel
       }
 
-    case 'messaging':
+    case 'messaging': {
+      // Detect Slack specifically for native node
+      const toolLower = (step.tool || '').toLowerCase()
+      const actionLower = (step.action || '').toLowerCase()
+      const isSlack = /slack/.test(toolLower) || /slack/.test(actionLower)
+
+      if (isSlack) {
+        return {
+          ...baseNode,
+          type: 'n8n-nodes-base.slack',
+          typeVersion: 2,
+          parameters: {
+            resource: 'message',
+            operation: 'send',
+            channel: step.inputs?.channel || '#general',
+            text: step.inputs?.text || '={{ $json.response || $json.body }}',
+            otherOptions: {},
+          },
+        }
+      }
+
+      // Generic messaging (Discord, Telegram, WhatsApp, etc.) — use HTTP request
       return {
         ...baseNode,
         type: 'n8n-nodes-base.httpRequest',
@@ -169,6 +206,7 @@ export function mapIntentToN8nNode(
           options: {},
         },
       }
+    }
 
     case 'http':
       return {
@@ -208,6 +246,59 @@ export function mapIntentToN8nNode(
             ],
           },
           options: {},
+        },
+      }
+
+    case 'database':
+      return {
+        ...baseNode,
+        type: 'n8n-nodes-base.mySql',
+        typeVersion: 2,
+        parameters: {
+          operation: 'executeQuery',
+          query: step.inputs?.query || 'SELECT * FROM table_name LIMIT 10;',
+        },
+      }
+
+    case 'ftp':
+      return {
+        ...baseNode,
+        type: 'n8n-nodes-base.ftp',
+        typeVersion: 1,
+        parameters: {
+          operation: step.inputs?.operation || 'download',
+          path: step.inputs?.path || '/remote/path/file.csv',
+        },
+      }
+
+    case 'compress':
+      return {
+        ...baseNode,
+        type: 'n8n-nodes-base.executeCommand',
+        typeVersion: 1,
+        parameters: {
+          command: step.inputs?.command || 'zip -r archive.zip ./files',
+        },
+      }
+
+    case 'ssh':
+      return {
+        ...baseNode,
+        type: 'n8n-nodes-base.ssh',
+        typeVersion: 1,
+        parameters: {
+          operation: 'execute',
+          command: step.inputs?.command || 'ls -la',
+        },
+      }
+
+    case 'cleanup':
+      return {
+        ...baseNode,
+        type: 'n8n-nodes-base.executeCommand',
+        typeVersion: 1,
+        parameters: {
+          command: step.inputs?.command || 'rm -rf /tmp/workflow_*',
         },
       }
 

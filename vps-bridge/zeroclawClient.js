@@ -32,7 +32,7 @@ function detectLanguage(history) {
 const ZEROCLAW_BASE_URL =
   process.env.ZEROCLAW_BASE_URL ||
   process.env.ZEROCLAW_KIRO_URL ||
-  'http://127.0.0.1:3010';
+  require('./config').ZEROCLAW_BASE_URL;
 
 function callZeroclaw(message) {
   return callZeroclawRaw({ message });
@@ -148,6 +148,11 @@ function stripToolCalls(text) {
   return cleaned.trim();
 }
 
+// Re-export the console system prompt so endpoints.js can inject it into
+// Zeroclaw requests (Zeroclaw ignores the system_prompt field natively).
+const { SYSTEM_PROMPTS } = require('./config');
+const CONSOLE_SYSTEM_PROMPT = SYSTEM_PROMPTS.console;
+
 module.exports = {
   callZeroclaw,
   callZeroclawStructured,
@@ -155,4 +160,5 @@ module.exports = {
   stripToolCalls,
   detectLanguage,
   ZEROCLAW_BASE_URL,
+  CONSOLE_SYSTEM_PROMPT,
 };

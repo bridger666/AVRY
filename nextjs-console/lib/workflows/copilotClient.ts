@@ -1,78 +1,65 @@
+'use client'
+
 /**
  * Workflow Copilot Client
- * Two functions for the two AIRA copilot modes:
- *   askAiraChat()      → chat / expert mode (natural language answer)
- *   generateWorkflow() → workflow builder mode (structured JSON spec)
  *
- * Both call POST /api/workflows/copilot with the appropriate mode field.
+ * Single entry point: sendCopilotMessage()
+ * The state machine on the server handles all routing internally —
+ * the client just sends the message + the full current state and
+ * gets back the updated state. No mode switching, no split paths.
  */
 
-export type GeneratedWorkflowStep = {
-  id: string
-  type: 'trigger' | 'action' | 'condition' | 'channel'
-  title: string
-  description?: string
+import type {
+  CopilotConversationState,
+  CopilotStage,
+  GeneratedWorkflow,
+  TestResult,
+  Message,
+} from '@/lib/workflows/copilotStateMachine'
+
+// Re-export types so consumers don't need to import from the server file
+export type { CopilotConversationState, CopilotStage, GeneratedWorkflow, TestResult, Message }
+
+export interface CopilotApiResponse {
+  sessionId: string
+  message: string
+  stage: CopilotStage
+  workflow: GeneratedWorkflow | null
+  testResults: TestResult[] | null
+  testAttempts: number
+  conversationHistory: Message[]
+  // Convenience flags
+  canApply: boolean
+  isCompleted: boolean
+  isTesting: boolean
+  isError: boolean
+  // Full state — must be stored and sent back on the next request
+  currentState: CopilotConversationState
 }
 
-export type GeneratedWorkflow = {
-  steps: GeneratedWorkflowStep[]
-  estimate_hours?: number | null
-  automation_score?: number | null
-}
-
-export type ChatResponse = {
-  content: string
-}
-
-async function callCopilot(body: Record<string, unknown>): Promise<Response> {
-  return fetch('/api/workflows/copilot', {
+export async function sendCopilotMessage(params: {
+  prompt: string
+  sessionId?: string | null
+  currentState?: CopilotConversationState | null
+}): Promise<CopilotApiResponse> {
+  const res = await fetch('/api/workflows/copilot', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-}
-
-/**
- * Chat / expert mode — returns a natural language answer.
- */
-export async function askAiraChat(params: {
-  message: string
-  workflowContext?: Record<string, unknown>
-}): Promise<ChatResponse> {
-  const res = await callCopilot({
-    mode: 'chat',
-    description: params.message,
-    workflowContext: params.workflowContext,
+    body: JSON.stringify({
+      prompt: params.prompt,
+      sessionId: params.sessionId ?? undefined,
+      currentState: params.currentState ?? undefined,
+    }),
   })
 
   if (!res.ok) {
-    let msg = 'Chat request failed'
-    try { const err = await res.json(); msg = err.message || msg } catch { /* ignore */ }
+    let msg = 'Copilot request failed'
+    try {
+      const err = await res.json()
+      msg = err.message || msg
+    } catch { /* ignore */ }
     throw new Error(msg)
   }
 
-  const data = await res.json()
-  return { content: data.content ?? '' }
-}
-
-/**
- * Workflow builder mode — returns structured workflow steps.
- */
-export async function generateWorkflow(params: {
-  description: string
-  workflowContext?: Record<string, unknown>
-}): Promise<GeneratedWorkflow> {
-  const res = await callCopilot({
-    mode: 'workflow',
-    description: params.description,
-    workflowContext: params.workflowContext,
-  })
-
-  if (!res.ok) {
-    let msg = 'Failed to generate workflow'
-    try { const err = await res.json(); msg = err.message || msg } catch { /* ignore */ }
-    throw new Error(msg)
-  }
-
-  return res.json() as Promise<GeneratedWorkflow>
+  return res.json() as Promise<CopilotApiResponse>
 }

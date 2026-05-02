@@ -9,7 +9,8 @@
  * - Graceful fallback when MCP is unreachable
  */
 
-const MCP_URL = process.env.N8N_MCP_URL || 'http://127.0.0.1:3020'
+// n8n-MCP server runs on the VPS. Set N8N_MCP_URL in .env.local to override.
+const MCP_URL = process.env.N8N_MCP_URL || 'http://43.156.108.96:3020'
 const MCP_AUTH = process.env.N8N_MCP_AUTH_TOKEN || ''
 const CACHE_TTL_MS = 10 * 60 * 1000
 

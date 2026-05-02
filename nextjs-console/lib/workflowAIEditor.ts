@@ -27,7 +27,7 @@ export interface StepEditResponse {
 
 /**
  * Request workflow-level changes from AI
- * Sends current workflow + user instruction to AIRA endpoint
+ * Sends current workflow + user instruction to Aivory endpoint
  * Returns proposed updated workflow with change summary
  */
 export async function requestWorkflowEdit(
@@ -66,7 +66,7 @@ export async function requestWorkflowEdit(
 
 /**
  * Request step-level changes from AI
- * Sends current step + user description to AIRA endpoint
+ * Sends current step + user description to Aivory endpoint
  * Returns updated step configuration
  */
 export async function requestStepEdit(

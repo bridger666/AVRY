@@ -2,7 +2,7 @@
  * useWorkflowExtend Hook
  * 
  * Manages workflow extension state and API calls for adding follow-up steps
- * after a specific node using AIRA.
+ * after a specific node using Aivory.
  */
 
 import { useCallback, useState } from 'react'

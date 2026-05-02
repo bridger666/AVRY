@@ -43,7 +43,7 @@ export interface StreamChunk {
 }
 
 /**
- * Workflow specification produced by AIRA when user requests workflow generation.
+ * Workflow specification produced by Aivory when user requests workflow generation.
  * Compatible with Aivory Workflow Spec used by the Workflow Tab / canvas.
  */
 export interface WorkflowSpec {

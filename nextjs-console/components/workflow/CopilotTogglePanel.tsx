@@ -1,21 +1,22 @@
 'use client'
 
+/**
+ * CopilotTogglePanel
+ *
+ * Key fixes vs old version:
+ * - Removed isWorkflowIntent() + WORKFLOW_KEYWORDS — this was the main culprit
+ *   splitting traffic between sendChat and buildWorkflow, breaking conversation
+ * - Single onSendMessage prop flows into useWorkflowCopilot.sendMessage
+ * - Apply-to-canvas button shown when canApply = true (server-driven, not keyword-driven)
+ * - isTesting indicator shown during TESTING / FIXING stages
+ * - Text size matched to floating assistant: text-[13px]
+ */
+
 import { useRef, useState, useEffect, useCallback } from 'react'
 import { useCopilotPanel } from '@/hooks/useCopilotPanel'
 import { useWorkflowCopilot } from '@/hooks/useWorkflowCopilot'
-import type { CopilotMessage, CopilotSuggestion } from '@/hooks/useWorkflowCopilot'
-import type { SavedWorkflow } from '@/hooks/useWorkflows'
-
-const WORKFLOW_KEYWORDS = [
-  'workflow', 'automate', 'automation', 'trigger', 'step', 'build', 'create',
-  'generate', 'connect', 'integrate', 'integration', 'when', 'then', 'if',
-  'send email', 'notify', 'schedule', 'run', 'execute', 'pipeline',
-]
-
-function isWorkflowIntent(text: string): boolean {
-  const lower = text.toLowerCase()
-  return WORKFLOW_KEYWORDS.some(kw => lower.includes(kw))
-}
+import type { CopilotMessage } from '@/hooks/useWorkflowCopilot'
+import type { GeneratedWorkflow } from '@/lib/workflows/copilotClient'
 
 // File icon helpers
 const FILE_ICONS = {
@@ -31,7 +32,6 @@ function getFileIcon(name: string) {
   return FILE_ICONS.default
 }
 
-// Aivory logo — uses the official 2026 brand asset
 function AivoryLogo() {
   return (
     <img
@@ -44,35 +44,52 @@ function AivoryLogo() {
 }
 
 interface CopilotTogglePanelProps {
+  currentSpec?: unknown
   currentWorkflowName?: string
-  currentSpec: SavedWorkflow | null
-  onApplySuggestion?: (suggestion: CopilotSuggestion) => void
+  onApplyWorkflow?: (workflow: GeneratedWorkflow) => void
+  onApplySuggestion?: (workflow: GeneratedWorkflow) => void
 }
 
-export function CopilotTogglePanel({
-  currentWorkflowName,
-  currentSpec,
-  onApplySuggestion,
-}: CopilotTogglePanelProps) {
-  const { isOpen, open, close, toggle } = useCopilotPanel()
-  const { messages, loading, error, lastSuggestion, sendChat, buildWorkflow, clearMessages } = useWorkflowCopilot({ currentSpec })
+export function CopilotTogglePanel({ onApplyWorkflow, onApplySuggestion }: CopilotTogglePanelProps) {
+  const { isOpen, open, close } = useCopilotPanel()
+  const {
+    messages,
+    loading,
+    error,
+    stage,
+    workflow,
+    canApply,
+    isCompleted,
+    sendMessage,
+    reset,
+  } = useWorkflowCopilot()
+
+  // Support both prop names for backward compatibility
+  const applyHandler = onApplyWorkflow || onApplySuggestion
+
+  // Don't reset on open/close — messages persist via localStorage.
+  // Only the explicit "Clear" button (onClear={reset}) wipes the conversation.
+  const handleOpen = useCallback(() => { open() }, [open])
+  const handleClose = useCallback(() => { close() }, [close])
 
   return (
     <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30">
       {isOpen ? (
         <CopilotPanelExpanded
-          onClose={close}
+          onClose={handleClose}
           messages={messages}
           loading={loading}
           error={error}
-          lastSuggestion={lastSuggestion}
-          onSendChat={sendChat}
-          onBuildWorkflow={buildWorkflow}
-          onApplySuggestion={onApplySuggestion}
-          clearMessages={clearMessages}
+          stage={stage}
+          workflow={workflow}
+          canApply={canApply}
+          isCompleted={isCompleted}
+          onSendMessage={sendMessage}
+          onApplyWorkflow={applyHandler}
+          onClear={reset}
         />
       ) : (
-        <CopilotBarCollapsed onClick={open} />
+        <CopilotBarCollapsed onClick={handleOpen} />
       )}
     </div>
   )
@@ -83,13 +100,13 @@ export function CopilotTogglePanel({
 function CopilotBarCollapsed({ onClick }: { onClick: () => void }) {
   return (
     <button
-      className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#2d2d2a] border border-white/10 text-[#f7f7f7] text-sm font-medium cursor-pointer shadow-lg hover:border-[#666864] hover:shadow-xl transition-all duration-150 select-none"
+      className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#2d2d2a] border border-white/10 text-[#f7f7f7] text-[13px] font-medium cursor-pointer shadow-lg hover:border-[#666864] hover:shadow-xl transition-all duration-150 select-none"
       onClick={onClick}
       aria-label="Open Aivory Copilot"
     >
       <img src="/Aivory_logo_2026.svg" alt="" className="h-4 object-contain" aria-hidden="true" />
       <span>Aivory Copilot</span>
-      <span className="text-xs text-[#a1a1aa] ml-1">/ or &#8984;K</span>
+      <span className="text-[11px] text-[#a1a1aa] ml-1">/ or &#8984;K</span>
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#a1a1aa] ml-0.5">
         <polyline points="6 9 12 15 18 9"/>
       </svg>
@@ -104,20 +121,23 @@ interface CopilotPanelExpandedProps {
   messages: CopilotMessage[]
   loading: boolean
   error: string | null
-  lastSuggestion: CopilotSuggestion | null
-  onSendChat: (msg: string) => void
-  onBuildWorkflow: (prompt: string) => void
-  onApplySuggestion?: (suggestion: CopilotSuggestion) => void
-  clearMessages?: () => void
+  stage: string
+  workflow: GeneratedWorkflow | null
+  canApply: boolean
+  isCompleted: boolean
+  onSendMessage: (text: string) => Promise<void>
+  onApplyWorkflow?: (workflow: GeneratedWorkflow) => void
+  onClear?: () => void
 }
 
 function CopilotPanelExpanded({
   onClose, messages, loading, error,
-  lastSuggestion, onSendChat, onBuildWorkflow,
-  onApplySuggestion, clearMessages,
+  stage, workflow, canApply, isCompleted,
+  onSendMessage, onApplyWorkflow, onClear,
 }: CopilotPanelExpandedProps) {
   const [input, setInput] = useState('')
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
+  const [appliedToCanvas, setAppliedToCanvas] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -129,6 +149,10 @@ function CopilotPanelExpanded({
   useEffect(() => {
     setTimeout(() => textareaRef.current?.focus(), 80)
   }, [])
+
+  useEffect(() => {
+    setAppliedToCanvas(false)
+  }, [workflow?.workflowName, workflow?.steps.length])
 
   const hasMessages = messages.length > 0 || loading
   const hasContent = input.trim().length > 0 || attachedFiles.length > 0
@@ -146,11 +170,8 @@ function CopilotPanelExpanded({
     setInput('')
     setAttachedFiles([])
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
-    if (trimmed) {
-      if (isWorkflowIntent(trimmed)) onBuildWorkflow(trimmed)
-      else onSendChat(trimmed)
-    }
-  }, [input, hasContent, loading, onSendChat, onBuildWorkflow])
+    if (trimmed) onSendMessage(trimmed)
+  }, [input, hasContent, loading, onSendMessage])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -175,6 +196,15 @@ function CopilotPanelExpanded({
     setAttachedFiles(prev => prev.filter((_, i) => i !== index))
   }
 
+  // Stage label shown during active processing
+  const stageLabel: Record<string, string> = {
+    CLARIFYING: 'Memahami kebutuhan...',
+    GENERATING: 'Membuat workflow...',
+    TESTING: 'Testing workflow...',
+    FIXING: 'Memperbaiki otomatis...',
+    APPLYING: 'Menerapkan ke canvas...',
+  }
+
   return (
     <div
       className="w-[520px] max-w-[90vw] rounded-2xl overflow-hidden flex flex-col border border-white/[0.08] shadow-2xl"
@@ -184,12 +214,19 @@ function CopilotPanelExpanded({
     >
       {/* ── Header ── */}
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.08] shrink-0">
-        <AivoryLogo />
+        <div className="flex items-center gap-3">
+          <AivoryLogo />
+          {/* Active stage badge */}
+          {stageLabel[stage] && (
+            <span className="text-[10px] text-[#a1a1aa] font-light animate-pulse">
+              {stageLabel[stage]}
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-1">
-          {/* Trash / clear */}
           <button
             className="text-white/40 hover:text-white/80 p-1 rounded-md transition-colors"
-            onClick={clearMessages}
+            onClick={onClear}
             title="Clear conversation"
             aria-label="Clear conversation"
           >
@@ -200,7 +237,6 @@ function CopilotPanelExpanded({
               <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
             </svg>
           </button>
-          {/* Chevron up / collapse */}
           <button
             className="text-white/40 hover:text-white/80 p-1 rounded-md transition-colors"
             onClick={onClose}
@@ -214,7 +250,7 @@ function CopilotPanelExpanded({
         </div>
       </div>
 
-      {/* ── Body — greeting or chat ── */}
+      {/* ── Body ── */}
       {!hasMessages ? (
         <div className="flex items-center justify-center px-6 py-8 shrink-0 min-h-[140px]">
           <p className="text-[22px] font-normal text-[#f7f7f7] text-center tracking-tight">
@@ -231,21 +267,13 @@ function CopilotPanelExpanded({
                 </div>
               )}
               <div className={`flex flex-col gap-1 max-w-[85%] ${msg.role === 'user' ? 'items-end' : ''}`}>
-                <p className={`text-xs leading-relaxed m-0 px-3 py-2 rounded-[10px] whitespace-pre-wrap break-words text-left ${
+                <p className={`text-[13px] leading-[1.55] m-0 px-3 py-2 rounded-[10px] whitespace-pre-wrap break-words text-left ${
                   msg.role === 'user'
                     ? 'bg-[#282825] border border-white/5 text-[#f7f7f7] rounded-br-[2px]'
                     : 'bg-white/[0.04] border border-white/5 text-[#f7f7f7] rounded-bl-[2px]'
                 }`}>
                   {msg.content}
                 </p>
-                {msg.suggestion && onApplySuggestion && (
-                  <button
-                    className="text-xs font-semibold px-3 py-1.5 rounded-md border border-[#666864] bg-[#353532] text-[#f7f7f7] cursor-pointer hover:bg-[#444440] transition-colors duration-150"
-                    onClick={() => onApplySuggestion(msg.suggestion!)}
-                  >
-                    Apply to canvas
-                  </button>
-                )}
               </div>
             </div>
           ))}
@@ -257,7 +285,7 @@ function CopilotPanelExpanded({
               </div>
               <div className="px-3 py-2 bg-white/[0.04] border border-white/5 rounded-[10px] rounded-bl-[2px]">
                 <div className="flex gap-1">
-                  {[0, 1, 2].map((idx) => (
+                  {[0, 1, 2].map(idx => (
                     <span key={idx} className="w-[5px] h-[5px] rounded-full bg-[#a1a1aa] animate-bounce" style={{ animationDelay: `${idx * 0.2}s` }} />
                   ))}
                 </div>
@@ -265,21 +293,40 @@ function CopilotPanelExpanded({
             </div>
           )}
 
-          {error && <p className="text-xs text-red-400 m-1 px-1">{error}</p>}
+          {error && <p className="text-[13px] text-red-400 m-1 px-1">{error}</p>}
           <div ref={messagesEndRef} />
         </div>
       )}
 
-      {/* ── Suggestion banner ── */}
-      {lastSuggestion && onApplySuggestion && (
-        <div className="flex items-center justify-between px-4 py-2 bg-[#353532]/40 border-t border-[#666864]/40 shrink-0">
-          <span className="text-xs text-[#f7f7f7] font-medium">Workflow ready — {lastSuggestion.steps.length} steps</span>
+      {/* ── Apply banner — shown only when server says canApply (workflow ready) ── */}
+      {canApply && workflow && onApplyWorkflow && !appliedToCanvas && (
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-[#353532]/60 border-t border-[#666864]/40 shrink-0 rounded-xl mx-3 mb-2">
+          <div className="flex flex-col text-left">
+            <span className="text-[13px] text-[#f7f7f7] font-medium">
+              Workflow siap -- {workflow.steps.length} langkah
+            </span>
+            <span className="text-[11px] text-[#a1a1aa]">
+              Validated. Setup items: {workflow.setupReport?.nodeRequirements?.length ?? 0}
+            </span>
+          </div>
           <button
-            className="text-xs font-semibold px-3 py-1 rounded-md border border-[#666864] bg-[#353532] text-[#f7f7f7] cursor-pointer hover:bg-[#444440] transition-colors duration-150"
-            onClick={() => onApplySuggestion(lastSuggestion)}
+            className="text-[13px] font-semibold px-4 py-1.5 rounded-lg bg-[#6c5ce7] text-white cursor-pointer hover:bg-[#5b4bd6] transition-colors duration-150"
+            onClick={() => {
+              onApplyWorkflow(workflow)
+              setAppliedToCanvas(true)
+            }}
           >
             Apply to canvas
           </button>
+        </div>
+      )}
+
+      {/* ── Completed banner ── */}
+      {(isCompleted || appliedToCanvas) && (
+        <div className="flex items-center px-4 py-2 bg-emerald-900/20 border-t border-emerald-700/30 shrink-0">
+          <span className="text-[13px] text-emerald-400 font-medium text-left">
+            Workflow berhasil diterapkan ke canvas
+          </span>
         </div>
       )}
 
@@ -289,7 +336,7 @@ function CopilotPanelExpanded({
           {attachedFiles.map((file, i) => {
             const icon = getFileIcon(file.name)
             return (
-              <div key={i} className="flex items-center gap-2 bg-[#4a4a48] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white/75 max-w-[180px]">
+              <div key={i} className="flex items-center gap-2 bg-[#4a4a48] border border-white/10 rounded-lg px-3 py-1.5 text-[13px] text-white/75 max-w-[180px]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={icon.color} strokeWidth="1.8" className="shrink-0">
                   <path d={icon.path}/>
                 </svg>
@@ -298,9 +345,7 @@ function CopilotPanelExpanded({
                   onClick={() => removeFile(i)}
                   className="text-white/30 hover:text-white/70 ml-1 shrink-0 leading-none"
                   aria-label="Remove attachment"
-                >
-                  ×
-                </button>
+                >x</button>
               </div>
             )
           })}
@@ -309,7 +354,6 @@ function CopilotPanelExpanded({
 
       {/* ── Input area ── */}
       <div className="bg-[#2e2e2c] border-t border-white/[0.07] px-4 py-3.5 flex items-end gap-3 shrink-0">
-        {/* Hidden file input */}
         <input
           ref={fileInputRef}
           type="file"
@@ -318,11 +362,9 @@ function CopilotPanelExpanded({
           accept=".json,.txt,.csv,.pdf,.png,.jpg,.jpeg,.yaml,.yml,.env,.log"
           onChange={handleFileChange}
         />
-
-        {/* Textarea */}
         <textarea
           ref={textareaRef}
-          className="flex-1 bg-transparent border-none outline-none resize-none text-[#f7f7f7] text-sm leading-relaxed placeholder:text-white/30 min-h-[22px] max-h-[180px] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden caret-teal-400 disabled:opacity-50 text-left"
+          className="flex-1 bg-transparent border-none outline-none resize-none text-[#f7f7f7] text-[13px] leading-relaxed placeholder:text-white/30 min-h-[22px] max-h-[180px] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden caret-teal-400 disabled:opacity-50 text-left"
           rows={1}
           value={input}
           onChange={handleInputChange}
@@ -331,8 +373,6 @@ function CopilotPanelExpanded({
           disabled={loading}
           aria-label="Message Aivory"
         />
-
-        {/* Attach button */}
         <button
           className="text-white/40 hover:text-white/70 flex items-center justify-center p-1 rounded-md transition-colors shrink-0 pb-0.5"
           onClick={() => fileInputRef.current?.click()}
@@ -344,10 +384,7 @@ function CopilotPanelExpanded({
             <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
           </svg>
         </button>
-
-        {/* Send button */}
         <button
-          id="copilotSend"
           className={`w-9 h-9 rounded-[20px] flex items-center justify-center transition-colors shrink-0 ${hasContent ? 'bg-[#353532] border border-[#666864] hover:bg-[#444440]' : 'bg-[#555552]'}`}
           onClick={handleSend}
           disabled={!hasContent || loading}

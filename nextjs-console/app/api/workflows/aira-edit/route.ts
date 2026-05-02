@@ -12,7 +12,7 @@ export const maxDuration = 120
 /**
  * POST /api/workflows/aira-edit
  * 
- * AIRA Workflow Edit Endpoint
+ * Aivory Workflow Edit Endpoint
  * Processes AI-powered workflow edits via Zeroclaw gateway with two modes:
  * - EDIT_WORKFLOW: Modify entire workflow structure (10-15s timeout)
  * - EDIT_STEP: Modify single step (2-5s timeout)

@@ -2,58 +2,143 @@
 
 /**
  * useWorkflowCopilot
- * Two-mode AIRA copilot hook:
- *   sendChat()    → chat mode (natural language answer, no canvas change)
- *   buildWorkflow() → workflow mode (generates steps, shows "Apply to canvas")
+ * Single-path multi-turn copilot hook with localStorage persistence.
+ *
+ * Key features:
+ * - ONE function (sendMessage) — server state machine decides routing
+ * - Stores full `currentState` from API and sends it back every request
+ * - Messages + serverState persisted to localStorage so they survive panel close/open
+ * - reset() only called by explicit "Clear" button, NOT on open/close
  */
 
-import { useState, useCallback } from 'react'
-import { askAiraChat, generateWorkflow, GeneratedWorkflowStep } from '@/lib/workflows/copilotClient'
-import type { SavedWorkflow } from '@/hooks/useWorkflows'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import {
+  sendCopilotMessage,
+  type CopilotApiResponse,
+  type CopilotConversationState,
+  type GeneratedWorkflow,
+  type TestResult,
+} from '@/lib/workflows/copilotClient'
 
 export interface CopilotMessage {
   role: 'user' | 'assistant'
   content: string
-  /** Only present on assistant messages that produced a workflow spec */
-  suggestion?: CopilotSuggestion
 }
 
-export interface CopilotSuggestion {
-  trigger: string
-  steps: SavedWorkflow['steps']
-  estimate_hours?: number | null
-  automation_score?: number | null
+export interface UseWorkflowCopilotReturn {
+  messages: CopilotMessage[]
+  loading: boolean
+  error: string | null
+  stage: CopilotConversationState['stage']
+  workflow: GeneratedWorkflow | null
+  testResults: TestResult[] | null
+  canApply: boolean
+  isCompleted: boolean
+  isTesting: boolean
+  sendMessage: (text: string) => Promise<void>
+  reset: () => void
 }
 
-interface UseWorkflowCopilotOptions {
-  currentSpec: SavedWorkflow | null
+// ── localStorage helpers ──────────────────────────────────
+
+const STORAGE_KEY = 'aivory_copilot_state'
+
+interface PersistedCopilotState {
+  messages: CopilotMessage[]
+  sessionId: string | null
+  serverState: CopilotConversationState | null
+  savedAt: string
 }
 
-export function useWorkflowCopilot({ currentSpec }: UseWorkflowCopilotOptions) {
-  const [messages, setMessages] = useState<CopilotMessage[]>([])
+function loadPersistedState(): PersistedCopilotState | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as PersistedCopilotState
+  } catch {
+    return null
+  }
+}
+
+function savePersistedState(state: PersistedCopilotState) {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch { /* quota exceeded — ignore */ }
+}
+
+function clearPersistedState() {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(STORAGE_KEY)
+}
+
+// ── Hook ──────────────────────────────────────────────────
+
+export function useWorkflowCopilot(): UseWorkflowCopilotReturn {
+  // Load initial state from localStorage
+  const initial = useRef(loadPersistedState())
+
+  const [messages, setMessages] = useState<CopilotMessage[]>(initial.current?.messages ?? [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [lastSuggestion, setLastSuggestion] = useState<CopilotSuggestion | null>(null)
 
-  // Build workflow context to pass along when a spec is loaded
-  const workflowContext = currentSpec
-    ? {
-        title: currentSpec.title,
-        trigger: currentSpec.trigger,
-        steps: currentSpec.steps.map((s, i) => ({ step: i + 1, action: s.action })),
-      }
-    : undefined
+  const [serverState, setServerState] = useState<CopilotConversationState | null>(
+    initial.current?.serverState ?? null
+  )
+  const [sessionId, setSessionId] = useState<string | null>(
+    initial.current?.sessionId ?? null
+  )
 
-  /** Chat mode — natural language answer, no canvas change */
-  const sendChat = useCallback(async (message: string) => {
-    if (!message.trim()) return
+  // Derived convenience fields surfaced from server state
+  const [workflow, setWorkflow] = useState<GeneratedWorkflow | null>(null)
+  const [testResults, setTestResults] = useState<TestResult[] | null>(null)
+  const [canApply, setCanApply] = useState(false)
+  const [isCompleted, setIsCompleted] = useState(false)
+  const [isTesting, setIsTesting] = useState(false)
+
+  const stage = serverState?.stage ?? 'IDLE'
+
+  // Persist messages + serverState to localStorage whenever they change
+  useEffect(() => {
+    savePersistedState({
+      messages,
+      sessionId,
+      serverState,
+      savedAt: new Date().toISOString(),
+    })
+  }, [messages, sessionId, serverState])
+
+  const sendMessage = useCallback(async (text: string) => {
+    const trimmed = text.trim()
+    if (!trimmed || loading) return
+
     setError(null)
-    setMessages(prev => [...prev, { role: 'user', content: message }])
+    setMessages(prev => [...prev, { role: 'user', content: trimmed }])
     setLoading(true)
 
     try {
-      const result = await askAiraChat({ message, workflowContext })
-      setMessages(prev => [...prev, { role: 'assistant', content: result.content }])
+      const response: CopilotApiResponse = await sendCopilotMessage({
+        prompt: trimmed,
+        sessionId,
+        currentState: serverState,
+      })
+
+      // Persist state for next round
+      setSessionId(response.sessionId)
+      setServerState(response.currentState)
+
+      // Update derived fields
+      setWorkflow(response.workflow)
+      setTestResults(response.testResults)
+      setCanApply(response.canApply)
+      setIsCompleted(response.isCompleted)
+      setIsTesting(response.isTesting)
+
+      // Add assistant reply to chat
+      if (response.message) {
+        setMessages(prev => [...prev, { role: 'assistant', content: response.message }])
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.'
       setError(msg)
@@ -61,74 +146,33 @@ export function useWorkflowCopilot({ currentSpec }: UseWorkflowCopilotOptions) {
     } finally {
       setLoading(false)
     }
-  }, [workflowContext])
+  }, [loading, sessionId, serverState])
 
-  /** Workflow builder mode — generates steps, attaches suggestion to message */
-  const buildWorkflow = useCallback(async (prompt: string) => {
-    if (!prompt.trim()) return
-    setError(null)
-    setMessages(prev => [...prev, { role: 'user', content: prompt }])
-    setLoading(true)
-
-    try {
-      let description = prompt
-      if (currentSpec) {
-        const stepSummary = currentSpec.steps
-          .map((s, i) => `Step ${i + 1}: ${s.action}`)
-          .join('\n')
-        description = `Current workflow "${currentSpec.title}":\nTrigger: ${currentSpec.trigger}\n${stepSummary}\n\nUser request: ${prompt}`
-      }
-
-      const result = await generateWorkflow({ description, workflowContext })
-
-      const newSteps: SavedWorkflow['steps'] = result.steps.map((s: GeneratedWorkflowStep, i: number) => ({
-        step: i + 1,
-        action: s.title + (s.description ? ` — ${s.description}` : ''),
-        tool: '',
-        output: '',
-        type: s.type,
-      }))
-
-      const triggerStep = result.steps[0]
-      const trigger = triggerStep
-        ? triggerStep.title + (triggerStep.description ? ` — ${triggerStep.description}` : '')
-        : (currentSpec?.trigger ?? '')
-
-      const suggestion: CopilotSuggestion = {
-        trigger,
-        steps: newSteps.slice(1),
-        estimate_hours: result.estimate_hours ?? null,
-        automation_score: result.automation_score ?? null,
-      }
-
-      setLastSuggestion(suggestion)
-
-      const stepLines = result.steps
-        .map((s: GeneratedWorkflowStep, i: number) =>
-          `${i + 1}. [${s.type}] ${s.title}${s.description ? ` — ${s.description}` : ''}`
-        )
-        .join('\n')
-
-      const content =
-        `Here's your workflow (${result.steps.length} steps):\n\n${stepLines}` +
-        (result.estimate_hours ? `\n\nEstimated time: ~${result.estimate_hours}h` : '') +
-        (result.automation_score ? `\nAutomation score: ${Math.round((result.automation_score ?? 0) * 100)}%` : '')
-
-      setMessages(prev => [...prev, { role: 'assistant', content, suggestion }])
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Generation failed. Please try again.'
-      setError(msg)
-      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${msg}` }])
-    } finally {
-      setLoading(false)
-    }
-  }, [currentSpec, workflowContext])
-
-  const clearMessages = useCallback(() => {
+  const reset = useCallback(() => {
     setMessages([])
-    setLastSuggestion(null)
+    setLoading(false)
     setError(null)
+    setServerState(null)
+    setSessionId(null)
+    setWorkflow(null)
+    setTestResults(null)
+    setCanApply(false)
+    setIsCompleted(false)
+    setIsTesting(false)
+    clearPersistedState()
   }, [])
 
-  return { messages, loading, error, lastSuggestion, sendChat, buildWorkflow, clearMessages }
+  return {
+    messages,
+    loading,
+    error,
+    stage,
+    workflow,
+    testResults,
+    canApply,
+    isCompleted,
+    isTesting,
+    sendMessage,
+    reset,
+  }
 }

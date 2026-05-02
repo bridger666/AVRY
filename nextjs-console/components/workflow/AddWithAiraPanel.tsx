@@ -106,7 +106,7 @@ export const AddWithAiraPanel: React.FC<AddWithAiraPanelProps> = ({
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
-        <h4 className={styles.title}>Add with AIRA</h4>
+        <h4 className={styles.title}>Add with Aivory</h4>
         <button className={styles.closeBtn} onClick={handleCancel} title="Close">
           ✕
         </button>
@@ -180,7 +180,7 @@ export const AddWithAiraPanel: React.FC<AddWithAiraPanelProps> = ({
             ) : (
               <>
                 <span>+</span>
-                Ask AIRA
+                Ask Aivory
               </>
             )}
           </button>

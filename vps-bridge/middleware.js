@@ -107,10 +107,19 @@ function errorHandler(err, req, res, next) {
 // ============================================================================
 
 /**
- * Validates API key from X-API-Key header
+ * Validates API key from X-API-Key header.
+ * Public endpoints listed in PUBLIC_PATHS bypass the check.
  */
+const PUBLIC_PATHS = new Set(['/health', '/deep-health']);
+
 function authenticateApiKey(apiKey) {
   return (req, res, next) => {
+    // Public endpoints — no API key required (trailing slash tolerated)
+    const normalizedPath = (req.path || '').replace(/\/+$/, '') || '/';
+    if (PUBLIC_PATHS.has(normalizedPath)) {
+      return next();
+    }
+
     const providedKey = req.headers['x-api-key'];
     
     if (!providedKey || providedKey !== apiKey) {
