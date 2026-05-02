@@ -10,6 +10,7 @@ console.log('[server.js] __dirname:', __dirname);
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const { prepareWorkflowDraft } = require('./workflowDraftService');
 
 // Import configuration and modules
 const { config, validateConfig } = require('./config');
@@ -23,16 +24,17 @@ const {
 const {
   handleConsoleStream,
   handleAiraStream,
-  handleMobileConsole,
   handleAriaChat,
   handleDeepDiagnostic,
   handleFreeDiagnostic,
   handleBlueprintGeneration,
   handleWorkflowGeneration,
+  handleWorkflowClarify,
   handleWorkflowSynthesis,
   handleBridgeAira,
   handleBridgeKiro,
   handleHealthCheck,
+  handleDeepHealth,
   handleAivoryPipeline,
   handleListAgents,
   handleCreateAgent,
@@ -101,6 +103,13 @@ app.use('/bridge/', limiter);
 
 app.get('/health', handleHealthCheck);
 
+/**
+ * GET /deep-health
+ * Pings downstream local services (Zeroclaw, n8n-MCP) and returns a status snapshot.
+ * No authentication required — safe to call from monitoring tools.
+ */
+app.get('/deep-health', handleDeepHealth);
+
 // ============================================================================
 // AUTHENTICATED ENDPOINTS
 // ============================================================================
@@ -110,7 +119,7 @@ app.use(authenticateApiKey(config.apiKey));
 
 // Apply request enrichment and logging to all AI endpoints
 app.use(
-  ['/console/stream', '/console/mobile', '/diagnostics/run', '/blueprints/generate', '/workflows/*'],
+  ['/console/stream', '/diagnostics/run', '/blueprints/generate', '/workflows/*'],
   enrichRequest
 );
 app.use(
@@ -129,12 +138,6 @@ app.use(
 app.post('/console/stream', handleConsoleStream);
 
 /**
- * POST /console/mobile
- * Non-streaming console for mobile (WhatsApp, Telegram, Zenclaw)
- */
-app.post('/console/mobile', handleMobileConsole);
-
-/**
  * POST /aria
  * Plain chat endpoint for ARIA (routes through internal gateway)
  */
@@ -146,7 +149,7 @@ app.post('/aria', (req, res, next) => {
 
 /**
  * POST /aria/stream
- * Streaming AIRA endpoint for the floating assistant tab.
+ * Streaming Aivory endpoint for the floating assistant tab.
  */
 app.post('/aria/stream', (req, res, next) => {
   req.requestId = require('uuid').v4();
@@ -190,6 +193,12 @@ app.post('/blueprints/generate-workflow', (req, res, next) => {
   next();
 }, handleWorkflowGeneration);
 
+app.post('/workflows/clarify', (req, res, next) => {
+  req.requestId = require('uuid').v4();
+  req.startTime = Date.now();
+  next();
+}, handleWorkflowClarify);
+
 // ============================================================================
 // WORKFLOW SYNTHESIS
 // ============================================================================
@@ -199,6 +208,38 @@ app.post('/blueprints/generate-workflow', (req, res, next) => {
  * Generates n8n workflow JSON from workflow module spec
  */
 app.post('/workflows/synthesize', handleWorkflowSynthesis);
+
+/**
+ * POST /workflows/draft-test
+ * Builds a workflow draft through n8n-as-code-service, validates it in sandbox,
+ * and returns a setup report for the frontend approval step.
+ */
+app.post('/workflows/draft-test', async (req, res, next) => {
+  try {
+    const { workflowId, description, steps } = req.body || {};
+
+    if (!description || !Array.isArray(steps) || steps.length === 0) {
+      return res.status(400).json({
+        error: true,
+        code: 'BAD_REQUEST',
+        message: 'description and non-empty steps array are required',
+      });
+    }
+
+    const result = await prepareWorkflowDraft({
+      workflowId,
+      description,
+      steps,
+    });
+
+    res.json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // ============================================================================
 // AGENTS CRUD ENDPOINTS
@@ -304,8 +345,8 @@ const server = app.listen(config.port, '0.0.0.0', () => {
   });
   logger.info('📡 Endpoints registered:');
   logger.info('  GET  /health');
+  logger.info('  GET  /deep-health');
   logger.info('  POST /console/stream');
-  logger.info('  POST /console/mobile');
   logger.info('  POST /aria');
   logger.info('  POST /aria/stream');
   logger.info('  POST /diagnostics/run');
@@ -361,4 +402,3 @@ process.on('unhandledRejection', (reason, promise) => {
   });
   process.exit(1);
 });
-

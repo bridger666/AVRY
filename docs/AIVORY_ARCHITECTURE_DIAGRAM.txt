@@ -1,0 +1,165 @@
+
+                          AIVORY SYSTEM ARCHITECTURE
+                          VPS: 43.156.108.96
+
+ USER BROWSER
+ ============
+
+ +------------------------------------------------------------------+
+ |                    Next.js Console (Frontend)                     |
+ |                    nextjs-console/ (localhost:3000)                |
+ |                                                                   |
+ |  Pages:                        Components:                       |
+ |   /console    AI Chat           AiraFloatingAssistant             |
+ |   /workflows  Canvas Editor     WorkflowCanvas (ReactFlow)       |
+ |   /dashboard  Overview          ConsoleWorkflowDesigner           |
+ |   /diagnostics Scoring          WorkflowGenerationPanel           |
+ |   /blueprint  AI Blueprint      NodeInspectorPanel                |
+ |   /agents     Agent Builder     ChatInput + FileDropzone          |
+ |   /integrations OAuth           StandardNodePalette               |
+ |   /roadmap    Product Map       AgentNode / AppNode / StdNode     |
+ |                                                                   |
+ |  API Routes (server-side):                                        |
+ |   /api/console/stream ----+                                       |
+ |   /api/aira/stream -------+---> VPS Bridge :3003                  |
+ |   /api/aira/ask ----------+                                       |
+ |   /api/diagnostics/run ---+                                       |
+ |   /api/diagnostics/free --+                                       |
+ |   /api/blueprints/generate+                                       |
+ |   /api/workflows/activate-+                                       |
+ |   /api/workflows/aira-*---+                                       |
+ |   /api/agents/* ----------+                                       |
+ |   /api/copilot/[...path]--+---> VPS Bridge (proxy)                |
+ |                            |                                      |
+ |   /api/workflows/copilot-test ---> n8n-as-code :3500              |
+ |   /api/workflows/copilot-apply --> n8n-as-code :3500              |
+ |                                                                   |
+ |  Lib:                                                             |
+ |   n8nAsCodeClient.ts  --> :3500 (build/test/bind/deploy)          |
+ |   n8nMcpClient.ts     --> n8n MCP (node search/schema)            |
+ |   nodeMapper.ts       --> intent detection + n8n node mapping     |
+ |   workflowConverter.ts--> Aivory spec to n8n JSON                 |
+ |   n8nMapper.ts        --> n8n JSON to ReactFlow nodes             |
+ +------------------------------------------------------------------+
+        |                    |                      |
+        | SSE streaming      | REST JSON            | REST JSON
+        | (console/aira)     | (diag/blueprint)     | (copilot)
+        v                    v                      v
+ ======================== INTERNET ==================================
+        |                    |                      |
+        v                    v                      v
+ +------------------------------------------------------------------+
+ |                VPS  43.156.108.96                                  |
+ |                                                                   |
+ |  +------------------------------------------------------------+  |
+ |  |          VPS Bridge (Express)  :3003                        |  |
+ |  |          vps-bridge/server.js                               |  |
+ |  |                                                             |  |
+ |  |  Endpoints:                                                 |  |
+ |  |   POST /console/stream    SSE chat streaming                |  |
+ |  |   POST /console/mobile    non-streaming chat                |  |
+ |  |   POST /aria/stream       Aira floating assistant           |  |
+ |  |   POST /aria              plain Aira chat                   |  |
+ |  |   POST /diagnostics/run   deep diagnostic                   |  |
+ |  |   POST /diagnostics/free/run  free diagnostic               |  |
+ |  |   POST /blueprints/generate   AI blueprint                  |  |
+ |  |   POST /workflows/synthesize  workflow JSON gen              |  |
+ |  |   POST /workflows/draft-test  copilot sandbox test          |  |
+ |  |   CRUD /agents/*          agent management                  |  |
+ |  |   POST /bridge/aira       general Aira entry                |  |
+ |  |   POST /bridge/kiro       Kiro routing                      |  |
+ |  |   POST /context/ui-state  UI state awareness                |  |
+ |  |                                                             |  |
+ |  |  Clients:                                                   |  |
+ |  |   zeroclawStreamingClient --> Zeroclaw (AI orchestrator)    |  |
+ |  |   openrouterClient --------> OpenRouter API                 |  |
+ |  |   n8nClient ---------------> n8n :5678 (workflow CRUD)      |  |
+ |  |   n8nMcpClient ------------> n8n MCP (node search)          |  |
+ |  |   n8nAsCodeServiceClient --> n8n-as-code :3500              |  |
+ |  |   agentsRepository -------> file-based agent store          |  |
+ |  +------------------------------------------------------------+  |
+ |       |              |              |               |             |
+ |       v              v              v               v             |
+ |  +---------+  +------------+  +-----------+  +-------------+     |
+ |  | Zeroclaw|  | OpenRouter |  |   n8n     |  | n8n-as-code |     |
+ |  | (AI     |  | (Qwen LLM)|  | :5678     |  | :3500       |     |
+ |  | Orch.)  |  |            |  |           |  |             |     |
+ |  |         |  | Models:    |  | Workflows |  | /drafts/    |     |
+ |  | Routes  |  |  Qwen 32B |  | Creds     |  |   build     |     |
+ |  | prompts |  |  Qwen 72B |  | Executions|  |   test      |     |
+ |  | context |  |  Claude   |  | Webhooks  |  |   bind-cred |     |
+ |  |         |  |            |  |           |  |   deploy    |     |
+ |  +---------+  +------------+  +-----------+  |   report    |     |
+ |       |                            ^          |   cleanup   |     |
+ |       |                            |          +-------------+     |
+ |       v                            |               |              |
+ |  +----------+                      |               |              |
+ |  | Python   |                      +---------------+              |
+ |  | Backend  |                      n8n-as-code calls n8n API      |
+ |  | :8081    |                      for sandbox test, credential   |
+ |  | (legacy) |                      binding, and production deploy |
+ |  |          |                                                     |
+ |  | app/     |                                                     |
+ |  |  main.py |                                                     |
+ |  |  api/    |                                                     |
+ |  |  services|                                                     |
+ |  |  llm/    |                                                     |
+ |  +----------+                                                     |
+ +------------------------------------------------------------------+
+
+
+ DATA FLOW: Workflow Copilot Pipeline
+ ====================================
+
+ User designs workflow on canvas
+       |
+       v
+ Next.js /api/copilot-test
+       |
+       v
+ n8nAsCodeClient.ts
+       |
+       +---> :3500 /drafts/build     (create draft + metadata)
+       +---> :3500 /drafts/test      (real n8n sandbox execution)
+       +---> :3500 /drafts/bind-cred (match credentials)
+       |
+       v
+ Return: { draft_id, testResult, credentials, readyToDeploy }
+       |
+       v (user clicks "Deploy")
+ Next.js /api/copilot-apply
+       |
+       v
+ n8nAsCodeClient.ts
+       |
+       +---> :3500 /drafts/deploy    (inject creds + POST to n8n + activate)
+       |
+       v
+ Return: { workflowId, workflowUrl, activated }
+
+
+ DATA FLOW: AI Console Chat
+ ===========================
+
+ User types message
+       |
+       v
+ Next.js /api/console/stream
+       |
+       v
+ VPS Bridge :3003 /console/stream
+       |
+       v
+ zeroclawStreamingClient
+       |
+       v
+ Zeroclaw orchestrator --> OpenRouter (Qwen) --> SSE back to browser
+
+
+ PORT MAP
+ ========
+ :3000  Next.js Console (dev, or Vercel in prod)
+ :3003  VPS Bridge (Express gateway)
+ :3500  n8n-as-code-service (workflow copilot backend)
+ :5678  n8n (workflow automation engine)
+ :8081  Python backend (legacy diagnostics/blueprint)

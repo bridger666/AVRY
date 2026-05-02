@@ -32,7 +32,7 @@ function detectLanguage(history) {
 const ZEROCLAW_BASE_URL =
   process.env.ZEROCLAW_BASE_URL ||
   process.env.ZEROCLAW_KIRO_URL ||
-  'http://127.0.0.1:3010';
+  require('./config').ZEROCLAW_BASE_URL;
 
 /**
  * Stream response from Zeroclaw with SSE forwarding.

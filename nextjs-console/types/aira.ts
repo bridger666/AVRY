@@ -1,5 +1,5 @@
 /**
- * AIRA Workflow Edit Protocol
+ * Aivory Workflow Edit Protocol
  * Defines the request/response contract for AI-powered workflow editing
  */
 

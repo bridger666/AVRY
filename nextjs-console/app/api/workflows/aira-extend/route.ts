@@ -13,7 +13,7 @@ export const maxDuration = 120
 
 // ── System prompt for workflow extension ────────────────────────────────────
 
-const EXTENSION_SYSTEM_PROMPT = `You are AIRA, the automation and AI copilot inside Aivory.
+const EXTENSION_SYSTEM_PROMPT = `You are Aivory, the automation and AI copilot inside Aivory.
 Your job is to extend existing workflows by adding follow-up steps after a specific node.
 
 You are in WORKFLOW EXTENSION mode.

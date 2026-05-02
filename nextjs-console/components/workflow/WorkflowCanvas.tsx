@@ -154,7 +154,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
   const [showWorkflowAiraModal, setShowWorkflowAiraModal] = useState(false);
   const [currentWorkflow, setCurrentWorkflow] = useState<SavedWorkflow | null>(null);
   const [airaLoading, setAiraLoading] = useState(false);
-  // Add with AIRA panel state
+  // Add with Aivory panel state
   const [showAddWithAiraPanel, setShowAddWithAiraPanel] = useState(false);
   const [airaSourceStepId, setAiraSourceStepId] = useState<string | null>(null);
   // Explain path modal state
@@ -198,7 +198,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
     [setEdges]
   );
 
-  // ── Inject nodes from outside (AIRA generation) ──────────
+  // ── Inject nodes from outside (Aivory generation) ──────────
   useEffect(() => {
     if (!onInjectNodes) return;
     onInjectNodes((newNodes: Node[], newEdges: Edge[]) => {
@@ -893,7 +893,7 @@ export function WorkflowCanvas({ workflowId, isActive = false, n8nWorkflowId, fa
         />
       )}
 
-      {/* ── Add with AIRA Panel ── */}
+      {/* ── Add with Aivory Panel ── */}
       {showAddWithAiraPanel && airaSourceStepId && nodes.find(n => n.id === airaSourceStepId) && (
         <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} onClick={() => setShowAddWithAiraPanel(false)} />

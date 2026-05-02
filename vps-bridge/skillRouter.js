@@ -4,8 +4,8 @@
  * Maps Aivory context (page, mode, feature, endpoint) to Zeroclaw skill names.
  *
  * Available skills (defined in Zeroclaw config.toml):
- *   aira_console_general   — AIRA global console assistant (default)
- *   aira_roadmap_explain   — AIRA when explaining AI Roadmap tab
+ *   aira_console_general   — Aivory global console assistant (default)
+ *   aira_roadmap_explain   — Aivory when explaining AI Roadmap tab
  *   diag_engine            — Diagnostic engine (Free + Deep)
  *   blueprint_engine       — Blueprint generation and refinement
  *   workflow_observer      — View/observe workflows (n8n, logs, status)
@@ -79,11 +79,11 @@ function selectZeroclawSkill(ctx = {}) {
     return SKILLS.WORKFLOW_OBSERVER;
   }
 
-  // 6. AIRA console pages that map to specific engines
+  // 6. Aivory console pages that map to specific engines
   if (page === 'diagnostic') return SKILLS.DIAG_ENGINE;
   if (page === 'blueprint') return SKILLS.BLUEPRINT_ENGINE;
 
-  // 7. Default — AIRA console general
+  // 7. Default — Aivory console general
   return SKILLS.AIRA_CONSOLE;
 }
 

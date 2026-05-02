@@ -39,74 +39,8 @@ async function getUserContext(sessionId) {
   }
 }
 
-// ============================================================================
-// CONSOLE CHAT STREAMING ENDPOINT
-// ============================================================================
-
-async function handleConsoleStream(req, res, next) {
-  console.log('[console/stream] handler hit');
-  console.log('[console/stream] req.body:', JSON.stringify(req.body));
-  console.log('[console/stream] messages received:', JSON.stringify(req.body.messages, null, 2));
-  
-  try {
-    const { session_id, messages } = req.body;
-    
-    if (!session_id) {
-      const error = new Error('Missing required field: session_id');
-      error.statusCode = 400;
-      error.errorCode = 'BAD_REQUEST';
-      error.details = { field: 'session_id', expected: 'string' };
-      return next(error);
-    }
-    
-    if (!messages || !Array.isArray(messages)) {
-      const error = new Error('Missing or invalid field: messages (expected array)');
-      error.statusCode = 400;
-      error.errorCode = 'BAD_REQUEST';
-      error.details = { field: 'messages', expected: 'array' };
-      return next(error);
-    }
-    
-    const routing = MODEL_ROUTING['/console/stream'];
-    console.log('[console/stream] routing:', routing);
-    console.log('[console/stream] sendStreamingRequest type:', typeof sendStreamingRequest);
-    
-    console.log('[console/stream] calling sendStreamingRequest with params:', {
-      model: routing.model,
-      useCase: routing.useCase,
-      messagesLength: messages.length,
-      requestId: req.requestId
-    });
-    
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    
-    await sendStreamingRequest(
-      routing.model,
-      routing.useCase,
-      messages,
-      res,
-      req.requestId,
-      routing.models
-    );
-    
-    console.log('[console/stream] sendStreamingRequest completed');
-    
-  } catch (error) {
-    console.error('[console/stream] unhandled error:', error);
-    if (!res.headersSent) {
-      next(error);
-    } else {
-      try {
-        res.write(`data: ${JSON.stringify({ type: 'error', error: error.message || 'Stream failed' })}\n\n`);
-        res.end();
-      } catch (writeErr) {
-        console.error('[console/stream] failed to write error to stream:', writeErr);
-      }
-    }
-  }
-}
+// NOTE: handleConsoleStream is defined below (Zeroclaw-based version)
+// The old OpenRouter-direct version was removed to eliminate the duplicate.
 
 // ============================================================================
 // AIRA CONVERSATION HELPERS (history + onboarding rewrite)
@@ -694,11 +628,28 @@ Return this EXACT JSON structure:
   "title": "${workflow_title}",
   "trigger": "FILL: specific event or condition that starts this workflow",
   "steps": [
-    {"step": 1, "action": "FILL: specific action", "tool": "FILL: tool/service used", "output": "FILL: what this step produces"},
-    {"step": 2, "action": "FILL: specific action", "tool": "FILL: tool/service", "output": "FILL: output"},
-    {"step": 3, "action": "FILL: specific action", "tool": "FILL: tool/service", "output": "FILL: output"},
-    {"step": 4, "action": "FILL: specific action", "tool": "FILL: tool/service", "output": "FILL: output"},
-    {"step": 5, "action": "FILL: specific action", "tool": "FILL: tool/service", "output": "FILL: output"}
+    {
+      "id": "step_1",
+      "type": "trigger",
+      "title": "human readable title",
+      "description": "what this step does",
+      "nodeType": "n8n-nodes-base.scheduleTrigger",
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 48 }]
+        }
+      },
+      "testable": true
+    },
+    {
+      "id": "step_2",
+      "type": "action",
+      "title": "human readable title",
+      "description": "what this step does",
+      "nodeType": "n8n-nodes-base.httpRequest",
+      "parameters": {},
+      "testable": true
+    }
   ],
   "integrations": ["FILL: integration 1", "FILL: integration 2", "FILL: integration 3"],
   "estimated_time": "FILL: e.g. 2-5 minutes per execution",
@@ -706,6 +657,39 @@ Return this EXACT JSON structure:
   "error_handling": "FILL: describe fallback/error strategy",
   "notes": "FILL: any important implementation notes"
 }
+
+CRITICAL REQUIREMENTS:
+- nodeType is REQUIRED for every step, no exceptions
+- parameters must match the n8n node schema for that nodeType
+- If unsure of exact parameters, use empty object {} — but nodeType must always be present
+- Respond in the same language as the user
+
+NODETYPE REFERENCE (use exact strings):
+- schedule/cron/timer/jadwal/setiap/berkala → n8n-nodes-base.scheduleTrigger
+- webhook/http trigger/incoming request → n8n-nodes-base.webhook
+- manual/start/mulai → n8n-nodes-base.manualTrigger
+- gmail/email google → n8n-nodes-base.gmail
+- email generic/smtp → n8n-nodes-base.emailSend
+- slack → n8n-nodes-base.slack
+- http request/api call/fetch → n8n-nodes-base.httpRequest
+- postgres/postgresql → n8n-nodes-base.postgres
+- mysql → n8n-nodes-base.mysql
+- notion → n8n-nodes-base.notion
+- airtable → n8n-nodes-base.airtable
+- google sheets/spreadsheet → n8n-nodes-base.googleSheets
+- if/condition/filter/branch → n8n-nodes-base.if
+- set/transform/map data → n8n-nodes-base.set
+- code/javascript/python → n8n-nodes-base.code
+- wait/delay/pause → n8n-nodes-base.wait
+- telegram → n8n-nodes-base.telegram
+- whatsapp → n8n-nodes-base.whatsApp
+- discord → n8n-nodes-base.discord
+- stripe → n8n-nodes-base.stripe
+- hubspot → n8n-nodes-base.hubspot
+- salesforce → n8n-nodes-base.salesforce
+- s3/aws storage → n8n-nodes-base.s3
+- mongodb → n8n-nodes-base.mongoDb
+- redis → n8n-nodes-base.redis
 
 Replace every FILL placeholder with specific, actionable content for ${company_name || 'this company'} based on the workflow title and diagnostic context. Do not return any FILL placeholders.`;
 
@@ -725,34 +709,46 @@ Replace every FILL placeholder with specific, actionable content for ${company_n
 }
 
 // ============================================================================
-// MOBILE CONSOLE ENDPOINT
+// WORKFLOW CLARIFY ENDPOINT
 // ============================================================================
 
-async function handleMobileConsole(req, res, next) {
+async function handleWorkflowClarify(req, res, next) {
   try {
-    const { session_id, message } = req.body;
-    
-    if (!session_id) {
-      const error = new Error('Missing required field: session_id');
+    const { session_id, organization_id, user_request, conversation_history } = req.body;
+
+    if (!user_request || typeof user_request !== 'string') {
+      const error = new Error('Missing or invalid field: user_request (expected string)');
       error.statusCode = 400;
       error.errorCode = 'BAD_REQUEST';
-      error.details = { field: 'session_id', expected: 'string' };
+      error.details = { field: 'user_request', expected: 'string' };
       return next(error);
     }
-    
-    if (!message || typeof message !== 'string') {
-      const error = new Error('Missing or invalid field: message (expected string)');
-      error.statusCode = 400;
-      error.errorCode = 'BAD_REQUEST';
-      error.details = { field: 'message', expected: 'string' };
-      return next(error);
-    }
-    
-    const n8nResult = await callN8N('console', message);
-    if (!n8nResult.success) return res.status(503).json({ error: 'Gateway unavailable' });
-    
-    res.json({ model: 'zeroclaw', response: n8nResult.data.response });
-    
+
+    const routing = MODEL_ROUTING['/blueprints/generate'];
+
+    const systemPrompt = `You are a workflow automation assistant.
+Ask 2-3 short clarifying questions to understand what the user wants to automate:
+- What triggers it (schedule, webhook, app event, manual)
+- What actions happen (which apps, what data)
+- Any conditions or filters needed
+Reply in the same language as the user. Plain text response only.`;
+
+    const conversationContext = Array.isArray(conversation_history) && conversation_history.length > 0
+      ? `\n\nConversation history:\n${conversation_history.map(m => `${(m.role || 'user').toUpperCase()}: ${m.content || ''}`).join('\n')}`
+      : '';
+
+    const prompt = `${systemPrompt}\n\nUser request: ${user_request}${conversationContext}\n\nAsk 2-3 clarifying questions to help design the workflow.`;
+
+    const result = await sendRequest(
+      routing.model,
+      routing.useCase,
+      prompt,
+      req.requestId,
+      true,
+      routing.models
+    );
+
+    res.json({ message: result });
   } catch (error) {
     next(error);
   }
@@ -1225,19 +1221,110 @@ async function handleHealthCheck(req, res) {
   }
 }
 
+// ============================================================================
+// DEEP HEALTH CHECK ENDPOINT
+// ============================================================================
+
+/**
+ * Ping a local service with a short timeout.
+ * Returns { status, latency_ms, error? }
+ *
+ * @param {string} host  - e.g. '127.0.0.1'
+ * @param {number} port  - e.g. 3010
+ * @param {string} path  - e.g. '/health'
+ * @param {number} timeoutMs
+ */
+function pingLocalService(host, port, path, timeoutMs) {
+  return new Promise((resolve) => {
+    const http = require('http');
+    const start = Date.now();
+
+    const req = http.request(
+      { hostname: host, port, path, method: 'GET', timeout: timeoutMs },
+      (res) => {
+        // Drain the response body so the socket is released
+        res.resume();
+        res.on('end', () => {
+          const latency_ms = Date.now() - start;
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({ status: 'ok', latency_ms });
+          } else {
+            resolve({
+              status: 'error',
+              latency_ms,
+              error: `HTTP ${res.statusCode}`,
+            });
+          }
+        });
+      }
+    );
+
+    req.on('timeout', () => {
+      req.destroy();
+      resolve({
+        status: 'error',
+        latency_ms: timeoutMs,
+        error: `Timeout after ${timeoutMs}ms`,
+      });
+    });
+
+    req.on('error', (err) => {
+      resolve({
+        status: 'error',
+        latency_ms: Date.now() - start,
+        error: err.message,
+      });
+    });
+
+    req.end();
+  });
+}
+
+async function handleDeepHealth(req, res) {
+  const TIMEOUT_MS = 3000;
+
+  // Read service addresses from env so they can be overridden in tests;
+  // defaults are the correct VPS-local addresses.
+  const zeroclawHost = process.env.ZEROCLAW_HOST || '127.0.0.1';
+  const zeroclawPort = parseInt(process.env.ZEROCLAW_PORT || '3010', 10);
+  const n8nMcpHost  = process.env.N8N_MCP_HOST  || '127.0.0.1';
+  const n8nMcpPort  = parseInt(process.env.N8N_MCP_PORT  || '3020', 10);
+
+  const [zeroclaw, n8n_mcp] = await Promise.all([
+    pingLocalService(zeroclawHost, zeroclawPort, '/health', TIMEOUT_MS),
+    pingLocalService(n8nMcpHost,  n8nMcpPort,  '/health', TIMEOUT_MS),
+  ]);
+
+  const services = { zeroclaw, n8n_mcp };
+
+  const statuses = Object.values(services).map((s) => s.status);
+  const allOk    = statuses.every((s) => s === 'ok');
+  const allError = statuses.every((s) => s === 'error');
+  const overall  = allOk ? 'ok' : allError ? 'down' : 'degraded';
+
+  const httpStatus = overall === 'ok' ? 200 : overall === 'degraded' ? 207 : 503;
+
+  res.status(httpStatus).json({
+    status: overall,
+    timestamp: new Date().toISOString(),
+    services,
+  });
+}
+
 module.exports = {
   handleConsoleStream,
   handleAiraStream,
-  handleMobileConsole,
   handleAriaChat,
   handleDeepDiagnostic,
   handleFreeDiagnostic,
   handleBlueprintGeneration,
   handleWorkflowGeneration,
+  handleWorkflowClarify,
   handleWorkflowSynthesis,
   handleBridgeAira,
   handleBridgeKiro,
   handleHealthCheck,
+  handleDeepHealth,
 };
 
 // Zeroclaw client (appended via EOF)

@@ -29,6 +29,7 @@ interface AivoryWorkflow {
   company_name?: string
   diagnostic_score?: number
   created_at?: string
+  tags?: string[]
 }
 
 interface N8nNode {
@@ -45,6 +46,8 @@ interface N8nWorkflow {
   nodes: N8nNode[]
   connections: Record<string, any>
   settings: Record<string, any>
+  versionId?: string
+  tags?: string[]
 }
 
 /**
@@ -67,12 +70,26 @@ export function convertToN8nWorkflow(workflow: AivoryWorkflow): N8nWorkflow {
   const nodes: N8nNode[] = []
   const connections: Record<string, any> = {}
 
-  // 1. Trigger node — always Webhook with auto-generated path
-  const uniquePath = workflow.workflow_id
-    ? `aivory-${workflow.workflow_id}-${Date.now()}`
-    : `aivory-${Date.now()}`
+  // 1. Trigger node — detect schedule vs webhook based on trigger text
+  const triggerText = (workflow.trigger || '').toLowerCase()
+  const isSchedule = /jam|hari|menit|detik|hour|day|minute|second|schedule|cron|setiap|every|interval|waktu|berkala/.test(triggerText)
 
-  const triggerNode: N8nNode = {
+  // Parse hour interval from trigger text if schedule
+  const hourMatch = triggerText.match(/(\d+)\s*jam/)
+  const hourInterval = hourMatch ? parseInt(hourMatch[1]) : 24
+
+  const triggerNode: N8nNode = isSchedule ? {
+    id: generateNodeId(),
+    name: 'Schedule Trigger',
+    type: 'n8n-nodes-base.scheduleTrigger',
+    typeVersion: 1.2,
+    position: [250, 300],
+    parameters: {
+      rule: {
+        interval: [{ field: 'hours', hoursInterval: hourInterval }]
+      }
+    },
+  } : {
     id: generateNodeId(),
     name: 'Webhook Trigger',
     type: 'n8n-nodes-base.webhook',
@@ -80,7 +97,7 @@ export function convertToN8nWorkflow(workflow: AivoryWorkflow): N8nWorkflow {
     position: [250, 300],
     parameters: {
       httpMethod: 'POST',
-      path: uniquePath,
+      path: workflow.workflow_id ? `aivory-${workflow.workflow_id}` : `aivory-${Date.now()}`,
       responseMode: 'responseNode',
     },
   }
@@ -88,6 +105,7 @@ export function convertToN8nWorkflow(workflow: AivoryWorkflow): N8nWorkflow {
 
   // 2. Step nodes — classified via nodeMapper engine
   let aiNodeCount = 0
+  const nodeNames: string[] = []
   const stepCount = workflow.steps.length
 
   workflow.steps.forEach((step, i) => {
@@ -96,8 +114,10 @@ export function convertToN8nWorkflow(workflow: AivoryWorkflow): N8nWorkflow {
     // Detect intent — last step defaults to 'respond' unless it has a specific channel intent
     let intent: NodeIntent = detectNodeIntent(step.action, step.tool)
     console.log(`[workflowConverter] Step ${i}: action="${step.action}" tool="${step.tool}" → intent="${intent}" isLast=${isLast}`)
-    if (isLast && intent !== 'respond' && intent !== 'filter' && intent !== 'email' && intent !== 'messaging') {
-      console.log(`[workflowConverter] Step ${i}: overriding intent from "${intent}" to "respond" (last step)`)
+    // Only override last step to respondToWebhook for webhook-triggered workflows.
+    // Scheduled workflows have no webhook to respond to — keep the detected intent.
+    if (isLast && !isSchedule && intent !== 'respond' && intent !== 'filter' && intent !== 'email' && intent !== 'messaging') {
+      console.log(`[workflowConverter] Step ${i}: overriding intent from "${intent}" to "respond" (last step, webhook workflow)`)
       intent = 'respond'
     }
 
@@ -110,13 +130,12 @@ export function convertToN8nWorkflow(workflow: AivoryWorkflow): N8nWorkflow {
 
     nodes.push(stepNode)
 
-    // Connect previous node → this node
-    const prevName = i === 0
-      ? triggerNode.name
-      : `Step ${i}: ${workflow.steps[i - 1].action.substring(0, 40)}`
-    connections[prevName] = {
+    // Connect previous node → this node using tracked names
+    const prevNodeName = i === 0 ? triggerNode.name : nodeNames[i - 1]
+    connections[prevNodeName] = {
       main: [[{ node: stepNode.name, type: 'main', index: 0 }]],
     }
+    nodeNames.push(stepNode.name)
   })
 
   return {
@@ -124,5 +143,31 @@ export function convertToN8nWorkflow(workflow: AivoryWorkflow): N8nWorkflow {
     nodes,
     connections,
     settings: { executionOrder: 'v1' },
+    versionId: generateNodeId(),
+    tags: workflow.tags || [],
   }
+}
+
+/**
+ * Generate a download-ready n8n JSON blob and trigger browser download
+ */
+export function downloadN8nJSON(workflow: AivoryWorkflow, filename?: string): void {
+  const n8nWorkflow = convertToN8nWorkflow(workflow)
+  const blob = new Blob([JSON.stringify(n8nWorkflow, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename || `${workflow.title.replace(/\s+/g, '-').toLowerCase()}-n8n.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+/**
+ * Convert workflow to n8n JSON string (for API calls, no browser needed)
+ */
+export function convertToN8nJsonString(workflow: AivoryWorkflow): string {
+  const n8nWorkflow = convertToN8nWorkflow(workflow)
+  return JSON.stringify(n8nWorkflow, null, 2)
 }

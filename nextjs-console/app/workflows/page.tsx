@@ -16,6 +16,7 @@ import { StandardNodePalette } from '@/components/workflow/StandardNodePalette'
 import { DynamicNodePalette } from '@/components/workflow/DynamicNodePalette'
 import { clearCanvasState } from '@/hooks/useCanvasPersistence'
 import { detectNodeIntent } from '@/lib/workflows/nodeMapper'
+import { convertToN8nWorkflow } from '@/lib/workflowConverter'
 import type { AivoryWorkflowSpec } from '@/types/workflow'
 import { useRouterContext } from '@/contexts/RouterContext'
 import { ContinuedFromConsole } from '@/components/routing/ContinuedFromConsole'
@@ -647,7 +648,7 @@ function WorkflowsPageInner() {
   const [generationPrompt, setGenerationPrompt] = useState<string | null>(null)
   const moreRef = useRef<HTMLDivElement>(null)
   const activateRef = useRef<HTMLDivElement>(null)
-  // Ref to inject nodes directly into the live canvas (used by AIRA generation)
+  // Ref to inject nodes directly into the live canvas (used by Aivory generation)
   const canvasInjectRef = useRef<((nodes: any[], edges: any[]) => void) | null>(null)
   // Pending handoff nodes/edges to inject once the canvas mounts
   const pendingHandoffRef = useRef<{ nodes: any[]; edges: any[] } | null>(null)
@@ -862,21 +863,25 @@ function WorkflowsPageInner() {
   const handleExport = () => {
     if (!selected) return
     
-    // Create a deep copy and redact apiKey from all steps
-    const exportData = JSON.parse(JSON.stringify(selected))
-    if (Array.isArray(exportData.steps)) {
-      exportData.steps.forEach((step: any) => {
-        if (step.config && step.config.apiKey) {
-          step.config.apiKey = '[REDACTED]'
-        }
-      })
-    }
+    // Convert Aivory workflow to n8n format for import into n8n
+    const n8nWorkflow = convertToN8nWorkflow({
+      workflow_id: selected.workflow_id,
+      title: selected.title,
+      trigger: selected.trigger,
+      steps: selected.steps.map((s, i) => ({
+        step: i + 1,
+        action: s.action,
+        tool: s.tool,
+        output: s.output,
+      })),
+      company_name: selected.company_name,
+    })
     
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const blob = new Blob([JSON.stringify(n8nWorkflow, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${selected.workflow_id}.json`
+    a.download = `${selected.title.replace(/\s+/g, '-').toLowerCase()}-n8n.json`
     a.click()
     URL.revokeObjectURL(url)
     setShowMore(false)
@@ -990,8 +995,8 @@ function WorkflowsPageInner() {
 
   // ── Copilot apply suggestion ────────────────────────────
   // ALWAYS creates a NEW workflow — never appends to existing canvas
-  const handleCopilotApply = async (suggestion: import('@/hooks/useWorkflowCopilot').CopilotSuggestion) => {
-    // Build React Flow nodes + edges from the copilot suggestion steps
+  const handleCopilotApply = async (workflow: import('@/lib/workflows/copilotClient').GeneratedWorkflow) => {
+    // Build React Flow nodes + edges from the generated workflow.
     // Map nodeMapper intents to canvas icon/category
     const intentToIcon: Record<string, string> = {
       email: 'mail', messaging: 'slack', http: 'http', respond: 'respond',
@@ -1001,10 +1006,14 @@ function WorkflowsPageInner() {
       email: 'channel', messaging: 'channel', http: 'action', respond: 'channel',
       filter: 'condition', transform: 'action', schedule: 'trigger', ai: 'action',
     }
-    const allSteps = [
-      { step: 0, action: suggestion.trigger, tool: '', output: '', type: 'trigger' },
-      ...suggestion.steps,
-    ]
+    const allSteps = workflow.steps.map((step, index) => ({
+      step: index + 1,
+      action: step.title,
+      tool: step.type,
+      output: step.description || '',
+      type: step.type,
+      config: step.config || {},
+    }))
     const rfNodes = allSteps.map((s, i) => {
       const intent = detectNodeIntent(s.action || '', s.tool || '')
       return {
@@ -1017,6 +1026,7 @@ function WorkflowsPageInner() {
           category: i === 0 ? 'trigger' : (intentToCategory[intent] ?? 'action'),
           title: s.action || `Step ${i + 1}`,
           description: s.output || s.tool || '',
+          config: s.config || {},
         },
       }
     })
@@ -1028,26 +1038,31 @@ function WorkflowsPageInner() {
       animated: false,
     }))
 
-    console.log('[AIRA Copilot] Creating NEW workflow → nodes:', rfNodes.length, 'edges:', rfEdges.length)
+    console.log('[Aivory Copilot] Creating NEW workflow → nodes:', rfNodes.length, 'edges:', rfEdges.length)
 
     // Generate a meaningful title from the suggestion trigger text
-    const title = suggestion.trigger
-      ? `${suggestion.trigger} (AI)`
-      : `Aivory Workflow ${new Date().toLocaleTimeString()}`
+    const title = workflow.workflowName || allSteps[0]?.action || `Aivory Workflow ${new Date().toLocaleTimeString()}`
 
     const newWorkflow: SavedWorkflow = {
       workflow_id: `workflow_${Date.now()}`,
-      title,
+      title: `${title} (AI)`,
       status: 'draft',
       source: 'n8n',
       company_name: '',
-      trigger: suggestion.trigger,
-      steps: suggestion.steps,
+      trigger: allSteps[0]?.action || '',
+      steps: allSteps.slice(1).map((step) => ({
+        step: step.step,
+        action: step.action,
+        tool: step.tool,
+        output: step.output,
+        type: step.type,
+        config: step.config,
+      })),
       integrations: [],
-      estimated_time: suggestion.estimate_hours ? `~${suggestion.estimate_hours}h estimated` : '0',
-      automation_percentage: suggestion.automation_score ? `${Math.round((suggestion.automation_score ?? 0) * 100)}% automated` : '0',
+      estimated_time: workflow.estimate_hours ? `~${workflow.estimate_hours}h estimated` : '0',
+      automation_percentage: workflow.automation_score ? `${Math.round((workflow.automation_score ?? 0) * 100)}% automated` : '0',
       error_handling: '',
-      notes: '',
+      notes: workflow.summary || '',
       created_at: new Date().toISOString(),
     }
 

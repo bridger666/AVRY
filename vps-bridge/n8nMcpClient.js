@@ -10,9 +10,10 @@
  * - Graceful fallback to static values when MCP is unreachable
  */
 
-const MCP_URL = process.env.N8N_MCP_URL || 'http://127.0.0.1:3020';
+const MCP_URL = process.env.N8N_MCP_URL || '';
 const MCP_AUTH = process.env.N8N_MCP_AUTH_TOKEN || '';
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const CACHE_TTL_MS = Number(process.env.N8N_MCP_CACHE_TTL_MS || 10 * 60 * 1000);
+const MCP_TIMEOUT_MS = Number(process.env.N8N_MCP_TIMEOUT_MS || 15000);
 
 // ── Session state ─────────────────────────────────────────────────────────────
 
@@ -70,6 +71,10 @@ function parseSseResponse(body) {
 // ── Low-level MCP request ─────────────────────────────────────────────────────
 
 async function mcpRequest(method, params, retryOnSessionError = true) {
+  if (!MCP_URL) {
+    throw new Error('N8N_MCP_URL is not configured');
+  }
+
   const id = ++requestCounter;
   const headers = {
     'Content-Type': 'application/json',
@@ -89,7 +94,7 @@ async function mcpRequest(method, params, retryOnSessionError = true) {
     method: 'POST',
     headers,
     body,
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(MCP_TIMEOUT_MS),
   });
 
   // Capture session ID from initialize response
@@ -161,7 +166,13 @@ async function getNodeSchema(nodeType) {
   if (cached) return cached;
 
   try {
-    const result = await callTool('get_node_schema', { nodeType });
+    const result = await callTool('get_node', {
+      nodeType,
+      detail: 'standard',
+      mode: 'info',
+      includeTypeInfo: true,
+      includeExamples: false,
+    });
     if (result) setCache(nodeType, result);
     return result;
   } catch (err) {
@@ -176,7 +187,7 @@ async function getNodeSchema(nodeType) {
  */
 async function validateNodeConfig(nodeType, config, mode = 'full') {
   try {
-    return await callTool('validate_node_config', { nodeType, config, mode });
+    return await callTool('validate_node', { nodeType, config, mode });
   } catch (err) {
     console.warn(`[n8nMcpClient] validateNodeConfig(${nodeType}) failed:`, err.message);
     return { valid: true, errors: [], warnings: ['MCP validation unavailable'] };
@@ -200,9 +211,16 @@ async function validateWorkflow(workflow) {
  * Search nodes by keyword (for AIRA to discover nodes).
  * NOT cached — queries vary.
  */
-async function searchNodes(query) {
+async function searchNodes(query, options = {}) {
   try {
-    return await callTool('search_nodes', { query });
+    return await callTool('search_nodes', {
+      query,
+      limit: options.limit || 8,
+      mode: options.mode || 'OR',
+      source: options.source || 'core',
+      includeExamples: false,
+      includeOperations: !!options.includeOperations,
+    });
   } catch (err) {
     console.warn(`[n8nMcpClient] searchNodes(${query}) failed:`, err.message);
     return [];
@@ -213,6 +231,7 @@ async function searchNodes(query) {
  * Check if the MCP server is reachable.
  */
 async function isAvailable() {
+  if (!MCP_URL) return false;
   try {
     await ensureSession();
     return true;

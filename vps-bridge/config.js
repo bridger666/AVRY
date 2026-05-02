@@ -45,7 +45,6 @@ const MODEL_CHAINS = {
  * - Deep Diagnostic: heavy chain
  * - Blueprint: heavy chain (quality + architecture)
  * - Workflow Synthesis: heavy chain (structured JSON/config)
- * - Mobile Console: light chain (speed, lightweight)
  */
 const MODEL_ROUTING = {
   '/console/stream': {
@@ -53,12 +52,6 @@ const MODEL_ROUTING = {
     models: MODEL_CHAINS.heavy,
     useCase: 'console',
     streaming: true
-  },
-  '/console/mobile': {
-    model: MODEL_CHAINS.light[0],
-    models: MODEL_CHAINS.light,
-    useCase: 'console',
-    streaming: false
   },
   '/diagnostics/free/run': {
     model: MODEL_CHAINS.light[0],
@@ -91,7 +84,7 @@ const MODEL_ROUTING = {
 // ============================================================================
 
 const SYSTEM_PROMPTS = {
-  console: `You are AIRA (Aivory Intelligence & Readiness Assistant).
+  console: `You are Aivory.
 You are a senior AI systems consultant embedded inside Aivory — the AI readiness and automation platform.
 
 YOUR CORE IDENTITY:
@@ -411,5 +404,8 @@ module.exports = {
   MODEL_ROUTING,
   SYSTEM_PROMPTS,
   config,
-  validateConfig
+  validateConfig,
+  // Convenience export so other modules can import ZEROCLAW_BASE_URL from config
+  ZEROCLAW_BASE_URL: process.env.ZEROCLAW_BASE_URL || process.env.ZEROCLAW_KIRO_URL || 'http://127.0.0.1:3010',
+  N8N_AS_CODE_SERVICE_URL: process.env.N8N_AS_CODE_SERVICE_URL || 'http://127.0.0.1:3500',
 };

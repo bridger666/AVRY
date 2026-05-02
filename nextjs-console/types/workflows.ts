@@ -1,7 +1,7 @@
 /**
  * Workflow Specification Types
  * 
- * This module defines the core TypeScript interfaces for the AIRA Workflow Generation system.
+ * This module defines the core TypeScript interfaces for the Aivory Workflow Generation system.
  * All workflow specifications, steps, edges, and related types are defined here to ensure
  * consistency across backend and frontend surfaces.
  * 

@@ -16,11 +16,12 @@ import type { N8nWorkflowValidationResult } from '@/lib/workflows/n8nMcpClient'
 
 function getConfig() {
   // Support N8N_BASE_URL (primary), N8N_API_URL, N8N_URL, or hardcoded fallback
+  // FIX #1: Default port changed from 3003 (Zeroclaw) → 5678 (n8n REST API)
   const raw = (
     process.env.N8N_BASE_URL ||
     process.env.N8N_API_URL ||
     process.env.N8N_URL ||
-    'http://43.156.108.96:3003'
+    'http://43.156.108.96:5678'  // ← was 3003 (Zeroclaw webhook port, WRONG)
   ).replace(/\/$/, '')
   const key = process.env.N8N_API_KEY
   if (!key) throw new Error('N8N_API_KEY is not configured')
@@ -233,6 +234,10 @@ export async function setN8nWorkflowActive(n8nId: string, active: boolean): Prom
  *
  * 2. POST /workflows/:id/activate
  *    - On failure: throw — caller must NOT mark Aivory workflow as active.
+ *
+ * FIX #3: onDraftCreated errors are NO LONGER swallowed.
+ * If persisting the draft ID fails, we throw immediately and skip activation.
+ * This prevents orphaned workflows in n8n that Aivory can never reference again.
  */
 export async function deployAndActivate(
   spec: AivoryWorkflowSpec,
@@ -274,13 +279,20 @@ export async function deployAndActivate(
     console.log(`[n8nClient] deployAndActivate: webhook path=${n8nWebhookPath}`)
   }
 
-  // Persist the draft ID + webhook path immediately before activation.
+  // FIX #3: Persist the draft ID BEFORE activation.
+  // If onDraftCreated throws (e.g. DB write fails), we abort here.
+  // This prevents a scenario where n8n has an active workflow but Aivory
+  // has no record of its ID — making it impossible to deactivate from the UI.
   if (onDraftCreated) {
-    try {
-      onDraftCreated(n8nId, n8nWorkflowUrl, n8nWebhookPath)
-    } catch (e) {
-      console.warn('[n8nClient] onDraftCreated callback threw (non-fatal):', e)
-    }
+    // ❌ OLD (bug): errors silently swallowed, orphaned workflows possible
+    // try {
+    //   onDraftCreated(n8nId, n8nWorkflowUrl, n8nWebhookPath)
+    // } catch (e) {
+    //   console.warn('[n8nClient] onDraftCreated callback threw (non-fatal):', e)
+    // }
+
+    // ✅ NEW: let it throw — caller must fix their DB write before we activate
+    onDraftCreated(n8nId, n8nWorkflowUrl, n8nWebhookPath)
   }
 
   // ── Step 2: activate ─────────────────────────────────────────────────────────
