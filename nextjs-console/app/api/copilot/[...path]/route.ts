@@ -29,12 +29,15 @@ const VPS_BRIDGE_API_KEY =
   ''
 
 // Internal token for service-to-service calls (Next.js → VPS Bridge).
-// The bridge passes this through without re-validating downstream.
 const INTERNAL_TOKEN =
   process.env.INTERNAL_TOKEN || 'aivory-internal-2026'
 
+// n8n-as-code service URL (used for draft-test)
+const N8N_AS_CODE_URL = (
+  process.env.N8N_AS_CODE_URL || 'http://43.156.108.96:3500'
+).replace(/\/$/, '')
+
 // Per-endpoint timeouts (ms).
-// All copilot endpoints can be slow (LLM + sandbox) — give them 120s.
 const TIMEOUT_BY_PATH: Record<string, number> = {
   '/workflows/clarify':    120_000,
   '/workflows/generate':   120_000,
@@ -52,6 +55,33 @@ const ALLOWED_PATHS = [
   '/workflows/edit',
   '/workflows/draft-test',
 ]
+
+// ── Normalize Zeroclaw { model, response } → { workflow, message } ──────────
+// Zeroclaw returns natural language or JSON in `response`. We try to parse it
+// as a workflow object; if that fails we build a minimal placeholder.
+function normalizeZeroclawToWorkflow(
+  response: string,
+  fallbackName: string,
+): { workflow: Record<string, unknown>; message: string } {
+  try {
+    const parsed = JSON.parse(response)
+    if (parsed && typeof parsed === 'object' && parsed.workflowName) {
+      return { workflow: parsed as Record<string, unknown>, message: response }
+    }
+  } catch {
+    // Not JSON — fall through to minimal workflow
+  }
+  return {
+    workflow: {
+      workflowName: fallbackName,
+      steps: [],
+      estimate_hours: 2,
+      automation_score: 0.8,
+      summary: response,
+    },
+    message: response,
+  }
+}
 
 export async function POST(
   request: NextRequest,
@@ -79,21 +109,87 @@ export async function POST(
     return NextResponse.json({ message: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const targetUrl = `${VPS_BRIDGE_URL}${path}`
+  const bodyRecord = body && typeof body === 'object' ? body as Record<string, unknown> : {}
+
+  // ── Determine effective target URL and outbound body per endpoint ─────────
+  const isClarify   = path === '/workflows/clarify'
+  const isGenerate  = path === '/workflows/generate'
+  const isRepair    = path === '/workflows/repair'
+  const isEdit      = path === '/workflows/edit'
+  const isDraftTest = path === '/workflows/draft-test'
+
+  let effectiveTargetUrl: string
+  let outboundBody: unknown
+
+  if (isClarify) {
+    // Zeroclaw only handles requests via /console/stream (webhook)
+    effectiveTargetUrl = `${VPS_BRIDGE_URL}/console/stream`
+    outboundBody = {
+      message: bodyRecord.user_request ?? '',
+      session_id: bodyRecord.session_id ?? 'copilot',
+      organization_id: bodyRecord.organization_id ?? 'default',
+      context: {
+        mode: 'workflow_clarify',
+        source_tab: 'workflows',
+        history: Array.isArray(bodyRecord.conversation_history)
+          ? bodyRecord.conversation_history
+          : [],
+      },
+    }
+  } else if (isGenerate) {
+    effectiveTargetUrl = `${VPS_BRIDGE_URL}/console/stream`
+    outboundBody = {
+      message: bodyRecord.user_request ?? '',
+      history: Array.isArray(bodyRecord.conversation_history)
+        ? bodyRecord.conversation_history
+        : [],
+      mode: 'console',
+      channel: 'console_ui',
+      entrypoint: 'workflow_generate',
+      context: {
+        session_id: bodyRecord.session_id,
+        organization_id: bodyRecord.organization_id,
+      },
+    }
+  } else if (isRepair) {
+    effectiveTargetUrl = `${VPS_BRIDGE_URL}/console/stream`
+    outboundBody = {
+      message: `Repair these failed steps: ${JSON.stringify(bodyRecord.failed_steps)}. Current workflow: ${JSON.stringify(bodyRecord.current_workflow)}`,
+      history: [],
+      mode: 'console',
+      channel: 'console_ui',
+      entrypoint: 'workflow_repair',
+      context: {
+        session_id: bodyRecord.session_id,
+        organization_id: bodyRecord.organization_id,
+      },
+    }
+  } else if (isEdit) {
+    effectiveTargetUrl = `${VPS_BRIDGE_URL}/console/stream`
+    outboundBody = {
+      message: bodyRecord.edit_request ?? bodyRecord.user_request ?? '',
+      history: [],
+      mode: 'console',
+      channel: 'console_ui',
+      entrypoint: 'workflow_edit',
+      context: {
+        session_id: bodyRecord.session_id,
+        organization_id: bodyRecord.organization_id,
+        current_workflow: bodyRecord.current_workflow,
+      },
+    }
+  } else if (isDraftTest) {
+    // draft-test goes directly to n8n-as-code, not console/stream
+    effectiveTargetUrl = `${N8N_AS_CODE_URL}/drafts/build`
+    outboundBody = body // pass through as-is
+  } else {
+    effectiveTargetUrl = `${VPS_BRIDGE_URL}${path}`
+    outboundBody = body
+  }
+
   const timeoutMs = TIMEOUT_BY_PATH[path] ?? DEFAULT_TIMEOUT_MS
 
-  // ── Special case: /workflows/clarify → route through /console/stream ─────
-  // Zeroclaw does not have a /workflows/clarify endpoint — it only handles
-  // requests via /webhook (exposed as /console/stream on the VPS Bridge).
-  // Rewrite the target and transform the body to match Zeroclaw's schema.
-  const isClarify = path === '/workflows/clarify'
-  const effectiveTargetUrl = isClarify
-    ? `${VPS_BRIDGE_URL}/console/stream`
-    : targetUrl
-
-  // Single auth header — x-api-key is the external key, X-Internal-Key is
-  // the internal service-to-service token. Both are sent so the bridge can
-  // accept either pattern without re-validating downstream.
+  // Single auth header set
   const headers: Record<string, string> = {
     'Content-Type':   'application/json',
     'x-api-key':      VPS_BRIDGE_API_KEY,
@@ -101,7 +197,6 @@ export async function POST(
   }
 
   // ── Log outgoing request ──────────────────────────────────────────────────
-  const bodyRecord = body && typeof body === 'object' ? body as Record<string, unknown> : {}
   console.log(`[/api/copilot${path}] → VPS`, {
     targetUrl: effectiveTargetUrl,
     timeoutMs,
@@ -114,22 +209,6 @@ export async function POST(
       ? bodyRecord.conversation_history.length
       : null,
   })
-
-  // Transform body for clarify → console/stream schema
-  const outboundBody = isClarify
-    ? {
-        message: bodyRecord.user_request ?? '',
-        session_id: bodyRecord.session_id ?? 'copilot',
-        organization_id: bodyRecord.organization_id ?? 'default',
-        context: {
-          mode: 'workflow_clarify',
-          source_tab: 'workflows',
-          history: Array.isArray(bodyRecord.conversation_history)
-            ? bodyRecord.conversation_history
-            : [],
-        },
-      }
-    : body
 
   const t0 = Date.now()
 
@@ -182,14 +261,29 @@ export async function POST(
       )
     }
 
-    // For clarify: Zeroclaw returns { model, response } — normalize to { message }
+    // ── Normalize Zeroclaw responses ──────────────────────────────────────
+
     if (isClarify && parsed && typeof parsed === 'object') {
+      // Zeroclaw returns { model, response } — normalize to { message }
       const p = parsed as Record<string, unknown>
       const responseText = typeof p.response === 'string' ? p.response
         : typeof p.message === 'string' ? p.message
         : rawBody || ''
       console.log(`[/api/copilot${path}] clarify message_length:`, responseText.length)
       return NextResponse.json({ message: responseText }, { status: 200 })
+    }
+
+    if ((isGenerate || isRepair || isEdit) && parsed && typeof parsed === 'object') {
+      const p = parsed as Record<string, unknown>
+      // If Zeroclaw returned { model, response } instead of { workflow }
+      if (!p.workflow && typeof p.response === 'string') {
+        const fallbackName = isGenerate ? 'Generated Workflow'
+          : isRepair ? 'Repaired Workflow'
+          : 'Edited Workflow'
+        const normalized = normalizeZeroclawToWorkflow(p.response, fallbackName)
+        console.log(`[/api/copilot${path}] normalized Zeroclaw response → workflow:`, normalized.workflow.workflowName)
+        return NextResponse.json(normalized, { status: 200 })
+      }
     }
 
     return NextResponse.json(parsed ?? {}, { status: 200 })
