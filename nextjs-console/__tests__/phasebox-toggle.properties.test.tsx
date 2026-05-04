@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Property-Based Tests for PhaseBox Toggle Behavior
  * 

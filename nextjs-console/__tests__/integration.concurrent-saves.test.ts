@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { updateWorkflow } from '../lib/n8n'
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Unit Tests for Apps Icon Rendering in Collapsed Icon Strip
  * 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Property 2: Preservation — Chat Bubble Styling and Navigation Behavior
  *

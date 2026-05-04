@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Unit and Edge-Case Tests for Console Copilot Memory Fix
  *

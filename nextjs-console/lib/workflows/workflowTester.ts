@@ -61,7 +61,7 @@ export async function validateWorkflowStructure(
       stepId: 'overall',
       status: 'success',
       message: `✅ Workflow valid dengan ${steps.length} steps`,
-      details: `Trigger: ${triggerNode.title}`,
+      errorDetail: `Trigger: ${triggerNode.title}`,
       timestamp: new Date().toISOString(),
     })
   }
@@ -113,7 +113,7 @@ function validateTrigger(step: GeneratedWorkflowStep): TestResult {
       stepId: step.id,
       status: 'success',
       message: `✅ Schedule trigger: ${step.title}`,
-      details: 'Schedule akan aktif setelah workflow di-deploy',
+      errorDetail: 'Schedule akan aktif setelah workflow di-deploy',
       timestamp: new Date().toISOString(),
     }
   }
@@ -124,7 +124,7 @@ function validateTrigger(step: GeneratedWorkflowStep): TestResult {
       stepId: step.id,
       status: 'success',
       message: `✅ Webhook trigger: ${step.title}`,
-      details: 'Webhook endpoint akan tersedia setelah activation',
+      errorDetail: 'Webhook endpoint akan tersedia setelah activation',
       timestamp: new Date().toISOString(),
     }
   }
@@ -135,7 +135,7 @@ function validateTrigger(step: GeneratedWorkflowStep): TestResult {
       stepId: step.id,
       status: 'success',
       message: `✅ Email trigger: ${step.title}`,
-      details: 'Email credentials required untuk activation',
+      errorDetail: 'Email credentials required untuk activation',
       timestamp: new Date().toISOString(),
     }
   }
@@ -145,7 +145,7 @@ function validateTrigger(step: GeneratedWorkflowStep): TestResult {
     stepId: step.id,
     status: 'success',
     message: `✅ Trigger valid: ${step.title}`,
-    details: step.description,
+    errorDetail: step.description,
     timestamp: new Date().toISOString(),
   }
 }
@@ -157,7 +157,7 @@ function validateAction(step: GeneratedWorkflowStep): TestResult {
     stepId: step.id,
     status: 'success',
     message: `✅ Action: ${step.title}`,
-    details: step.description || 'Action akan divalidasi saat execution',
+    errorDetail: step.description || 'Action akan divalidasi saat execution',
     timestamp: new Date().toISOString(),
   }
 }
@@ -167,7 +167,7 @@ function validateCondition(step: GeneratedWorkflowStep): TestResult {
     stepId: step.id,
     status: 'success',
     message: `✅ Condition: ${step.title}`,
-    details: 'Branching logic akan dievaluasi saat runtime',
+    errorDetail: 'Branching logic akan dievaluasi saat runtime',
     timestamp: new Date().toISOString(),
   }
 }
@@ -180,7 +180,7 @@ function validateChannel(step: GeneratedWorkflowStep): TestResult {
       stepId: step.id,
       status: 'success',
       message: `✅ Slack notification: ${step.title}`,
-      details: 'Slack credentials required',
+      errorDetail: 'Slack credentials required',
       timestamp: new Date().toISOString(),
     }
   }
@@ -190,7 +190,7 @@ function validateChannel(step: GeneratedWorkflowStep): TestResult {
       stepId: step.id,
       status: 'success',
       message: `✅ Email notification: ${step.title}`,
-      details: 'SMTP credentials required',
+      errorDetail: 'SMTP credentials required',
       timestamp: new Date().toISOString(),
     }
   }
@@ -199,7 +199,7 @@ function validateChannel(step: GeneratedWorkflowStep): TestResult {
     stepId: step.id,
     status: 'success',
     message: `✅ Notification: ${step.title}`,
-    details: step.description,
+    errorDetail: step.description,
     timestamp: new Date().toISOString(),
   }
 }

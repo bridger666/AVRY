@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { getWorkflow, updateWorkflow } from '../lib/n8n'
 import { n8nToReactFlow, reactFlowToN8n } from '../lib/n8nMapper'

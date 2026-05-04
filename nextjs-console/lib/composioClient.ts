@@ -40,7 +40,7 @@ export function buildConnectionId(tenantId: string, appId: string): string {
 
 export async function initiateAuth(toolkitSlug: string, connectionId: string) {
   // Step 1: get or create authConfig for this toolkit
-  const authConfigsList = await composio.authConfigs.list({ toolkitSlug })
+  const authConfigsList = await composio.authConfigs.list({ toolkit: toolkitSlug })
   const authConfigs = (authConfigsList as any).items || []
   
   if (authConfigs.length === 0) {
@@ -62,7 +62,7 @@ export async function initiateAuth(toolkitSlug: string, connectionId: string) {
 }
 
 export async function getToken(toolkitSlug: string, connectionId: string) {
-  const accounts = await composio.connectedAccounts.list({ userId: connectionId })
+  const accounts = await composio.connectedAccounts.list({ userIds: [connectionId] })
   const account = (accounts as any).items?.find(
     (a: any) => a.toolkitSlug === toolkitSlug || a.appName === toolkitSlug
   )
@@ -75,7 +75,7 @@ export async function getToken(toolkitSlug: string, connectionId: string) {
 }
 
 export async function deleteNangoConnection(toolkitSlug: string, connectionId: string) {
-  const accounts = await composio.connectedAccounts.list({ userId: connectionId })
+  const accounts = await composio.connectedAccounts.list({ userIds: [connectionId] })
   const account = (accounts as any).items?.find(
     (a: any) => a.toolkitSlug === toolkitSlug || a.appName === toolkitSlug
   )
@@ -85,7 +85,7 @@ export async function deleteNangoConnection(toolkitSlug: string, connectionId: s
 }
 
 export async function getNangoConnection(toolkitSlug: string, connectionId: string) {
-  const accounts = await composio.connectedAccounts.list({ userId: connectionId })
+  const accounts = await composio.connectedAccounts.list({ userIds: [connectionId] })
   return (accounts as any).items?.find(
     (a: any) => a.toolkitSlug === toolkitSlug || a.appName === toolkitSlug
   ) || null

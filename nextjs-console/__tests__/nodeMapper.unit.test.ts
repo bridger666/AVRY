@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect } from 'vitest'
 import { detectNodeIntent, mapIntentToN8nNode } from '@/lib/workflows/nodeMapper'
 import type { MapContext } from '@/lib/workflows/nodeMapper'

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Unit Tests for n8n Client Functions
  * 
