@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+const FALLBACK = NextResponse.json(
+  { rawagentresponse: '{"route":"console","confidence":0,"reason":"Staying in Console","tabLabel":"Console"}' },
+  { status: 200 }
+)
+
 export async function POST(req: NextRequest) {
-  const body = await req.json()
+  const body = await req.json().catch(() => ({}))
   const bridgeUrl = process.env.VPS_BRIDGE_URL ?? 'http://43.156.108.96:3003'
   const apiKey = process.env.VPS_BRIDGE_API_KEY ?? ''
 
   try {
-    // Zeroclaw /webhook returns JSON: { model: "...", response: "..." }
-    // Both /console/stream and /aria/stream proxy to the same /webhook endpoint
+    // 8s hard timeout — intent classification is best-effort, never blocks the user
     const res = await fetch(`${bridgeUrl}/aria/stream`, {
       method: 'POST',
       headers: {
@@ -15,29 +19,28 @@ export async function POST(req: NextRequest) {
         'x-api-key': apiKey,
       },
       body: JSON.stringify({
-        message: body.message,
+        message: body.message ?? '',
         session_id: 'intent-classifier',
         organization_id: 'default',
         context: body.context ?? {},
       }),
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(8000),
     })
 
     if (!res.ok) {
-      const detail = await res.text().catch(() => '')
-      console.error('[IntentAPI] bridge error:', res.status, detail.slice(0, 200))
-      return NextResponse.json({ error: 'Bridge error' }, { status: res.status })
+      // Non-2xx from bridge → silent fallback, never 503
+      return FALLBACK
     }
 
-    // Zeroclaw returns JSON with { model, response } — extract the response field
+    // Zeroclaw returns JSON: { model, response }
     const data = await res.json()
     const raw: string = data?.response ?? data?.raw_agent_response ?? data?.final_text ?? ''
 
-    console.log('[IntentAPI] upstream response field:', raw.slice(0, 200))
+    if (!raw) return FALLBACK
 
     return NextResponse.json({ rawagentresponse: raw }, { status: 200 })
-  } catch (err) {
-    console.error('[IntentAPI] error:', err instanceof Error ? err.message : err)
-    return NextResponse.json({ error: 'Bridge unreachable' }, { status: 503 })
+  } catch {
+    // Timeout, network error, parse error → silent fallback, never 503
+    return FALLBACK
   }
 }
