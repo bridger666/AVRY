@@ -82,6 +82,15 @@ export async function POST(
   const targetUrl = `${VPS_BRIDGE_URL}${path}`
   const timeoutMs = TIMEOUT_BY_PATH[path] ?? DEFAULT_TIMEOUT_MS
 
+  // ── Special case: /workflows/clarify → route through /console/stream ─────
+  // Zeroclaw does not have a /workflows/clarify endpoint — it only handles
+  // requests via /webhook (exposed as /console/stream on the VPS Bridge).
+  // Rewrite the target and transform the body to match Zeroclaw's schema.
+  const isClarify = path === '/workflows/clarify'
+  const effectiveTargetUrl = isClarify
+    ? `${VPS_BRIDGE_URL}/console/stream`
+    : targetUrl
+
   // Single auth header — x-api-key is the external key, X-Internal-Key is
   // the internal service-to-service token. Both are sent so the bridge can
   // accept either pattern without re-validating downstream.
@@ -94,7 +103,7 @@ export async function POST(
   // ── Log outgoing request ──────────────────────────────────────────────────
   const bodyRecord = body && typeof body === 'object' ? body as Record<string, unknown> : {}
   console.log(`[/api/copilot${path}] → VPS`, {
-    targetUrl,
+    targetUrl: effectiveTargetUrl,
     timeoutMs,
     session_id:          bodyRecord.session_id ?? null,
     organization_id:     bodyRecord.organization_id ?? null,
@@ -106,6 +115,22 @@ export async function POST(
       : null,
   })
 
+  // Transform body for clarify → console/stream schema
+  const outboundBody = isClarify
+    ? {
+        message: bodyRecord.user_request ?? '',
+        session_id: bodyRecord.session_id ?? 'copilot',
+        organization_id: bodyRecord.organization_id ?? 'default',
+        context: {
+          mode: 'workflow_clarify',
+          source_tab: 'workflows',
+          history: Array.isArray(bodyRecord.conversation_history)
+            ? bodyRecord.conversation_history
+            : [],
+        },
+      }
+    : body
+
   const t0 = Date.now()
 
   try {
@@ -114,10 +139,10 @@ export async function POST(
 
     let bridgeResponse: Response
     try {
-      bridgeResponse = await fetch(targetUrl, {
+      bridgeResponse = await fetch(effectiveTargetUrl, {
         method:  'POST',
         headers,
-        body:    JSON.stringify(body),
+        body:    JSON.stringify(outboundBody),
         signal:  controller.signal,
       })
     } finally {
@@ -155,6 +180,16 @@ export async function POST(
         { message: errorMsg },
         { status: bridgeResponse.status }
       )
+    }
+
+    // For clarify: Zeroclaw returns { model, response } — normalize to { message }
+    if (isClarify && parsed && typeof parsed === 'object') {
+      const p = parsed as Record<string, unknown>
+      const responseText = typeof p.response === 'string' ? p.response
+        : typeof p.message === 'string' ? p.message
+        : rawBody || ''
+      console.log(`[/api/copilot${path}] clarify message_length:`, responseText.length)
+      return NextResponse.json({ message: responseText }, { status: 200 })
     }
 
     return NextResponse.json(parsed ?? {}, { status: 200 })
