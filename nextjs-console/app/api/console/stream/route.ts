@@ -74,23 +74,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: true, message: msg }, { status: bridgeResponse.status })
     }
 
-    // /console/stream returns SSE from Zeroclaw — pipe directly to the frontend
-    // The bridge proxyStream() forwards Zeroclaw's SSE response as-is
-    const contentType = bridgeResponse.headers.get('content-type') || ''
-
-    if (contentType.includes('text/event-stream') && bridgeResponse.body) {
-      // SSE response — stream directly through
-      return new NextResponse(bridgeResponse.body, {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache, no-transform',
-          'Connection': 'keep-alive',
-        },
-      })
-    }
-
-    // Fallback: JSON response — convert to SSE for the frontend chat stream
+    // Zeroclaw returns JSON: { model, response } — always use JSON path
+    // The VPS Bridge sets Content-Type: text/event-stream but the body is plain JSON,
+    // not actual SSE events. We must parse it and wrap in SSE format ourselves.
     const bridgeData = await bridgeResponse.json() as {
       response?: string
       raw_agent_response?: string
@@ -100,6 +86,7 @@ export async function POST(req: NextRequest) {
       skill?: string
     }
     const text = bridgeData.response ?? bridgeData.final_text ?? bridgeData.raw_agent_response ?? ''
+    console.log('[console/stream] extracted text length:', text.length, 'preview:', text.slice(0, 100))
     const enc = new TextEncoder()
 
     const { readable, writable } = new TransformStream()
