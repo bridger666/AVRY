@@ -37,26 +37,33 @@ export async function POST(req: NextRequest) {
 
     let bridgeResponse: Response
     try {
+      const bridgePayload = {
+        message: messages.filter((m: { role: string }) => m.role === 'user').at(-1)?.content ?? '',
+        history: messages,
+        mode: 'console',
+        channel: 'console_ui',
+        entrypoint: 'console',
+        context: {
+          session_id,
+          organization_id,
+          user_id,
+          page: 'console',
+          source_tab: 'console',
+        },
+      }
+      console.log('[debug] bridgeUrl:', bridgeUrl)
+      console.log('[debug] bridgePayload:', JSON.stringify(bridgePayload).substring(0, 500))
+
       bridgeResponse = await fetch(bridgeUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Api-Key': config.VPS_BRIDGE_API_KEY,
         },
-        body: JSON.stringify({
-          message: messages.filter((m: { role: string }) => m.role === 'user').at(-1)?.content ?? '',
-          context: {
-            session_id,
-            organization_id,
-            user_id,
-            history: messages,
-            page: 'console',
-            mode: 'console_main',
-            source_tab: 'console',
-          },
-        }),
+        body: JSON.stringify(bridgePayload),
         signal: controller.signal,
       })
+      console.log('[debug] bridgeResponse status:', bridgeResponse.status, 'content-type:', bridgeResponse.headers.get('content-type'))
     } finally {
       clearTimeout(timeoutId)
     }
