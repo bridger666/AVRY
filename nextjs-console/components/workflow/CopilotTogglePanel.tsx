@@ -13,6 +13,8 @@
  */
 
 import { useRef, useState, useEffect, useCallback } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useCopilotPanel } from '@/hooks/useCopilotPanel'
 import { useWorkflowCopilot } from '@/hooks/useWorkflowCopilot'
 import type { CopilotMessage } from '@/hooks/useWorkflowCopilot'
@@ -270,13 +272,17 @@ function CopilotPanelExpanded({
                 </div>
               )}
               <div className={`flex flex-col gap-1 max-w-[85%] ${msg.role === 'user' ? 'items-end' : ''}`}>
-                <p className={`text-[13px] leading-[1.55] m-0 px-3 py-2 rounded-[10px] whitespace-pre-wrap break-words text-left ${
-                  msg.role === 'user'
-                    ? 'bg-[#282825] border border-white/5 text-[#f7f7f7] rounded-br-[2px]'
-                    : 'bg-white/[0.04] border border-white/5 text-[#f7f7f7] rounded-bl-[2px]'
-                }`}>
-                  {msg.content}
-                </p>
+                {msg.role === 'assistant' ? (
+                  <div className="text-[13px] leading-[1.55] px-3 py-2 rounded-[10px] bg-white/[0.04] border border-white/5 text-[#f7f7f7] rounded-bl-[2px] break-words text-left [&_strong]:font-semibold [&_em]:italic [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_p]:m-0 [&_p+p]:mt-1.5 [&_code]:bg-white/10 [&_code]:px-1 [&_code]:rounded [&_code]:text-[12px]">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="text-[13px] leading-[1.55] m-0 px-3 py-2 rounded-[10px] whitespace-pre-wrap break-words text-left bg-[#282825] border border-white/5 text-[#f7f7f7] rounded-br-[2px]">
+                    {msg.content}
+                  </p>
+                )}
               </div>
             </div>
           ))}
