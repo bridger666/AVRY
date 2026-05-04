@@ -13,6 +13,25 @@ const DRAFTS_DIR = path.join(WORKFLOW_STORE, 'drafts');
 const N8N_HOST = (process.env.N8N_HOST || 'http://localhost:5678').replace(/\/$/, '');
 const N8N_API_KEY = process.env.N8N_API_KEY || '';
 
+// Structured JSON logging
+const logInfo = (data) => {
+  console.log(JSON.stringify({
+    level: 'info',
+    service: 'n8n-as-code-service',
+    ts: new Date().toISOString(),
+    ...data,
+  }));
+};
+
+const logError = (data) => {
+  console.error(JSON.stringify({
+    level: 'error',
+    service: 'n8n-as-code-service',
+    ts: new Date().toISOString(),
+    ...data,
+  }));
+};
+
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
   const lines = fs.readFileSync(filePath, 'utf8').split(/\r?\n/);
@@ -239,6 +258,7 @@ function buildRealN8nWorkflow({ draftId, intent, steps }) {
     // Use nodeType from step if provided (from ZeroClaw/n8n MCP inspection)
     // Fall back to detectIntent only if nodeType is not available
     let nodeConfig;
+    let intent;
     if (step.nodeType) {
       // Direct n8n node type provided — use it directly
       nodeConfig = {
@@ -246,16 +266,17 @@ function buildRealN8nWorkflow({ draftId, intent, steps }) {
         typeVersion: step.typeVersion || 1,
         parameters: step.parameters || {},
       };
+      intent = 'direct';
     } else {
-      const detectedIntent = detectIntent(
+      intent = detectIntent(
         step.title || step.action || '',
         step.type  || '',
         step.description || ''
       );
-      nodeConfig = NODE_TYPE_MAP[detectedIntent] || NODE_TYPE_MAP.default;
+      nodeConfig = NODE_TYPE_MAP[intent] || NODE_TYPE_MAP.default;
     }
     const nodeName   = step.title || `Step ${index + 1}`;
-    const nodeId     = `node_${index + 1}_${detectedIntent}`;
+    const nodeId     = `node_${index + 1}_${intent}`;
 
     nodes.push({
       id:          nodeId,
@@ -428,12 +449,27 @@ app.get('/health', (req, res) => {
 app.post('/drafts/build', (req, res) => {
   try {
     const { session_id, draft_id, intent, steps, config } = req.body || {};
+    
+    logInfo({ event: 'request', path: '/drafts/build', session_id });
+    
     const normalizedSteps = normalizeSteps(steps);
     if (!intent || typeof intent !== 'string') {
-      return res.status(400).json({ error: true, message: 'intent is required' });
+      return res.status(400).json({
+        error: {
+          code: 'INVALID_WORKFLOW_SPEC',
+          message: 'intent is required',
+          source: 'n8n-as-code-service'
+        }
+      });
     }
     if (normalizedSteps.length === 0) {
-      return res.status(400).json({ error: true, message: 'steps must be a non-empty array' });
+      return res.status(400).json({
+        error: {
+          code: 'INVALID_WORKFLOW_SPEC',
+          message: 'steps must be a non-empty array',
+          source: 'n8n-as-code-service'
+        }
+      });
     }
 
     ensureDraftsDir();
@@ -458,6 +494,8 @@ app.post('/drafts/build', (req, res) => {
     }));
     writeMeta(resolvedDraftId, meta);
 
+    logInfo({ event: 'success', path: '/drafts/build', status: 'ok', draftId: resolvedDraftId });
+
     res.json({
       draft_id: resolvedDraftId,
       workflow_code_path: workflowPath,
@@ -465,6 +503,11 @@ app.post('/drafts/build', (req, res) => {
       state: 'draft_created',
     });
   } catch (error) {
+    logError({
+      event: 'error',
+      path: '/drafts/build',
+      error_message: error.message
+    });
     res.status(error.status || 500).json({ error: true, message: error.message });
   }
 });
@@ -942,7 +985,18 @@ app.post('/drafts/bind-credentials', async (req, res) => {
 app.post('/drafts/deploy', async (req, res) => {
   try {
     const { draft_id, activate = true } = req.body || {};
-    if (!draft_id) return res.status(400).json({ error: true, message: 'draft_id is required' });
+    
+    logInfo({ event: 'request', path: '/drafts/deploy', draft_id });
+    
+    if (!draft_id) {
+      return res.status(400).json({
+        error: {
+          code: 'INVALID_WORKFLOW_SPEC',
+          message: 'draft_id is required',
+          source: 'n8n-as-code-service'
+        }
+      });
+    }
 
     const meta        = readMeta(draft_id);
     const workflowDef = buildRealN8nWorkflow({
@@ -957,8 +1011,11 @@ app.post('/drafts/deploy', async (req, res) => {
 
     if (missing.length > 0) {
       return res.status(400).json({
-        error:   true,
-        message: `Cannot deploy: ${missing.length} credential(s) missing`,
+        error: {
+          code: 'INVALID_WORKFLOW_SPEC',
+          message: `Cannot deploy: ${missing.length} credential(s) missing`,
+          source: 'n8n-as-code-service'
+        },
         missing,
       });
     }
@@ -1010,6 +1067,15 @@ app.post('/drafts/deploy', async (req, res) => {
     meta.updatedAt = new Date().toISOString();
     writeMeta(draft_id, meta);
 
+    logInfo({ 
+      event: 'success', 
+      path: '/drafts/deploy', 
+      status: 'ok', 
+      draftId, 
+      workflowId,
+      activated 
+    });
+
     return res.json({
       draft_id,
       workflowId,
@@ -1021,6 +1087,11 @@ app.post('/drafts/deploy', async (req, res) => {
         : `Workflow deployed (not activated). Open: ${n8nHost}/workflow/${workflowId}`,
     });
   } catch (error) {
+    logError({
+      event: 'error',
+      path: '/drafts/deploy',
+      error_message: error.message
+    });
     res.status(error.status || 500).json({ error: true, message: error.message });
   }
 });
@@ -1050,6 +1121,7 @@ app.post('/drafts/cleanup', (req, res) => {
   }
 });
 
-app.listen(3500, '127.0.0.1', () => {
-  console.log('n8n-as-code adapter running on 127.0.0.1:3500');
+const PORT = process.env.PORT || 3500;
+app.listen(PORT, '127.0.0.1', () => {
+  console.log(`n8n-as-code adapter running on 127.0.0.1:${PORT}`);
 });

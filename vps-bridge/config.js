@@ -349,7 +349,8 @@ Rules:
 const config = {
   // Server
   port: parseInt(process.env.VPS_BRIDGE_PORT || process.env.PORT) || 3003,
-  apiKey: process.env.VPS_BRIDGE_API_KEY || process.env.API_KEY,
+  apiKey: process.env.VPS_BRIDGE_API_KEY || process.env.API_KEY,  // Keep for backward compatibility
+  internalToken: process.env.INTERNAL_TOKEN || 'aivory-internal-2026',  // NEW
   corsOrigin: process.env.VPS_BRIDGE_CORS_ORIGIN || process.env.CORS_ORIGIN || '*',
   
   // OpenRouter
@@ -382,8 +383,8 @@ const config = {
 function validateConfig() {
   const missing = [];
   
-  if (!config.apiKey) {
-    missing.push('API_KEY');
+  if (!config.internalToken) {
+    missing.push('INTERNAL_TOKEN');
   }
   
   if (!config.openrouterApiKey) {

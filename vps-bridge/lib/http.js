@@ -48,7 +48,20 @@ async function request(method, url, { body, headers, timeout = 10000 } = {}) {
       return null;
     }
 
-    return await res.json();
+    // Read response as text first to handle empty or non-JSON responses
+    const text = await res.text();
+    
+    // Return null for empty body
+    if (!text || text.trim() === '') {
+      return null;
+    }
+    
+    // Try to parse as JSON, return raw text on parse failure
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
   } catch (error) {
     clearTimeout(id);
     throw error;

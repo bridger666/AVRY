@@ -28,6 +28,7 @@ export interface CopilotMessage {
 export interface UseWorkflowCopilotReturn {
   messages: CopilotMessage[]
   loading: boolean
+  loadingHint: string | null   // progressive hint: null → "working..." → "still working..."
   error: string | null
   stage: CopilotConversationState['stage']
   workflow: GeneratedWorkflow | null
@@ -81,6 +82,7 @@ export function useWorkflowCopilot(): UseWorkflowCopilotReturn {
 
   const [messages, setMessages] = useState<CopilotMessage[]>(initial.current?.messages ?? [])
   const [loading, setLoading] = useState(false)
+  const [loadingHint, setLoadingHint] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const [serverState, setServerState] = useState<CopilotConversationState | null>(
@@ -114,8 +116,14 @@ export function useWorkflowCopilot(): UseWorkflowCopilotReturn {
     if (!trimmed || loading) return
 
     setError(null)
+    setLoadingHint(null)
     setMessages(prev => [...prev, { role: 'user', content: trimmed }])
     setLoading(true)
+
+    // Progressive loading hints — shown after 5s and 30s so the user knows
+    // Zeroclaw is still working rather than the request being stuck.
+    const hint5  = setTimeout(() => setLoadingHint('Zeroclaw is working on it...'), 5_000)
+    const hint30 = setTimeout(() => setLoadingHint('Still working — this can take up to 2 minutes'), 30_000)
 
     try {
       const response: CopilotApiResponse = await sendCopilotMessage({
@@ -144,13 +152,17 @@ export function useWorkflowCopilot(): UseWorkflowCopilotReturn {
       setError(msg)
       setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${msg}` }])
     } finally {
+      clearTimeout(hint5)
+      clearTimeout(hint30)
       setLoading(false)
+      setLoadingHint(null)
     }
   }, [loading, sessionId, serverState])
 
   const reset = useCallback(() => {
     setMessages([])
     setLoading(false)
+    setLoadingHint(null)
     setError(null)
     setServerState(null)
     setSessionId(null)
@@ -165,6 +177,7 @@ export function useWorkflowCopilot(): UseWorkflowCopilotReturn {
   return {
     messages,
     loading,
+    loadingHint,
     error,
     stage,
     workflow,

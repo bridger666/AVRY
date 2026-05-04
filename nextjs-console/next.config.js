@@ -4,7 +4,7 @@ const nextConfig = {
     return [
       {
         source: '/api/bridge/:path*',
-        destination: 'http://43.156.108.96:3003/bridge/:path*',
+        destination: 'https://api.aivory.id/bridge/:path*',
       },
     ]
   },
