@@ -33,8 +33,8 @@ const VPS_BRIDGE_API_KEY =
   process.env.VPS_BRIDGE_API_KEY ||
   process.env.NEXT_PUBLIC_VPS_BRIDGE_API_KEY ||
   ''
-const UPSTREAM_PATH = '/workflows/clarify'
-const TIMEOUT_MS    = 10_000   // 10s — clarify is a quick LLM call; fail fast
+const UPSTREAM_PATH = '/console/stream'
+const TIMEOUT_MS    = 30_000   // 30s — route through Zeroclaw webhook
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -98,15 +98,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // ── 3. Proxy to VPS Bridge ────────────────────────────────────────────────
+  // /workflows/clarify doesn't exist on Zeroclaw — route through /console/stream
+  // which proxies to Zeroclaw's /webhook endpoint
   const targetUrl = `${VPS_BRIDGE_URL}${UPSTREAM_PATH}`
 
   const upstreamBody: Record<string, unknown> = {
+    message: user_request,
     session_id,
     organization_id,
-    user_request,
-  }
-  if (Array.isArray(conversation_history)) {
-    upstreamBody.conversation_history = conversation_history
+    context: {
+      mode: 'workflow_clarify',
+      source_tab: 'workflows',
+      history: Array.isArray(conversation_history) ? conversation_history : [],
+    },
   }
 
   const headers: Record<string, string> = {
@@ -208,6 +212,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // ── 7. Return success ─────────────────────────────────────────────────────
-  // VPS Bridge should return { message: string }
-  return NextResponse.json(parsed ?? {}, { status: 200 })
+  // Zeroclaw returns { model, response } — normalize to { message } for callers
+  const responseText =
+    parsed &&
+    typeof parsed === 'object' &&
+    typeof (parsed as Record<string, unknown>).response === 'string'
+      ? (parsed as Record<string, unknown>).response as string
+      : rawText || ''
+
+  console.log('[/api/workflows/clarify] success, message_length:', responseText.length)
+  return NextResponse.json({ message: responseText }, { status: 200 })
 }
