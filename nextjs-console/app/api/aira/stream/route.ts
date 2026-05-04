@@ -61,16 +61,16 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: true, message: msg }, { status: bridgeResponse.status })
     }
 
-    // /bridge/aira returns JSON — convert to SSE for the frontend chat stream
-    // Bridge now returns both final_text (cleaned) and raw_agent_response (compat)
+    // Zeroclaw returns JSON: { model, response } — convert to SSE for the frontend
     const bridgeData = await bridgeResponse.json() as {
+      response?: string
       raw_agent_response?: string
       final_text?: string
       mode?: string
       model?: string
       skill?: string
     }
-    const text = bridgeData.final_text ?? bridgeData.raw_agent_response ?? ''
+    const text = bridgeData.response ?? bridgeData.final_text ?? bridgeData.raw_agent_response ?? ''
     const enc = new TextEncoder()
 
     const { readable, writable } = new TransformStream()

@@ -6,7 +6,8 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.VPS_BRIDGE_API_KEY ?? ''
 
   try {
-    // /aria/stream returns SSE — consume it and collect the full text
+    // Zeroclaw /webhook returns JSON: { model: "...", response: "..." }
+    // Both /console/stream and /aria/stream proxy to the same /webhook endpoint
     const res = await fetch(`${bridgeUrl}/aria/stream`, {
       method: 'POST',
       headers: {
@@ -14,50 +15,27 @@ export async function POST(req: NextRequest) {
         'x-api-key': apiKey,
       },
       body: JSON.stringify({
+        message: body.message,
         session_id: 'intent-classifier',
         organization_id: 'default',
-        message: body.message,
+        context: body.context ?? {},
       }),
       signal: AbortSignal.timeout(10000),
     })
 
     if (!res.ok) {
+      const detail = await res.text().catch(() => '')
+      console.error('[IntentAPI] bridge error:', res.status, detail.slice(0, 200))
       return NextResponse.json({ error: 'Bridge error' }, { status: res.status })
     }
 
-    // Consume SSE stream and collect all chunk content
-    const reader = res.body?.getReader()
-    if (!reader) {
-      return NextResponse.json({ error: 'No response body' }, { status: 502 })
-    }
+    // Zeroclaw returns JSON with { model, response } — extract the response field
+    const data = await res.json()
+    const raw: string = data?.response ?? data?.raw_agent_response ?? data?.final_text ?? ''
 
-    const decoder = new TextDecoder()
-    let accumulated = ''
+    console.log('[IntentAPI] upstream response field:', raw.slice(0, 200))
 
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      const chunk = decoder.decode(value, { stream: true })
-      // Parse SSE lines: "data: {...}\n\n"
-      for (const line of chunk.split('\n')) {
-        if (!line.startsWith('data: ')) continue
-        try {
-          const event = JSON.parse(line.slice(6))
-          if (event.type === 'chunk' && event.content) {
-            accumulated += event.content
-          } else if (event.type === 'done') {
-            break
-          }
-        } catch {
-          // ignore malformed SSE lines
-        }
-      }
-    }
-
-    console.log('[IntentAPI] accumulated response:', accumulated.slice(0, 200))
-
-    return NextResponse.json({ rawagentresponse: accumulated }, { status: 200 })
+    return NextResponse.json({ rawagentresponse: raw }, { status: 200 })
   } catch (err) {
     console.error('[IntentAPI] error:', err instanceof Error ? err.message : err)
     return NextResponse.json({ error: 'Bridge unreachable' }, { status: 503 })
