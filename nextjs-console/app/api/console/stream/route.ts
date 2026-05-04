@@ -28,9 +28,9 @@ export async function POST(req: NextRequest) {
     }
 
     const config = getConfig()
-    // FIXED: Route console chat through /bridge/aira with Aivory context
-    // This ensures console uses the same Zeroclaw skill + SOUL + persona as AIRA
-    const bridgeUrl = `${config.VPS_BRIDGE_URL}/bridge/aira`
+    // FIXED: Use /console/stream on VPS Bridge (thin proxy) which forwards to Zeroclaw /webhook
+    // Previous code used /bridge/aira which doesn't exist in thin-proxy server.js
+    const bridgeUrl = `${config.VPS_BRIDGE_URL}/console/stream`
 
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 115000)
@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
           context: {
             session_id,
             organization_id,
+            user_id,
             history: messages,
             page: 'console',
             mode: 'console_main',
@@ -66,7 +67,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: true, message: msg }, { status: bridgeResponse.status })
     }
 
-    // /bridge/aira returns JSON — convert to SSE for the frontend chat stream
+    // /console/stream returns SSE from Zeroclaw — pipe directly to the frontend
+    // The bridge proxyStream() forwards Zeroclaw's SSE response as-is
+    const contentType = bridgeResponse.headers.get('content-type') || ''
+
+    if (contentType.includes('text/event-stream') && bridgeResponse.body) {
+      // SSE response — stream directly through
+      return new NextResponse(bridgeResponse.body, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache, no-transform',
+          'Connection': 'keep-alive',
+        },
+      })
+    }
+
+    // Fallback: JSON response — convert to SSE for the frontend chat stream
     const bridgeData = await bridgeResponse.json() as {
       raw_agent_response?: string
       final_text?: string
