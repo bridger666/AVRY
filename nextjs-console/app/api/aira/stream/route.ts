@@ -29,8 +29,9 @@ export async function POST(request: NextRequest) {
     }
 
     const config = getConfig()
-    // Route through /bridge/aira — the single ZeroClaw entry point
-    const bridgeUrl = `${config.VPS_BRIDGE_URL}/bridge/aira`
+    // FIXED: Use /aria/stream on VPS Bridge (thin proxy) which forwards to Zeroclaw /webhook
+    // Previous code used /bridge/aira which doesn't exist in thin-proxy server.js
+    const bridgeUrl = `${config.VPS_BRIDGE_URL}/aria/stream`
 
     // FIXED: TIMEOUT INCREASE — abort after 115s
     const controller = new AbortController()
