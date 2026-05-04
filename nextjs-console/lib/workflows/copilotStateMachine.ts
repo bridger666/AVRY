@@ -558,11 +558,11 @@ export class CopilotStateMachine {
       const { workflow } = result
 
       this.state.generatedWorkflow = {
-        workflowName: workflow.workflowName,
-        steps: workflow.steps,
-        estimate_hours: workflow.estimate_hours ?? 2,
-        automation_score: workflow.automation_score ?? 0.8,
-        summary: workflow.summary ?? '',
+        workflowName: workflow?.workflowName ?? 'Untitled Workflow',
+        steps: workflow?.steps ?? [],
+        estimate_hours: workflow?.estimate_hours ?? 2,
+        automation_score: workflow?.automation_score ?? 0.8,
+        summary: workflow?.summary ?? '',
         nodeConfigs: [],
       }
 
@@ -570,7 +570,7 @@ export class CopilotStateMachine {
 
       const displayMessage =
         result.message ??
-        this.buildWorkflowSummaryMessage(workflow.steps, workflow.workflowName)
+        this.buildWorkflowSummaryMessage(workflow?.steps ?? [], workflow?.workflowName ?? 'Untitled Workflow')
 
       return this.setAssistantMessage(displayMessage)
     } catch (error: unknown) {

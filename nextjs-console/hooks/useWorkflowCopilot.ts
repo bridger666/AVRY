@@ -122,8 +122,8 @@ export function useWorkflowCopilot(): UseWorkflowCopilotReturn {
 
     // Progressive loading hints — shown after 5s and 30s so the user knows
     // Zeroclaw is still working rather than the request being stuck.
-    const hint5  = setTimeout(() => setLoadingHint('Aivory is working on it...'), 5_000)
-    const hint30 = setTimeout(() => setLoadingHint('Still working — this can take up to 2 minutes'), 30_000)
+    const hint5  = setTimeout(() => setLoadingHint('Aivory is thinking...'), 5_000)
+    const hint30 = setTimeout(() => setLoadingHint('Almost there — this can take up to 2 minutes'), 30_000)
 
     try {
       const response: CopilotApiResponse = await sendCopilotMessage({
