@@ -17,8 +17,8 @@ export async function POST(request: NextRequest) {
     }
 
     const config = getConfig()
-    // Route through /bridge/aira — the single ZeroClaw entry point
-    const bridgeUrl = `${config.VPS_BRIDGE_URL}/bridge/aira`
+    // Route through /aria/stream — the correct thin-proxy endpoint
+    const bridgeUrl = `${config.VPS_BRIDGE_URL}/aria/stream`
 
     // FIXED: TIMEOUT INCREASE — abort after 115s
     const controller = new AbortController()
@@ -56,16 +56,16 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: true, message: msg }, { status: bridgeResponse.status })
     }
 
-    // /bridge/aira returns JSON — convert to SSE for the frontend chat stream
-    // Bridge now returns both final_text (cleaned) and raw_agent_response (compat)
+    // Zeroclaw returns JSON: { model, response } — convert to SSE for the frontend
     const bridgeData = await bridgeResponse.json() as {
+      response?: string
       raw_agent_response?: string
       final_text?: string
       mode?: string
       model?: string
       skill?: string
     }
-    const text = bridgeData.final_text ?? bridgeData.raw_agent_response ?? ''
+    const text = bridgeData.response ?? bridgeData.final_text ?? bridgeData.raw_agent_response ?? ''
     const enc = new TextEncoder()
 
     const { readable, writable } = new TransformStream()

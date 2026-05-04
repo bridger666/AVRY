@@ -92,13 +92,14 @@ export async function POST(req: NextRequest) {
 
     // Fallback: JSON response — convert to SSE for the frontend chat stream
     const bridgeData = await bridgeResponse.json() as {
+      response?: string
       raw_agent_response?: string
       final_text?: string
       mode?: string
       model?: string
       skill?: string
     }
-    const text = bridgeData.final_text ?? bridgeData.raw_agent_response ?? ''
+    const text = bridgeData.response ?? bridgeData.final_text ?? bridgeData.raw_agent_response ?? ''
     const enc = new TextEncoder()
 
     const { readable, writable } = new TransformStream()
