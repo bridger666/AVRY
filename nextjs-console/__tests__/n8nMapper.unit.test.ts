@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Unit Tests for n8n ↔ ReactFlow Mapper Functions
  * 

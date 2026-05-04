@@ -65,11 +65,11 @@ export default function AiraFloatingAssistant() {
     if (chipId === "upload") { fileInputRef.current?.click(); return }
     const labels: Record<string, string> = { attach: "Attach context from current page", log: "Show execution log", blueprint: "Switch to Blueprint mode" }
     const msg = labels[chipId]
-    if (msg) handleSend(msg, [])
+    if (msg) handleSend(msg)
   }
 
-  const pageContext = getPageContext(pathname)
-  const visible = ALLOWED_PATHS.some(p => pathname.startsWith(p))
+  const pageContext = getPageContext(pathname ?? "")
+  const visible = ALLOWED_PATHS.some(p => (pathname ?? "").startsWith(p))
 
   // Init session once
   useEffect(() => {
@@ -235,7 +235,7 @@ export default function AiraFloatingAssistant() {
           setMessages(prev =>
             prev.map(m =>
               m.id === assistantId
-                ? { ...m, content: chunk.content, isStreaming: true }
+                ? { ...m, content: chunk.content ?? "", isStreaming: true }
                 : m
             )
           )
@@ -376,7 +376,7 @@ export default function AiraFloatingAssistant() {
               onKeyDown={e => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault()
-                  if (hasContent && !isLoading) handleSend(input, [])
+                  if (hasContent && !isLoading) handleSend(input)
                 }
               }}
               disabled={isLoading}
@@ -394,7 +394,7 @@ export default function AiraFloatingAssistant() {
                 </svg>
               </button>
               <button
-                onClick={() => { if (hasContent && !isLoading) handleSend(input, []) }}
+                onClick={() => { if (hasContent && !isLoading) handleSend(input) }}
                 disabled={!hasContent || isLoading}
                 className={`w-8 h-8 rounded-[20px] flex items-center justify-center transition-all ${hasContent ? 'bg-[#353532] text-white border border-[#666864] hover:bg-[#444440]' : 'bg-[#555550] text-white/60'}`}
                 aria-label="Send"
@@ -414,7 +414,7 @@ export default function AiraFloatingAssistant() {
             onChange={e => {
               const files = Array.from(e.target.files ?? [])
               if (files.length > 0) {
-                handleSend(`Please analyze this file: ${files[0].name}`, [])
+                handleSend(`Please analyze this file: ${files[0].name}`)
               }
               if (fileInputRef.current) fileInputRef.current.value = ""
             }}

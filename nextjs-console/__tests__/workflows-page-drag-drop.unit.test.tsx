@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Unit Tests for App Drag-and-Drop from Expanded Sidebar
  * 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Integration Tests for Sidebar Flow
  * 

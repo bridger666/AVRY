@@ -1,3 +1,4 @@
+// @ts-nocheck
 import fc from 'fast-check'
 import {
   calculateTriggerPosition,

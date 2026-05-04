@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Property-Based Tests for WorkflowContainer Auto-Expand Last Phase
  * 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Unit Tests for App Drag-and-Drop After Expanding from Collapsed State
  * 

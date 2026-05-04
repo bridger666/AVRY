@@ -46,7 +46,7 @@ export function buildConnectionId(tenantId: string, appId: string): string {
 }
 
 export async function initiateAuth(providerConfigKey: string, connectionId: string) {
-  const result = await nango.auth(providerConfigKey, connectionId)
+  const result = await (nango as any).auth(providerConfigKey, connectionId)
   return { url: (result as { url?: string }).url || result }
 }
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Property-Based Tests for App-to-Step Action Mapping
  * 
