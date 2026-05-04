@@ -8,12 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@nangohq/frontend':
-        specifier: ^0.70.0
-        version: 0.70.1
-      '@nangohq/node':
-        specifier: ^0.70.0
-        version: 0.70.1
       '@tailwindcss/postcss':
         specifier: ^4.2.2
         version: 4.2.2
@@ -599,16 +593,6 @@ packages:
     engines: {node: '>=20'}
     peerDependencies:
       '@langchain/core': ^1.1.42
-
-  '@nangohq/frontend@0.70.1':
-    resolution: {integrity: sha512-EWyx9MhTdQlbM9I8wY7PxdQa7OnUIHt2kILvTMWZFKr2OPJo5k+AejQxs2t1QTT6A2gvEZlziYLoztxhXsJcTg==}
-
-  '@nangohq/node@0.70.1':
-    resolution: {integrity: sha512-WupMNpp96GCCNTs5e5UtEoo/snpnJ6tGNPf58hXqDANwFuZG7ePdjN5giyH1AePoqi0QkcXNNHuqPtLZPr8z5g==}
-    engines: {node: '>=20.0'}
-
-  '@nangohq/types@0.70.1':
-    resolution: {integrity: sha512-hcmlDwKK5rI2+KSroh4lz6BIH93mLiv9cRle8T3msrgILp14efB8FZVHHGS6UAUziKDtA6d1aS/SU8bUtgEo6Q==}
 
   '@napi-rs/canvas-android-arm64@0.1.97':
     resolution: {integrity: sha512-V1c/WVw+NzH8vk7ZK/O8/nyBSCQimU8sfMsB/9qeSvdkGKNU7+mxy/bIF0gTgeBFmHpj30S4E9WHMSrxXGQuVQ==}
@@ -1447,9 +1431,6 @@ packages:
   available-typed-arrays@1.0.7:
     resolution: {integrity: sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==}
     engines: {node: '>= 0.4'}
-
-  axios@1.15.0:
-    resolution: {integrity: sha512-wWyJDlAatxk30ZJer+GeCWS209sA42X+N5jU2jy6oHTp7ufw8uzUTVFBX9+wTfAlhiJXGS0Bq7X6efruWjuK9Q==}
 
   axios@1.16.0:
     resolution: {integrity: sha512-6hp5CwvTPlN2A31g5dxnwAX0orzM7pmCRDLnZSX772mv8WDqICwFjowHuPs04Mc8deIld1+ejhtaMn5vp6b+1w==}
@@ -3129,10 +3110,6 @@ packages:
     resolution: {integrity: sha512-t0rzBq87m3fVcduHDUFhKmyyX+9eo6WQjZvf51Ea/M0Q7+T374Jp1aUiyUl0GKxp8M/OETVHSDvmkyPgvX+X2w==}
     engines: {node: '>=10'}
 
-  type-fest@4.41.0:
-    resolution: {integrity: sha512-TeTSQ6H5YHvpqVwBRcnLDCBnDOHWYu7IvGbHT6N8AOymcr9PJGjc1GTtiWZTYg0NCgYwvnYWEkVChQAr9bjfwA==}
-    engines: {node: '>=16'}
-
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
@@ -3880,27 +3857,6 @@ snapshots:
     transitivePeerDependencies:
       - ws
 
-  '@nangohq/frontend@0.70.1':
-    dependencies:
-      '@nangohq/types': 0.70.1
-    transitivePeerDependencies:
-      - debug
-
-  '@nangohq/node@0.70.1':
-    dependencies:
-      '@nangohq/types': 0.70.1
-      axios: 1.15.0
-    transitivePeerDependencies:
-      - debug
-
-  '@nangohq/types@0.70.1':
-    dependencies:
-      axios: 1.15.0
-      json-schema: 0.4.0
-      type-fest: 4.41.0
-    transitivePeerDependencies:
-      - debug
-
   '@napi-rs/canvas-android-arm64@0.1.97':
     optional: true
 
@@ -4583,14 +4539,6 @@ snapshots:
   available-typed-arrays@1.0.7:
     dependencies:
       possible-typed-array-names: 1.1.0
-
-  axios@1.15.0:
-    dependencies:
-      follow-redirects: 1.16.0
-      form-data: 4.0.5
-      proxy-from-env: 2.1.0
-    transitivePeerDependencies:
-      - debug
 
   axios@1.16.0:
     dependencies:
@@ -6610,8 +6558,6 @@ snapshots:
   type-detect@4.1.0: {}
 
   type-fest@0.21.3: {}
-
-  type-fest@4.41.0: {}
 
   typescript@5.9.3: {}
 

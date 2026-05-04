@@ -278,7 +278,7 @@ export default function IntegrationsPage() {
 
   const fetchConnections = useCallback(async () => {
     try {
-      // Fetch OAuth connections from Next.js API (Nango)
+      // Fetch OAuth connections from Next.js API (Composio)
       const oauthRes = await fetch(`/api/integrations/oauth?action=status`)
       const oauthConns = oauthRes.ok ? await oauthRes.json() : []
 
@@ -300,7 +300,7 @@ export default function IntegrationsPage() {
   }, [fetchApps, fetchConnections])
 
   // ── OAuth Connection Polling ───────────────────────────
-  // After opening a Nango popup, poll /auth/status every 2s
+  // After opening a Composio OAuth popup, poll /auth/status every 2s
   // until connection appears or 120s timeout
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
