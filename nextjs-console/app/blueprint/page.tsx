@@ -431,7 +431,7 @@ function BlueprintInsightsSection({
                   </div>
                   <span className={styles.archPipelineLabel}>{stage.label}</span>
                   <ul className={styles.archPipelineItems}>
-                    {stage.items.map((item, j) => <li key={j}>{item}</li>)}
+                    {stage.items.map((item: any, j: number) => <li key={j}>{item}</li>)}
                   </ul>
                 </div>
                 {i < s.architecture.stages.length - 1 && (
