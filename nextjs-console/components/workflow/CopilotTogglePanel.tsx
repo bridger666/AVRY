@@ -55,6 +55,7 @@ export function CopilotTogglePanel({ onApplyWorkflow, onApplySuggestion }: Copil
   const {
     messages,
     loading,
+    loadingHint,
     error,
     stage,
     workflow,
@@ -79,6 +80,7 @@ export function CopilotTogglePanel({ onApplyWorkflow, onApplySuggestion }: Copil
           onClose={handleClose}
           messages={messages}
           loading={loading}
+          loadingHint={loadingHint}
           error={error}
           stage={stage}
           workflow={workflow}
@@ -120,6 +122,7 @@ interface CopilotPanelExpandedProps {
   onClose: () => void
   messages: CopilotMessage[]
   loading: boolean
+  loadingHint: string | null
   error: string | null
   stage: string
   workflow: GeneratedWorkflow | null
@@ -131,7 +134,7 @@ interface CopilotPanelExpandedProps {
 }
 
 function CopilotPanelExpanded({
-  onClose, messages, loading, error,
+  onClose, messages, loading, loadingHint, error,
   stage, workflow, canApply, isCompleted,
   onSendMessage, onApplyWorkflow, onClear,
 }: CopilotPanelExpandedProps) {
@@ -283,12 +286,17 @@ function CopilotPanelExpanded({
               <div className="shrink-0 mt-0.5">
                 <img src="/Aivory_Avatar.svg" alt="Aivory" className="w-4 h-4" />
               </div>
-              <div className="px-3 py-2 bg-white/[0.04] border border-white/5 rounded-[10px] rounded-bl-[2px]">
+              <div className="flex flex-col gap-1.5 px-3 py-2 bg-white/[0.04] border border-white/5 rounded-[10px] rounded-bl-[2px]">
                 <div className="flex gap-1">
                   {[0, 1, 2].map(idx => (
                     <span key={idx} className="w-[5px] h-[5px] rounded-full bg-[#a1a1aa] animate-bounce" style={{ animationDelay: `${idx * 0.2}s` }} />
                   ))}
                 </div>
+                {loadingHint && (
+                  <p className="text-[11px] text-[#a1a1aa] m-0 animate-pulse">
+                    {loadingHint}
+                  </p>
+                )}
               </div>
             </div>
           )}

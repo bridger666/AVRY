@@ -603,6 +603,13 @@ async function handleWorkflowGeneration(req, res, next) {
   try {
     const { workflow_id, workflow_title, workflow_steps, diagnostic_context, company_name } = req.body;
 
+    logger.info('workflow_request', {
+      event: 'workflow_request',
+      endpoint: '/workflows/generate',
+      workflow_id,
+      workflow_title,
+    });
+
     if (!workflow_id || !workflow_title) {
       const error = new Error('Missing required fields: workflow_id, workflow_title');
       error.statusCode = 400;
@@ -702,8 +709,23 @@ Replace every FILL placeholder with specific, actionable content for ${company_n
       routing.models
     );
 
+    logger.info('workflow_success', {
+      event: 'workflow_success',
+      endpoint: '/workflows/generate',
+      workflow_id,
+      workflow_title,
+      status: 'ok',
+    });
+
     res.json(result);
   } catch (error) {
+    logger.error('workflow_error', {
+      event: 'workflow_error',
+      endpoint: '/workflows/generate',
+      workflow_id,
+      workflow_title,
+      error_message: error.message,
+    });
     next(error);
   }
 }
@@ -715,6 +737,13 @@ Replace every FILL placeholder with specific, actionable content for ${company_n
 async function handleWorkflowClarify(req, res, next) {
   try {
     const { session_id, organization_id, user_request, conversation_history } = req.body;
+
+    logger.info('workflow_request', {
+      event: 'workflow_request',
+      endpoint: '/workflows/clarify',
+      session_id,
+      organization_id,
+    });
 
     if (!user_request || typeof user_request !== 'string') {
       const error = new Error('Missing or invalid field: user_request (expected string)');
@@ -748,8 +777,126 @@ Reply in the same language as the user. Plain text response only.`;
       routing.models
     );
 
+    logger.info('workflow_success', {
+      event: 'workflow_success',
+      endpoint: '/workflows/clarify',
+      session_id,
+      organization_id,
+      status: 'ok',
+    });
+
     res.json({ message: result });
   } catch (error) {
+    logger.error('workflow_error', {
+      event: 'workflow_error',
+      endpoint: '/workflows/clarify',
+      session_id,
+      organization_id,
+      error_message: error.message,
+    });
+    next(error);
+  }
+}
+
+// ============================================================================
+// WORKFLOW DEPLOY ENDPOINT
+// ============================================================================
+
+async function handleWorkflowDeploy(req, res, next) {
+  try {
+    const { workflow_spec, organization_id, user_id } = req.body;
+
+    logger.info('workflow_request', {
+      event: 'workflow_request',
+      endpoint: '/workflows/deploy',
+      organization_id,
+      user_id,
+    });
+
+    if (!workflow_spec || typeof workflow_spec !== 'object') {
+      const error = new Error('Missing or invalid field: workflow_spec (expected object)');
+      error.statusCode = 400;
+      error.errorCode = 'BAD_REQUEST';
+      error.details = { field: 'workflow_spec', expected: 'object' };
+      return next(error);
+    }
+
+    const n8nAsCodeUrl = process.env.N8N_AS_CODE_URL || 'http://localhost:3004';
+    const deployUrl = `${n8nAsCodeUrl}/workflows/deploy`;
+
+    logger.info('[workflow/deploy] calling n8n-as-code-service', { url: deployUrl });
+
+    const payload = JSON.stringify({
+      workflow_spec,
+      organization_id: organization_id || null,
+      user_id: user_id || null,
+    });
+
+    const response = await new Promise((resolve, reject) => {
+      const url = new URL(deployUrl);
+      const transport = url.protocol === 'https:' ? https : http;
+      const options = {
+        hostname: url.hostname,
+        port: url.port || (url.protocol === 'https:' ? 443 : 80),
+        path: url.pathname + url.search,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload)
+        }
+      };
+
+      const request = transport.request(options, (response) => {
+        let data = '';
+        response.on('data', chunk => { data += chunk; });
+        response.on('end', () => {
+          try {
+            resolve({ status: response.statusCode, body: JSON.parse(data) });
+          } catch {
+            resolve({ status: response.statusCode, body: data });
+          }
+        });
+      });
+
+      request.on('error', reject);
+      request.setTimeout(30000, () => {
+        request.destroy();
+        reject(new Error('n8n-as-code-service request timed out'));
+      });
+      request.write(payload);
+      request.end();
+    });
+
+    if (response.status < 200 || response.status >= 300) {
+      logger.error('[workflow/deploy] n8n-as-code-service returned error', { status: response.status, body: response.body });
+      return res.status(502).json({
+        status: 'error',
+        reason: 'deploy_failed',
+        details: typeof response.body === 'string' ? response.body : JSON.stringify(response.body)
+      });
+    }
+
+    logger.info('[workflow/deploy] deployment successful', { result: response.body });
+
+    logger.info('workflow_success', {
+      event: 'workflow_success',
+      endpoint: '/workflows/deploy',
+      organization_id,
+      user_id,
+      status: 'ok',
+    });
+
+    res.json(response.body);
+
+  } catch (error) {
+    logger.error('workflow_error', {
+      event: 'workflow_error',
+      endpoint: '/workflows/deploy',
+      organization_id,
+      user_id,
+      error_message: error.message,
+    });
+    logger.error('[workflow/deploy] unexpected error', { error: error.message });
     next(error);
   }
 }
@@ -1320,6 +1467,7 @@ module.exports = {
   handleBlueprintGeneration,
   handleWorkflowGeneration,
   handleWorkflowClarify,
+  handleWorkflowDeploy,
   handleWorkflowSynthesis,
   handleBridgeAira,
   handleBridgeKiro,

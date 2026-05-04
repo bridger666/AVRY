@@ -288,12 +288,45 @@ class BridgeClient {
       ? `${(process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000').replace(/\/$/, '')}/api/copilot${path}`
       : `/api/copilot${path}`
 
-    console.log('[BridgeClient] fetching:', url)
+    const bodyRecord = body && typeof body === 'object' ? body as Record<string, unknown> : {}
+    console.log('[BridgeClient] →', path, {
+      url,
+      session_id:      bodyRecord.session_id ?? null,
+      organization_id: bodyRecord.organization_id ?? null,
+    })
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+    const t0 = Date.now()
+
+    // Explicit 120s timeout with AbortController for proper cancellation.
+    // This matches the maxDuration on the copilot route and the VPS Bridge
+    // timeout, preventing silent hangs at any hop in the chain.
+    const controller = new AbortController()
+    const timeoutId  = setTimeout(() => controller.abort(), 120_000)
+
+    let response: Response
+    try {
+      response = await fetch(url, {
+        method:  'POST',
+        headers: {
+          'Content-Type':   'application/json',
+          // Pass the internal token so the VPS Bridge accepts the request
+          // without requiring a separate auth layer at each downstream hop.
+          'X-Internal-Key': (typeof process !== 'undefined' && process.env?.INTERNAL_TOKEN)
+            ? process.env.INTERNAL_TOKEN
+            : 'aivory-internal-2026',
+        },
+        body:    JSON.stringify(body),
+        signal:  controller.signal,
+      })
+    } finally {
+      clearTimeout(timeoutId)
+    }
+
+    const elapsed = Date.now() - t0
+    console.log('[BridgeClient] ←', path, {
+      status:    response.status,
+      ok:        response.ok,
+      elapsedMs: elapsed,
     })
 
     const rawBody = await response.text()
@@ -309,6 +342,7 @@ class BridgeClient {
         parsed && typeof (parsed as Record<string, unknown>).message === 'string'
           ? (parsed as Record<string, unknown>).message as string
           : rawBody || `Error ${response.status}`
+      console.error('[BridgeClient] error', path, { status: response.status, msg, elapsedMs: elapsed })
       throw new Error(msg)
     }
 
@@ -468,6 +502,11 @@ export class CopilotStateMachine {
     this.state.stage = 'CLARIFYING'
     this.updateTimestamp()
 
+    console.log('[CopilotStateMachine] entering CLARIFYING', {
+      session_id:          this.state.sessionId,
+      user_request_length: userMessage.length,
+    })
+
     try {
       const result = await this.bridge.clarify({
         session_id: this.state.sessionId,
@@ -475,9 +514,18 @@ export class CopilotStateMachine {
         user_request: userMessage,
         conversation_history: this.state.conversationHistory,
       })
+
+      console.log('[CopilotStateMachine] CLARIFYING done', {
+        session_id:      this.state.sessionId,
+        message_length:  result.message?.length ?? 0,
+      })
+
       return this.setAssistantMessage(result.message)
     } catch (error: unknown) {
-      console.error('[Copilot] clarify error:', error)
+      console.error('[CopilotStateMachine] CLARIFYING error', {
+        session_id: this.state.sessionId,
+        cause:      error instanceof Error ? error.message : String(error),
+      })
       return this.handleError(
         `Gagal memproses permintaan Anda: ${error instanceof Error ? error.message : 'Unknown error'}`
       )

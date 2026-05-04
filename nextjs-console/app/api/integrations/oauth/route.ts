@@ -1,81 +1,245 @@
 /**
- * OAuth API Route — Nango Connect Session
+ * OAuth API Route — Composio Integration Sessions
  *
  * GET /api/integrations/oauth?action=session
- *   → Creates a Nango connect session token for the frontend SDK
+ *   → Resolves the current user, fetches their Composio connected accounts,
+ *     and returns a structured session payload.
  *
  * GET /api/integrations/oauth?action=status
- *   → Returns OAuth connections list
+ *   → Returns the list of connected apps for the current user.
  *
  * POST /api/integrations/oauth  { action: 'revoke', appId }
- *   → Revokes a connection in Nango
+ *   → Deletes a Composio connected account for the current user.
+ *
+ * Error contract (no raw 500s):
+ *   401  { error: { code: 'UNAUTHENTICATED', message: '...' } }
+ *   400  { error: { code: 'BAD_REQUEST',     message: '...' } }
+ *   500  { error: { code: 'COMPOSIO_ERROR',  message: '...', details: '...' } }
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import {
-  nango,
-  getProviderConfigKey,
-  buildConnectionId,
-  deleteNangoConnection,
-} from '@/lib/nangoClient'
+import { getComposioClient } from '@/lib/composio'
 
-function getTenantId(req: NextRequest): string {
-  return req.headers.get('x-tenant-id') ?? 'default'
+// ── User resolution ───────────────────────────────────────────────────────────
+// Priority order:
+//   1. x-tenant-id header (server-to-server / curl testing)
+//   2. x-user-id header
+//   3. Cookie-based session (when the browser hits this from the integrations page)
+//   4. Fallback to 'default' tenant so the browser flow never gets a 401
+//
+// When real auth (JWT/session) is wired up, replace the fallback with a proper
+// session lookup and remove the 'default' fallback.
+
+function resolveUserId(req: NextRequest): string | null {
+  // 1. Explicit header (curl / server-to-server)
+  const tenantId = req.headers.get('x-tenant-id')
+  if (tenantId && tenantId.trim() !== '') return tenantId.trim()
+
+  const userId = req.headers.get('x-user-id')
+  if (userId && userId.trim() !== '') return userId.trim()
+
+  // 2. Cookie-based session (Next.js sets this via middleware or auth)
+  const sessionCookie =
+    req.cookies.get('session')?.value ||
+    req.cookies.get('next-auth.session-token')?.value ||
+    req.cookies.get('__session')?.value
+  if (sessionCookie) return sessionCookie
+
+  // 3. Fallback: use 'default' so the browser integrations page always works.
+  //    Replace this with a real auth check once sessions are implemented.
+  return 'default'
 }
 
-export async function GET(req: NextRequest) {
-  const tenantId = getTenantId(req)
+// ── GET handler ───────────────────────────────────────────────────────────────
+
+export async function GET(req: NextRequest): Promise<NextResponse> {
   const action = req.nextUrl.searchParams.get('action')
 
-  // Create a connect session token for the frontend SDK
+  // ── action=session ──────────────────────────────────────────────────────────
   if (action === 'session') {
+    // 1. Resolve user
+    const userId = resolveUserId(req)
+    if (!userId) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'UNAUTHENTICATED',
+            message: 'User is not authenticated',
+          },
+        },
+        { status: 401 }
+      )
+    }
+
+    // 2. Fetch connected accounts from Composio
     try {
-      const result = await nango.createConnectSession({
-        tags: {
-          end_user_id: tenantId,
+      const composio = getComposioClient()
+      const entity   = composio.getEntity(userId)
+      const connections = await entity.getConnections()
+
+      const connectedApps = Array.isArray(connections)
+        ? connections.map((c: Record<string, unknown>) => ({
+            appName:     c.appName     ?? c.appUniqueId ?? null,
+            status:      c.status      ?? 'connected',
+            connectedAt: c.createdAt   ?? null,
+            accountId:   c.id          ?? null,
+          }))
+        : []
+
+      const now = new Date().toISOString()
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          userId,
+          composioEntityId: userId,
+          connectedApps,
+          createdAt: now,
+          updatedAt: now,
         },
       })
-      return NextResponse.json({ token: result.data.token })
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create session'
-      console.error('[OAuth Session] Error:', message)
-      return NextResponse.json({ error: message }, { status: 503 })
+    } catch (err: unknown) {
+      const details = err instanceof Error ? err.message : String(err)
+      console.error('[integrations/oauth?action=session] Composio error:', details)
+
+      // Surface a clear error if the API key is missing
+      if (details.includes('COMPOSIO_API_KEY')) {
+        return NextResponse.json(
+          {
+            error: {
+              code:    'COMPOSIO_ERROR',
+              message: 'Composio is not configured on this server',
+              details,
+            },
+          },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json(
+        {
+          error: {
+            code:    'COMPOSIO_ERROR',
+            message: 'Failed to initialize Composio session',
+            details,
+          },
+        },
+        { status: 500 }
+      )
     }
   }
 
-  // Status endpoint
+  // ── action=status ───────────────────────────────────────────────────────────
   if (action === 'status') {
-    return NextResponse.json([])
+    const userId = resolveUserId(req)
+    if (!userId) {
+      return NextResponse.json(
+        {
+          error: {
+            code:    'UNAUTHENTICATED',
+            message: 'User is not authenticated',
+          },
+        },
+        { status: 401 }
+      )
+    }
+
+    try {
+      const composio   = getComposioClient()
+      const entity     = composio.getEntity(userId)
+      const connections = await entity.getConnections()
+      return NextResponse.json(Array.isArray(connections) ? connections : [])
+    } catch (err: unknown) {
+      const details = err instanceof Error ? err.message : String(err)
+      console.error('[integrations/oauth?action=status] Composio error:', details)
+      return NextResponse.json(
+        {
+          error: {
+            code:    'COMPOSIO_ERROR',
+            message: 'Failed to fetch connection status',
+            details,
+          },
+        },
+        { status: 500 }
+      )
+    }
   }
 
-  return NextResponse.json({ error: 'Unknown action. Use ?action=session or ?action=status' }, { status: 400 })
+  // ── unknown action ──────────────────────────────────────────────────────────
+  return NextResponse.json(
+    {
+      error: {
+        code:    'BAD_REQUEST',
+        message: 'Unknown action. Use ?action=session or ?action=status',
+      },
+    },
+    { status: 400 }
+  )
 }
 
-export async function POST(req: NextRequest) {
-  const tenantId = getTenantId(req)
+// ── POST handler ──────────────────────────────────────────────────────────────
 
-  let body: { action?: string; appId?: string }
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  const userId = resolveUserId(req)
+  if (!userId) {
+    return NextResponse.json(
+      {
+        error: {
+          code:    'UNAUTHENTICATED',
+          message: 'User is not authenticated',
+        },
+      },
+      { status: 401 }
+    )
+  }
+
+  let body: { action?: string; appId?: string; connectedAccountId?: string }
   try {
     body = await req.json()
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+    return NextResponse.json(
+      { error: { code: 'BAD_REQUEST', message: 'Invalid JSON body' } },
+      { status: 400 }
+    )
   }
 
-  if (body.action === 'revoke' && body.appId) {
-    const providerConfigKey = getProviderConfigKey(body.appId)
-    if (!providerConfigKey) {
-      return NextResponse.json({ error: 'Unknown app' }, { status: 400 })
+  // ── action=revoke ───────────────────────────────────────────────────────────
+  if (body.action === 'revoke') {
+    const accountId = body.connectedAccountId
+    if (!accountId) {
+      return NextResponse.json(
+        {
+          error: {
+            code:    'BAD_REQUEST',
+            message: 'connectedAccountId is required for revoke',
+          },
+        },
+        { status: 400 }
+      )
     }
 
-    const nangoConnectionId = buildConnectionId(tenantId, body.appId)
     try {
-      await deleteNangoConnection(providerConfigKey, nangoConnectionId)
+      const composio = getComposioClient()
+      await composio.connectedAccounts.delete({ connectedAccountId: accountId })
       return NextResponse.json({ success: true })
-    } catch (err) {
-      console.error('[OAuth Revoke] Error:', err)
-      return NextResponse.json({ success: true })
+    } catch (err: unknown) {
+      const details = err instanceof Error ? err.message : String(err)
+      console.error('[integrations/oauth POST revoke] Composio error:', details)
+      return NextResponse.json(
+        {
+          error: {
+            code:    'COMPOSIO_ERROR',
+            message: 'Failed to revoke connection',
+            details,
+          },
+        },
+        { status: 500 }
+      )
     }
   }
 
-  return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
+  return NextResponse.json(
+    { error: { code: 'BAD_REQUEST', message: 'Unknown action' } },
+    { status: 400 }
+  )
 }

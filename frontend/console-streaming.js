@@ -1,14 +1,27 @@
 /**
  * AIVORY AI Console - Zeroclaw Integration
  * Handles message streaming and API communication
+ *
+ * All skill calls go through the universal skill router:
+ *   POST /webhook/zeroclaw-skill-router-V2
+ *
+ * For console chat, the VPS Bridge /bridge/aira endpoint is used
+ * (proxied via the Next.js backend to avoid CORS).
  */
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
-const ZEROCLAW_ENDPOINT = 'http://43.156.108.96:3100/webhook';
-const ZEROCLAW_TRIGGER_ENDPOINT = 'http://43.156.108.96:3100/webhook';
+// VPS Bridge URL — all calls go through the bridge, not directly to Zeroclaw.
+// In production this is the deployed VPS; in dev it's localhost:3003.
+const VPS_BRIDGE_URL = window.VPS_BRIDGE_URL || 'http://43.156.108.96:3003';
+
+// Universal skill handler endpoint (n8n webhook)
+const SKILL_ROUTER_ENDPOINT = `${VPS_BRIDGE_URL}/webhook/zeroclaw-skill-handler-V2`;
+
+// Console chat endpoint (Zeroclaw AIRA via bridge)
+const ZEROCLAW_ENDPOINT = `${VPS_BRIDGE_URL}/bridge/aira`;
 
 const AIVORY_SYSTEM_PROMPT = "You are Aivory, a warm and intelligent AI assistant on the Aivory platform. Help paid users with workflow generation, AI readiness assessment, log diagnostics, blueprint execution, and strategic advisory. Always detect and respond in the user's language (English US, English UK, Bahasa Indonesia, Arabic). Keep responses concise and use markdown formatting.";
 
@@ -105,18 +118,31 @@ async function sendMessageWithSimulatedStreaming(userMessage) {
         // Hide typing indicator BEFORE rendering message
         hideTypingIndicator();
         
-        // Auto-detect workflow JSON and trigger n8n (fire and forget, no UI blocking)
+        // Auto-detect workflow JSON and trigger via universal skill router (fire and forget)
         const jsonMatch = reply.match(/```json([\s\S]*?)```/);
         if (jsonMatch) {
             try {
                 const workflowPayload = JSON.parse(jsonMatch[1].trim());
                 if (workflowPayload.trigger === 'aivory_workflow') {
-                    console.log('Workflow trigger detected, sending to n8n...');
-                    fetch(ZEROCLAW_TRIGGER_ENDPOINT, {
+                    console.log('Workflow trigger detected, sending to skill router...');
+                    fetch(SKILL_ROUTER_ENDPOINT, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ payload: workflowPayload })
-                    }).catch(e => console.warn('n8n trigger failed:', e));
+                        body: JSON.stringify({
+                            skill: 'workflow_trigger',
+                            context: {
+                                org_id: ConsoleState.orgId || 'default',
+                                user_id: ConsoleState.userId || 'console-user',
+                                session_id: ConsoleState.sessionId || 'console-session',
+                                payload: workflowPayload
+                            },
+                            meta: {
+                                source: 'console',
+                                trace_id: `trace-${Date.now()}`,
+                                requested_by: 'console-streaming'
+                            }
+                        })
+                    }).catch(e => console.warn('Skill router trigger failed:', e));
                 }
             } catch (e) {
                 console.warn('Could not parse workflow JSON:', e);
@@ -151,4 +177,60 @@ async function sendMessageWithSimulatedStreaming(userMessage) {
 function addMessageWithStreaming(role, content, files = [], reasoning = null, blueprint = null, shouldStream = true) {
     // Simply calls the existing addMessage function
     addMessage(role, content, files, reasoning, blueprint, shouldStream);
+}
+
+// ============================================================================
+// UNIVERSAL SKILL ROUTER — public helper
+// ============================================================================
+
+/**
+ * Call a ZeroClaw skill via the universal skill router.
+ *
+ * @param {string} skill  - Skill ID (see INTERNAL_SKILLS.md)
+ * @param {object} payload - Skill-specific payload (goes into context.payload)
+ * @param {object} [opts]  - Optional overrides: org_id, user_id, session_id, source
+ * @returns {Promise<object>} Standard skill response envelope
+ *
+ * @example
+ * const result = await callSkill('free_diagnostic', { answers: [...] });
+ * if (result.status === 'ok') { ... result.result ... }
+ */
+async function callSkill(skill, payload = {}, opts = {}) {
+    const orgId     = opts.org_id     || ConsoleState?.orgId     || 'default';
+    const userId    = opts.user_id    || ConsoleState?.userId    || 'console-user';
+    const sessionId = opts.session_id || ConsoleState?.sessionId || `session-${Date.now()}`;
+    const source    = opts.source     || 'console';
+
+    const body = {
+        skill,
+        context: {
+            org_id:     orgId,
+            user_id:    userId,
+            session_id: sessionId,
+            payload
+        },
+        meta: {
+            source,
+            trace_id:     `trace-${Date.now()}`,
+            requested_by: source
+        }
+    };
+
+    const response = await fetch(SKILL_ROUTER_ENDPOINT, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Skill router error ${response.status}: ${errText}`);
+    }
+
+    return response.json();
+}
+
+// Export for use by other modules (if bundled)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { callSkill, SKILL_ROUTER_ENDPOINT, ZEROCLAW_ENDPOINT };
 }

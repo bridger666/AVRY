@@ -1,63 +1,24 @@
 /**
- * VPS Bridge Production Server
- * Single entry point for all AI features in Aivory
- * Architecture: Next.js → VPS Bridge → Zenclaw → OpenRouter (Qwen)
+ * VPS Bridge - Thin Proxy
+ * Forwards requests from Next.js/Backend to internal services (Zeroclaw)
+ * Adds CORS headers and injects auth headers
+ * 
+ * Architecture: Next.js → VPS Bridge (thin proxy) → Zeroclaw :3010
  */
-
-console.log('[server.js] starting, cwd:', process.cwd());
-console.log('[server.js] __dirname:', __dirname);
 
 const express = require('express');
 const cors = require('cors');
-const rateLimit = require('express-rate-limit');
-const { prepareWorkflowDraft } = require('./workflowDraftService');
+const http = require('http');
+const https = require('https');
 
-// Import configuration and modules
-const { config, validateConfig } = require('./config');
-const { logger } = require('./logger');
-const {
-  enrichRequest,
-  logRequest,
-  errorHandler,
-  authenticateApiKey
-} = require('./middleware');
-const {
-  handleConsoleStream,
-  handleAiraStream,
-  handleAriaChat,
-  handleDeepDiagnostic,
-  handleFreeDiagnostic,
-  handleBlueprintGeneration,
-  handleWorkflowGeneration,
-  handleWorkflowClarify,
-  handleWorkflowSynthesis,
-  handleBridgeAira,
-  handleBridgeKiro,
-  handleHealthCheck,
-  handleDeepHealth,
-  handleAivoryPipeline,
-  handleListAgents,
-  handleCreateAgent,
-  handleGetAgent,
-  handleUpdateAgent,
-  handleDeleteAgent,
-  handleContextUiState,
-} = require('./endpoints');
+// Load environment variables
+require('dotenv').config();
 
-// ============================================================================
-// STARTUP VALIDATION
-// ============================================================================
-
-logger.info('🚀 Starting VPS Bridge...');
-
-// Validate configuration before starting
-try {
-  validateConfig();
-  logger.info('✅ Configuration validated successfully');
-} catch (error) {
-  logger.error('❌ Configuration validation failed', { error: error.message });
-  process.exit(1);
-}
+// Configuration
+const PORT = process.env.PORT || 3003;
+const ZEROCLAW_URL = process.env.ZEROCLAW_URL || 'http://127.0.0.1:3010';
+const INTERNAL_KEY = process.env.INTERNAL_TOKEN || 'aivory-internal-2026';
+const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
 // ============================================================================
 // EXPRESS APP SETUP
@@ -65,303 +26,178 @@ try {
 
 const app = express();
 
-// CORS configuration
+// CORS middleware
 app.use(cors({
-  origin: config.corsOrigin,
+  origin: CORS_ORIGIN,
   credentials: true
 }));
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: {
-    error: true,
-    code: 'RATE_LIMIT_EXCEEDED',
-    message: 'Too many requests, please try again later',
-    details: null
-  },
-  standardHeaders: true,
-  legacyHeaders: false
+// ============================================================================
+// HEALTH CHECK ENDPOINT
+// ============================================================================
+
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'vps-bridge-thin-proxy',
+    timestamp: new Date().toISOString(),
+    zeroclaw_url: ZEROCLAW_URL
+  });
 });
 
-// Apply rate limiting to all API routes
-app.use('/console/', limiter);
-app.use('/diagnostics/', limiter);
-app.use('/blueprints/', limiter);
-app.use('/workflows/', limiter);
-app.use('/agents/', limiter);
-app.use('/aria/', limiter);
-app.use('/bridge/', limiter);
-
 // ============================================================================
-// HEALTH CHECK ENDPOINT (No authentication required)
-// ============================================================================
-
-app.get('/health', handleHealthCheck);
-
-/**
- * GET /deep-health
- * Pings downstream local services (Zeroclaw, n8n-MCP) and returns a status snapshot.
- * No authentication required — safe to call from monitoring tools.
- */
-app.get('/deep-health', handleDeepHealth);
-
-// ============================================================================
-// AUTHENTICATED ENDPOINTS
-// ============================================================================
-
-// Apply API key authentication to all protected routes
-app.use(authenticateApiKey(config.apiKey));
-
-// Apply request enrichment and logging to all AI endpoints
-app.use(
-  ['/console/stream', '/diagnostics/run', '/blueprints/generate', '/workflows/*'],
-  enrichRequest
-);
-app.use(
-  ['/console/*', '/diagnostics/*', '/blueprints/*', '/workflows/*'],
-  logRequest
-);
-
-// ============================================================================
-// CONSOLE CHAT STREAMING
+// PROXY HANDLERS
 // ============================================================================
 
 /**
- * POST /console/stream
- * Streams AI console responses using Server-Sent Events
+ * Generic request forwarder with auth header injection
  */
-app.post('/console/stream', handleConsoleStream);
-
-/**
- * POST /aria
- * Plain chat endpoint for ARIA (routes through internal gateway)
- */
-app.post('/aria', (req, res, next) => {
-  req.requestId = require('uuid').v4();
-  req.startTime = Date.now();
-  next();
-}, handleAriaChat);
-
-/**
- * POST /aria/stream
- * Streaming Aivory endpoint for the floating assistant tab.
- */
-app.post('/aria/stream', (req, res, next) => {
-  req.requestId = require('uuid').v4();
-  req.startTime = Date.now();
-  next();
-}, handleAiraStream);
-
-// ============================================================================
-// DIAGNOSTIC ENDPOINTS
-// ============================================================================
-
-/**
- * POST /diagnostics/run
- * Processes deep diagnostic requests
- */
-app.post('/diagnostics/run', handleDeepDiagnostic);
-
-/**
- * POST /diagnostics/free/run
- * Processes free diagnostic (12 questions)
- */
-app.post('/diagnostics/free/run', (req, res, next) => {
-  req.requestId = require('uuid').v4();
-  req.startTime = Date.now();
-  next();
-}, handleFreeDiagnostic);
-
-// ============================================================================
-// BLUEPRINT GENERATION
-// ============================================================================
-
-/**
- * POST /blueprints/generate
- * Generates AI System Blueprint
- */
-app.post('/blueprints/generate', handleBlueprintGeneration);
-
-app.post('/blueprints/generate-workflow', (req, res, next) => {
-  req.requestId = require('uuid').v4();
-  req.startTime = Date.now();
-  next();
-}, handleWorkflowGeneration);
-
-app.post('/workflows/clarify', (req, res, next) => {
-  req.requestId = require('uuid').v4();
-  req.startTime = Date.now();
-  next();
-}, handleWorkflowClarify);
-
-// ============================================================================
-// WORKFLOW SYNTHESIS
-// ============================================================================
-
-/**
- * POST /workflows/synthesize
- * Generates n8n workflow JSON from workflow module spec
- */
-app.post('/workflows/synthesize', handleWorkflowSynthesis);
-
-/**
- * POST /workflows/draft-test
- * Builds a workflow draft through n8n-as-code-service, validates it in sandbox,
- * and returns a setup report for the frontend approval step.
- */
-app.post('/workflows/draft-test', async (req, res, next) => {
-  try {
-    const { workflowId, description, steps } = req.body || {};
-
-    if (!description || !Array.isArray(steps) || steps.length === 0) {
-      return res.status(400).json({
-        error: true,
-        code: 'BAD_REQUEST',
-        message: 'description and non-empty steps array are required',
-      });
+function proxyRequest(req, res, next) {
+  const targetUrl = new URL(req.path, ZEROCLAW_URL);
+  
+  const options = {
+    hostname: targetUrl.hostname,
+    port: targetUrl.port || (targetUrl.protocol === 'https:' ? 443 : 80),
+    path: targetUrl.pathname + targetUrl.search,
+    method: req.method,
+    headers: {
+      ...req.headers,
+      'X-Internal-Key': INTERNAL_KEY,
+      'Content-Type': 'application/json',
+      'host': targetUrl.host
     }
+  };
 
-    const result = await prepareWorkflowDraft({
-      workflowId,
-      description,
-      steps,
+  const transport = targetUrl.protocol === 'https:' ? https : http;
+  
+  const proxyReq = transport.request(options, (proxyRes) => {
+    // Copy headers from target response
+    Object.keys(proxyRes.headers).forEach(key => {
+      res.setHeader(key, proxyRes.headers[key]);
     });
+    
+    // Add CORS headers
+    res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    
+    proxyRes.pipe(res);
+  });
 
-    res.json({
-      success: true,
-      ...result,
+  proxyReq.on('error', (err) => {
+    console.error('[proxy] error:', err.message);
+    res.status(502).json({
+      error: true,
+      code: 'PROXY_ERROR',
+      message: 'Failed to reach internal service',
+      details: err.message
     });
-  } catch (error) {
-    next(error);
+  });
+
+  // Forward request body
+  if (req.body && Object.keys(req.body).length > 0) {
+    proxyReq.write(JSON.stringify(req.body));
   }
-});
+  
+  proxyReq.end();
+}
+
+/**
+ * SSE stream proxy to Zeroclaw
+ */
+function proxyStream(req, res) {
+  const targetUrl = new URL('/webhook', ZEROCLAW_URL);
+  
+  const options = {
+    hostname: targetUrl.hostname,
+    port: targetUrl.port || (targetUrl.protocol === 'https:' ? 443 : 80),
+    path: targetUrl.pathname,
+    method: 'POST',
+    headers: {
+      ...req.headers,
+      'X-Internal-Key': INTERNAL_KEY,
+      'Content-Type': 'application/json',
+      'host': targetUrl.host
+    }
+  };
+
+  const transport = targetUrl.protocol === 'https:' ? https : http;
+  
+  const proxyReq = transport.request(options, (proxyRes) => {
+    // Set SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('X-Accel-Buffering', 'no');
+    
+    proxyRes.pipe(res);
+  });
+
+  proxyReq.on('error', (err) => {
+    console.error('[proxy stream] error:', err.message);
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
+    }
+    res.write(`data: ${JSON.stringify({ type: 'error', error: 'Proxy error' })}\n\n`);
+    res.end();
+  });
+
+  // Forward request body
+  if (req.body && Object.keys(req.body).length > 0) {
+    proxyReq.write(JSON.stringify(req.body));
+  }
+  
+  proxyReq.end();
+}
 
 // ============================================================================
-// AGENTS CRUD ENDPOINTS
+// ROUTES - Forward all requests to Zeroclaw
 // ============================================================================
 
-/**
- * GET /agents
- * List agents for current workspace with optional filtering
- */
-app.get('/agents', handleListAgents);
+// Console streaming (SSE)
+app.post('/console/stream', proxyStream);
+app.post('/aria/stream', proxyStream);
 
-/**
- * POST /agents
- * Create a new agent
- */
-app.post('/agents', handleCreateAgent);
-
-/**
- * GET /agents/:id
- * Get a specific agent by ID
- */
-app.get('/agents/:id', handleGetAgent);
-
-/**
- * PATCH /agents/:id
- * Update an agent
- */
-app.patch('/agents/:id', handleUpdateAgent);
-
-/**
- * DELETE /agents/:id
- * Soft delete an agent
- */
-app.delete('/agents/:id', handleDeleteAgent);
-
-// ============================================================================
-// BRIDGE ENDPOINTS
-// ============================================================================
-
-/**
- * POST /bridge/aira
- * General AIRA entry point for all Aivory clients.
- */
-app.post('/bridge/aira', (req, res, next) => {
-  req.requestId = require('uuid').v4();
-  req.startTime = Date.now();
-  next();
-}, handleBridgeAira);
-
-/**
- * POST /bridge/kiro
- * Routes a Kiro-originated message through the Zeroclaw orchestrator.
- */
-app.post('/bridge/kiro', (req, res, next) => {
-  req.requestId = require('uuid').v4();
-  req.startTime = Date.now();
-  next();
-}, handleBridgeKiro);
-
-/**
- * POST /llm/aivory/pipeline
- * Runs Aivory diag+blueprint pipeline via Zeroclaw.
- */
-app.post('/llm/aivory/pipeline', handleAivoryPipeline);
-
-// ============================================================================
-// CONTEXT ENDPOINTS
-// ============================================================================
-
-/**
- * POST /context/ui-state
- * Receives UI state updates from frontend for context awareness
- */
-app.post('/context/ui-state', handleContextUiState);
+// All other requests - generic proxy
+app.all('*', proxyRequest);
 
 // ============================================================================
 // ERROR HANDLING
 // ============================================================================
 
-// 404 handler for unknown routes
-app.use((req, res) => {
-  res.status(404).json({
+app.use((err, req, res, next) => {
+  console.error('[error]', err.message);
+  res.status(500).json({
     error: true,
-    code: 'ENDPOINT_NOT_FOUND',
-    message: `Endpoint not found: ${req.method} ${req.path}`,
-    details: null
+    code: 'INTERNAL_ERROR',
+    message: 'Internal server error',
+    details: err.message
   });
 });
-
-// Centralized error handler (must be last)
-app.use(errorHandler);
 
 // ============================================================================
 // START SERVER
 // ============================================================================
 
-const server = app.listen(config.port, '0.0.0.0', () => {
-  logger.info('🎉 VPS Bridge is running', {
-    port: config.port,
-    openrouter_url: config.openrouterBaseUrl,
-    cors_origin: config.corsOrigin,
-    log_level: config.logLevel
-  });
-  logger.info('📡 Endpoints registered:');
-  logger.info('  GET  /health');
-  logger.info('  GET  /deep-health');
-  logger.info('  POST /console/stream');
-  logger.info('  POST /aria');
-  logger.info('  POST /aria/stream');
-  logger.info('  POST /diagnostics/run');
-  logger.info('  POST /diagnostics/free/run');
-  logger.info('  POST /blueprints/generate');
-  logger.info('  POST /workflows/synthesize');
-  logger.info('  GET  /agents');
-  logger.info('  POST /agents');
-  logger.info('  GET  /agents/:id');
-  logger.info('  PATCH /agents/:id');
-  logger.info('  DELETE /agents/:id');
-  logger.info('  POST /bridge/aira');
-  logger.info('  POST /bridge/kiro');
-  logger.info('  POST /llm/aivory/pipeline');
-  logger.info('  POST /context/ui-state');
+const server = app.listen(PORT, '127.0.0.1', () => {
+  console.log('✅ VPS Bridge Thin Proxy is running');
+  console.log(`   Port: ${PORT}`);
+  console.log(`   Host: 127.0.0.1`);
+  console.log(`   Zeroclaw URL: ${ZEROCLAW_URL}`);
+  console.log(`   CORS Origin: ${CORS_ORIGIN}`);
+  console.log('');
+  console.log('📡 Endpoints:');
+  console.log('   GET  /health');
+  console.log('   POST /console/stream (SSE → Zeroclaw)');
+  console.log('   POST /aria/stream (SSE → Zeroclaw)');
+  console.log('   ALL  * (proxy → Zeroclaw)');
 });
 
 // ============================================================================
@@ -369,16 +205,15 @@ const server = app.listen(config.port, '0.0.0.0', () => {
 // ============================================================================
 
 function gracefulShutdown(signal) {
-  logger.info(`${signal} received, shutting down gracefully...`);
-
+  console.log(`${signal} received, shutting down gracefully...`);
+  
   server.close(() => {
-    logger.info('✅ Server closed successfully');
+    console.log('✅ Server closed successfully');
     process.exit(0);
   });
 
-  // Force shutdown after 10 seconds
   setTimeout(() => {
-    logger.error('⚠️  Forced shutdown after timeout');
+    console.error('⚠️  Forced shutdown after timeout');
     process.exit(1);
   }, 10000);
 }
@@ -388,17 +223,11 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Handle uncaught errors
 process.on('uncaughtException', (error) => {
-  logger.error('❌ Uncaught exception', {
-    error: error.message,
-    stack: error.stack
-  });
+  console.error('❌ Uncaught exception:', error.message);
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('❌ Unhandled rejection', {
-    reason,
-    promise
-  });
+  console.error('❌ Unhandled rejection:', reason);
   process.exit(1);
 });

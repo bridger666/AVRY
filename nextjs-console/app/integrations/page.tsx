@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import Nango from '@nangohq/frontend'
 import styles from './integrations.module.css'
 import type { AivoryApp, AivoryConnection, CreateConnectionPayload } from '@/types/integrations'
 import { useRouterContext } from '@/contexts/RouterContext'
@@ -22,32 +21,7 @@ function relativeTime(iso: string | null): string {
   return `${Math.floor(hrs / 24)}d ago`
 }
 
-// ── ProviderButton (Task 7.1) ────────────────────────────
-
-// ── Provider config key mapping (must match Nango dashboard) ─
-const NANGO_PROVIDER_MAP: Record<string, string> = {
-  'gmail':           'google-mail',
-  'google-drive':    'google-drive',
-  'google-sheets':   'google-sheet',
-  'google-calendar': 'google-calendar',
-  'microsoft-teams': 'microsoft-teams',
-  'outlook':         'outlook',
-  'slack':           'slack',
-  'github':          'github-getting-started',
-  'discord':         'discord',
-  'dropbox':         'dropbox',
-  'hubspot':         'hubspot',
-  'salesforce':      'salesforce',
-  'notion':          'notion',
-  'trello':          'trello',
-  'asana':           'asana',
-  'linear':          'linear',
-  'airtable':        'airtable',
-  'shopify':         'shopify',
-  'mailchimp':       'mailchimp',
-  'intercom':        'intercom',
-  'zendesk':         'zendesk',
-}
+// ── ProviderButton (Composio OAuth) ─────────────────────
 
 interface ProviderButtonProps {
   app: AivoryApp & { providerEnabled?: boolean }
@@ -60,19 +34,28 @@ function ProviderButton({ app, onPopupOpened }: ProviderButtonProps) {
   const handleClick = async () => {
     setLoading(true)
     try {
-      // 1. Get a connect session token from our backend
+      // 1. Get the Composio session (resolves userId server-side)
       const sessionRes = await fetch('/api/integrations/oauth?action=session')
-      if (!sessionRes.ok) throw new Error('Failed to create Nango session')
-      const { token } = await sessionRes.json()
+      if (!sessionRes.ok) throw new Error('Failed to create session')
+      const { data } = await sessionRes.json()
+      const userId = data?.userId ?? 'default'
 
-      // 2. Use Nango frontend SDK to trigger OAuth popup
-      const nangoFrontend = new Nango({ connectSessionToken: token })
-      const integrationId = NANGO_PROVIDER_MAP[app.id] || app.oauthProvider || app.id
+      // 2. Initiate Composio OAuth — opens the provider's auth page
+      const connectRes = await fetch('/api/integrations/oauth/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appId: app.id, userId }),
+      })
+      if (!connectRes.ok) throw new Error('Failed to initiate connection')
+      const { redirectUrl } = await connectRes.json()
 
-      await nangoFrontend.auth(integrationId)
-
-      // OAuth completed successfully
-      onPopupOpened?.(app.id)
+      if (redirectUrl) {
+        // Open OAuth in a popup window
+        const popup = window.open(redirectUrl, 'composio-oauth', 'width=600,height=700')
+        if (popup) {
+          onPopupOpened?.(app.id)
+        }
+      }
     } catch (err) {
       console.error('[ProviderButton] OAuth error:', err)
     } finally {
@@ -375,7 +358,7 @@ export default function IntegrationsPage() {
     fetchConnections()
   }
 
-  // Reconnect: OAuth uses Nango JSON flow, manual uses credential modal
+  // Reconnect: OAuth uses Composio flow, manual uses credential modal
   const handleReconnect = async (conn: AivoryConnection) => {
     const app = apps.find(a => a.id === conn.appId) as AppWithEnabled | undefined
     if (!app) return
@@ -383,15 +366,23 @@ export default function IntegrationsPage() {
     if (conn.authType === 'oauth' && app.oauthProvider) {
       try {
         const sessionRes = await fetch('/api/integrations/oauth?action=session')
-        if (!sessionRes.ok) throw new Error('Failed to create Nango session')
-        const { token } = await sessionRes.json()
+        if (!sessionRes.ok) throw new Error('Failed to create session')
+        const { data } = await sessionRes.json()
+        const userId = data?.userId ?? 'default'
 
-        const nangoFrontend = new Nango({ connectSessionToken: token })
-        const integrationId = NANGO_PROVIDER_MAP[app.id] || app.oauthProvider || app.id
+        const connectRes = await fetch('/api/integrations/oauth/connect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ appId: app.id, userId }),
+        })
+        if (!connectRes.ok) throw new Error('Failed to initiate reconnection')
+        const { redirectUrl } = await connectRes.json()
 
-        await nangoFrontend.auth(integrationId)
-        setFeedback({ type: 'success', message: `Successfully reconnected ${app.name}` })
-        fetchConnections()
+        if (redirectUrl) {
+          window.open(redirectUrl, 'composio-oauth', 'width=600,height=700')
+          setFeedback({ type: 'success', message: `Reconnecting ${app.name}...` })
+          startConnectionPolling(app.id)
+        }
       } catch (err) {
         console.error('[Reconnect] Error:', err)
       }
