@@ -50,7 +50,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const connectionRequest = await entity.initiateConnection({
       appName:     appId,
-      redirectUrl,
+      redirectUri: redirectUrl,
     })
 
     console.log('[integrations/oauth/connect] initiated', {
