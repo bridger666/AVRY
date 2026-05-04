@@ -8,13 +8,13 @@ echo "==========================================================================
 echo ""
 echo ">>> Step 1: Backup current config"
 BACKUP_FILE="/home/ubuntu/.zeroclaw/config.toml.backup-$(date +%s)"
-sshpass -p 'mT4-wye-9Dn-hYK' ssh -o StrictHostKeyChecking=no ubuntu@43.156.108.96 "cp /home/ubuntu/.zeroclaw/config.toml $BACKUP_FILE"
+sshpass -p   ssh -o StrictHostKeyChecking=no ubuntu@  "  $BACKUP_FILE"
 echo "✅ Backup created: $BACKUP_FILE"
 
 # Step 2: Remove orphaned lines after [providers.models.openrouter]
 echo ""
 echo ">>> Step 2: Remove orphaned lines causing config error"
-sshpass -p 'mT4-wye-9Dn-hYK' ssh -o StrictHostKeyChecking=no ubuntu@43.156.108.96 << 'ENDSSH'
+sshpass -p  ssh -o StrictHostKeyChecking=no ubuntu@  << 'ENDSSH'
 # Use Python to safely remove orphaned lines
 python3 << 'PYTHON'
 import re
@@ -81,23 +81,23 @@ ENDSSH
 # Step 3: Verify config is valid
 echo ""
 echo ">>> Step 3: Verify config with zeroclaw doctor"
-sshpass -p 'mT4-wye-9Dn-hYK' ssh -o StrictHostKeyChecking=no ubuntu@43.156.108.96 "zeroclaw doctor 2>&1 | tail -15"
+sshpass -p '  ssh -o StrictHostKeyChecking=no   "zeroclaw doctor 2>&1 | tail -15"
 
 # Step 4: Restart zeroclaw service
 echo ""
 echo ">>> Step 4: Restart zeroclaw service"
-sshpass -p 'mT4-wye-9Dn-hYK' ssh -o StrictHostKeyChecking=no ubuntu@43.156.108.96 "sudo systemctl restart zeroclaw"
+sshpass -p   ssh -o StrictHostKeyChecking=no   "sudo systemctl restart zeroclaw"
 sleep 5
 
 # Step 5: Check service status
 echo ""
 echo ">>> Step 5: Check service status"
-sshpass -p 'mT4-wye-9Dn-hYK' ssh -o StrictHostKeyChecking=no ubuntu@43.156.108.96 "sudo systemctl status zeroclaw --no-pager | head -15"
+sshpass -p   ssh -o StrictHostKeyChecking=no ubuntu@  "sudo systemctl status zeroclaw --no-pager | head -15"
 
 # Step 6: Test webhook
 echo ""
 echo ">>> Step 6: Test webhook"
-sshpass -p 'mT4-wye-9Dn-hYK' ssh -o StrictHostKeyChecking=no ubuntu@43.156.108.96 "curl -s -X POST http://127.0.0.1:3010/webhook -H 'Content-Type: application/json' -d '{\"message\":\"test after config cleanup\",\"session_id\":\"cleanup-test\"}' --max-time 60"
+sshpass -p   ssh -o StrictHostKeyChecking=no ubuntu@  "curl -s -X POST http://127.0.0.1:3010/webhook -H 'Content-Type: application/json' -d '{\"message\":\"test after config cleanup\",\"session_id\":\"cleanup-test\"}' --max-time 60"
 
 echo ""
 echo "================================================================================"
