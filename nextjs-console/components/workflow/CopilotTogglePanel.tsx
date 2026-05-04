@@ -63,6 +63,7 @@ export function CopilotTogglePanel({ onApplyWorkflow, onApplySuggestion }: Copil
     workflow,
     canApply,
     isCompleted,
+    isTesting,
     sendMessage,
     reset,
   } = useWorkflowCopilot()
@@ -85,6 +86,7 @@ export function CopilotTogglePanel({ onApplyWorkflow, onApplySuggestion }: Copil
           loadingHint={loadingHint}
           error={error}
           stage={stage}
+          isTesting={isTesting}
           workflow={workflow}
           canApply={canApply}
           isCompleted={isCompleted}
@@ -127,6 +129,7 @@ interface CopilotPanelExpandedProps {
   loadingHint: string | null
   error: string | null
   stage: string
+  isTesting: boolean
   workflow: GeneratedWorkflow | null
   canApply: boolean
   isCompleted: boolean
@@ -137,7 +140,7 @@ interface CopilotPanelExpandedProps {
 
 function CopilotPanelExpanded({
   onClose, messages, loading, loadingHint, error,
-  stage, workflow, canApply, isCompleted,
+  stage, isTesting, workflow, canApply, isCompleted,
   onSendMessage, onApplyWorkflow, onClear,
 }: CopilotPanelExpandedProps) {
   const [input, setInput] = useState('')
@@ -225,6 +228,12 @@ function CopilotPanelExpanded({
           {stageLabel[stage] && (
             <span className="text-[10px] text-[#a1a1aa] font-light animate-pulse">
               {stageLabel[stage]}
+            </span>
+          )}
+          {/* isTesting indicator — shown during SANDBOX_TESTING / FIXING */}
+          {isTesting && !stageLabel[stage] && (
+            <span className="text-[10px] text-amber-400 font-light animate-pulse">
+              Testing workflow...
             </span>
           )}
         </div>

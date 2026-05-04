@@ -540,7 +540,38 @@ export class CopilotStateMachine {
       return this.setAssistantMessage('Baik, dibatalkan. Ada yang bisa saya bantu?')
     }
 
-    return this.generateWorkflow()
+    // Multi-turn clarification: call clarify again with updated history.
+    // If Zeroclaw still has a question → stay in CLARIFYING.
+    // If the response looks ready → proceed to generate.
+    try {
+      const result = await this.bridge.clarify({
+        session_id: this.state.sessionId,
+        organization_id: 'copilot',
+        user_request: this.state.userRequest,
+        conversation_history: this.state.conversationHistory,
+      })
+
+      const msg = result.message ?? ''
+      const isStillClarifying =
+        msg.trim().endsWith('?') ||
+        msg.toLowerCase().includes('tolong') ||
+        msg.toLowerCase().includes('bisa ceritakan') ||
+        msg.toLowerCase().includes('konfirmasi') ||
+        msg.toLowerCase().includes('berapa') ||
+        msg.toLowerCase().includes('kapan') ||
+        msg.toLowerCase().includes('apa')
+
+      if (isStillClarifying) {
+        // Stay in CLARIFYING — Zeroclaw still needs more info
+        return this.setAssistantMessage(msg)
+      }
+
+      // Zeroclaw is satisfied — proceed to generate
+      return this.generateWorkflow()
+    } catch {
+      // Fallback: just generate if clarify fails
+      return this.generateWorkflow()
+    }
   }
 
   async generateWorkflow(): Promise<CopilotConversationState> {
@@ -555,14 +586,40 @@ export class CopilotStateMachine {
         conversation_history: this.state.conversationHistory,
       })
 
-      const { workflow } = result
+      // Normalize: Zeroclaw may return { model, response } instead of { workflow }.
+      // The API route normalizes this, but we guard here too for safety.
+      let workflow = result.workflow
+      if (!workflow && (result as unknown as Record<string, unknown>).response) {
+        const responseText = (result as unknown as Record<string, unknown>).response as string
+        // Try to parse JSON from the response text first
+        try {
+          const parsed = JSON.parse(responseText)
+          if (parsed && typeof parsed === 'object' && parsed.workflowName) {
+            workflow = parsed
+          }
+        } catch {
+          // Not JSON — create a minimal workflow from the response text
+        }
+        if (!workflow) {
+          workflow = {
+            workflowName: 'Generated Workflow',
+            steps: [],
+            estimate_hours: 2,
+            automation_score: 0.8,
+            summary: responseText,
+          }
+        }
+      }
+      if (!workflow) {
+        throw new Error('Zeroclaw did not return a workflow')
+      }
 
       this.state.generatedWorkflow = {
-        workflowName: workflow?.workflowName ?? 'Untitled Workflow',
-        steps: workflow?.steps ?? [],
-        estimate_hours: workflow?.estimate_hours ?? 2,
-        automation_score: workflow?.automation_score ?? 0.8,
-        summary: workflow?.summary ?? '',
+        workflowName: workflow.workflowName ?? 'Untitled Workflow',
+        steps: workflow.steps ?? [],
+        estimate_hours: workflow.estimate_hours ?? 2,
+        automation_score: workflow.automation_score ?? 0.8,
+        summary: workflow.summary ?? '',
         nodeConfigs: [],
       }
 
@@ -570,7 +627,7 @@ export class CopilotStateMachine {
 
       const displayMessage =
         result.message ??
-        this.buildWorkflowSummaryMessage(workflow?.steps ?? [], workflow?.workflowName ?? 'Untitled Workflow')
+        this.buildWorkflowSummaryMessage(workflow.steps ?? [], workflow.workflowName ?? 'Untitled Workflow')
 
       return this.setAssistantMessage(displayMessage)
     } catch (error: unknown) {
