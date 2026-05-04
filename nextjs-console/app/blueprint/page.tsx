@@ -388,7 +388,7 @@ function BlueprintInsightsSection({
               </tr>
             </thead>
             <tbody>
-              {s.metrics.map((row, i) => (
+              {s.metrics.map((row: any, i: number) => (
                 <tr key={i}>
                   <td style={{ color: '#ccc' }}>{row.metric}</td>
                   <td>{row.current}</td>
