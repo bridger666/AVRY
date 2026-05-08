@@ -259,3 +259,95 @@ export interface DiagnosticResponse {
   primary_constraints: string[]
   timestamp: string
 }
+
+
+// ============================================================================
+// Deep Diagnostic Result Page — DiagnosticContext types (v2)
+// ============================================================================
+
+export type DimensionKey = 'strategy' | 'data' | 'process' | 'people' | 'governance'
+export type MaturityLevel = 'Nascent' | 'Initiating' | 'Developing' | 'Defined' | 'Optimizing'
+export type OpportunityQuadrant = 'quick_win' | 'major_project' | 'fill_in' | 'thankless_task'
+
+export interface ROIProjection {
+  annualLaborSavingsIDR: number | null
+  annualProcessSavingsIDR: number | null
+  totalAnnualSavingsIDR: number | null
+  hoursReclaimedPerYear: number | null
+  paybackMonths: number | null
+  threeYearROIPercent: number | null
+  costOfInaction90DaysIDR: number | null
+  hasEnoughDataForProjection: boolean
+  confidenceLevel: 'high' | 'medium' | 'low'
+  missingInputs: string[]
+}
+
+export interface DimensionScores {
+  strategy: number
+  data: number
+  process: number
+  people: number
+  governance: number
+  composite: number
+  maturityLevel: MaturityLevel
+  weakestDimension: DimensionKey
+  strongestDimension: DimensionKey
+}
+
+export interface RiskFlag {
+  id: string
+  risk: string
+  severity: 'HIGH' | 'MEDIUM' | 'LOW'
+  source: string
+  detected: boolean
+}
+
+export interface RankedOpportunity {
+  id: string
+  name: string
+  impactScore: number
+  effortScore: number
+  quadrant: OpportunityQuadrant
+  timeToValueWeeks: number
+  projectedROINote: string
+  prerequisites: string[]
+  dataReadiness: 'ready' | 'needs_prep' | 'not_ready'
+  errorComplexity: 'low' | 'medium' | 'high'
+}
+
+export interface DiagnosticContext {
+  company: string
+  submittedAt: string
+  quantitative: {
+    ticketVolumePerDay: number | null
+    ahtCurrentMinutes: number | null
+    ahtTargetMinutes: number | null
+    costCurrentPerTicket: number | null
+    costTargetPerTicket: number | null
+    totalManualHoursWeekly: number | null
+    fteCountInScope: number | null
+    currentAutomationPct: number | null
+    targetAutomationPct: number | null
+    budgetMidpointUSD: number | null
+    timelineMonths: number | null
+  }
+  calculations: ROIProjection
+  scores: DimensionScores
+  opportunities: RankedOpportunity[]
+  risks: RiskFlag[]
+  qualitative: {
+    primaryObjective: string
+    topPainPoints: string
+    compliance: string[]
+    implementApproach: string
+    aiCapability: string
+    leadershipAlignment: string
+    priorAIAttempts: string
+    resistanceSources: string[]
+    delayConsequence: string
+    errorTolerance: string
+    dataResidency: string
+  }
+}
+
+export type DiagnosticAnswers = Record<string, any>

@@ -1,0 +1,38 @@
+.container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.svg {
+  display: block;
+  margin: 0 auto;
+}
+
+.axisLabel {
+  font-size: 11px;
+  fill: #a1a1aa;
+  text-anchor: middle;
+}
+
+.axisLabelY {
+  font-size: 11px;
+  fill: #a1a1aa;
+  text-anchor: middle;
+}
+
+.quadrantLabel {
+  font-size: 11px;
+  fill: #666864;
+  font-style: italic;
+}
+
+.divider {
+  stroke: #444;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.dot {
+  cursor: pointer;
+  transition: r 0.15s ease;
+}

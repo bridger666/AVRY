@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { PhaseId, PhaseData } from '@/types/deepDiagnostic'
 import { DEEP_DIAGNOSTIC_PHASES } from '@/constants/deepDiagnosticQuestions'
-import { DeepDiagnosticService } from '@/services/deepDiagnostic'
+import { DeepDiagnosticService, buildDiagnosticContext } from '@/services/deepDiagnostic'
+import type { DiagnosticAnswers } from '@/types/diagnostic'
 import styles from './summary.module.css'
 
 const PHASE_ORDER: PhaseId[] = [
@@ -55,7 +56,16 @@ export default function SummaryPage() {
 
       const result = await DeepDiagnosticService.submitDiagnostic(companyName, phases)
       DeepDiagnosticService.saveResult(result)
-      router.push('/diagnostics/deep/result')
+
+      // Build rich DiagnosticContext and write to localStorage for the final-result page
+      const flattenedAnswers: DiagnosticAnswers = {}
+      for (const phaseId of PHASE_ORDER) {
+        Object.assign(flattenedAnswers, phaseData[phaseId]?.responses ?? {})
+      }
+      flattenedAnswers['companyName'] = companyName
+      buildDiagnosticContext(flattenedAnswers)
+
+      router.push('/diagnostics/deep/final-result')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Submission failed. Please try again.')
       setIsSubmitting(false)

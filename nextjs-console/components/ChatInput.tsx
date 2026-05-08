@@ -154,27 +154,15 @@ export default function ChatInput({ onSend, disabled = false, prefill, hasPendin
         {/* Bottom toolbar row: icons left, send right */}
         <div className="flex items-center justify-between px-3 pb-3">
           <div className="flex items-center gap-1">
-            {/* Add / attach button */}
-            <button
-              className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:border-white/20 transition-colors"
-              onClick={() => setUploadMenuOpen(o => !o)}
-              aria-label="Attach file"
-              type="button"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 5v14M5 12h14"/>
-              </svg>
-            </button>
-
-            {/* Paperclip / file button */}
+            {/* Attach / upload button — + icon */}
             <button
               className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:border-white/20 transition-colors"
               onClick={() => setUploadMenuOpen(o => !o)}
               aria-label="Upload file"
               type="button"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14"/>
               </svg>
             </button>
           </div>

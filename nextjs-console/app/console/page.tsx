@@ -7,7 +7,9 @@ import ChatMessage from "@/components/ChatMessage"
 import ChatInput from "@/components/ChatInput"
 import ConsoleTopBar from "@/components/console/ConsoleTopBar"
 import { CopilotTogglePanel } from "@/components/workflow/CopilotTogglePanel"
-import FollowUpChips from "@/components/chat/FollowUpChips"
+import SuggestionChips from "@/components/chat/SuggestionChips"
+import ActionList from "@/components/chat/ActionList"
+import { STATIC_ACTIONS } from "@/config/staticActions"
 import { RoutingSuggestBanner } from "@/components/chat/RoutingSuggestBanner"
 import { useAgenticStream } from "@/hooks/useAgenticStream"
 import { useIntentRouter } from "@/hooks/useIntentRouter"
@@ -115,6 +117,7 @@ export default function ConsolePage() {
     isStreaming,
     followUpSuggestions,
     setFollowUpSuggestions,
+    isClarification,
     handleSend,
     handleNewChat,
     switchSession,
@@ -394,8 +397,17 @@ export default function ConsolePage() {
 
             <div
               ref={chipsWrapRef}
-              className="relative mt-3 flex w-full flex-wrap justify-center gap-2 [animation:fadeUp_0.55s_0.20s_cubic-bezier(0.22,1,0.36,1)_both]"
+              className="relative mt-3 flex w-full flex-col gap-4 [animation:fadeUp_0.55s_0.20s_cubic-bezier(0.22,1,0.36,1)_both]"
             >
+                {/* Static Action List for empty chat state */}
+                <ActionList
+                  items={STATIC_ACTIONS.map(a => ({ label: a.label }))}
+                  onSelect={(label) => {
+                    handleSend(label, [])
+                  }}
+                />
+
+                <div className="flex w-full flex-wrap justify-center gap-2">
                 {CHIPS.map((chip) => (
                   <button
                     key={chip.id}
@@ -440,6 +452,7 @@ export default function ConsolePage() {
               </div>
             </div>
           </div>
+          </div>
         ) : (
           <>
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-8 py-8 pb-44">
@@ -467,14 +480,28 @@ export default function ConsolePage() {
                     />
                   </div>
                 )}
-                {messages.length > 0 && messages[messages.length - 1].role === "assistant" && followUpSuggestions.length > 0 && (
-                  <FollowUpChips
-                    suggestions={followUpSuggestions}
-                    onSelect={(suggestion) => {
-                      setFollowUpSuggestions([])
-                      handleSend(suggestion, [])
-                    }}
-                  />
+                {messages.length > 0 && messages[messages.length - 1].role === "assistant" && !isStreaming && !messages[messages.length - 1]?.isStreaming && (
+                  <>
+                    {isClarification && followUpSuggestions.length > 0 ? (
+                      <div className="mt-3">
+                        <ActionList
+                          items={followUpSuggestions.map(s => ({ label: s }))}
+                          onSelect={(label) => {
+                            setFollowUpSuggestions([])
+                            handleSend(label, [])
+                          }}
+                        />
+                      </div>
+                    ) : followUpSuggestions.length > 0 ? (
+                      <SuggestionChips
+                        suggestions={followUpSuggestions}
+                        onSelect={(suggestion) => {
+                          setFollowUpSuggestions([])
+                          handleSend(suggestion, [])
+                        }}
+                      />
+                    ) : null}
+                  </>
                 )}
               </div>
             </div>
