@@ -317,6 +317,8 @@ export interface RankedOpportunity {
 
 export interface DiagnosticContext {
   company: string
+  /** ISO currency code selected by the user (e.g. 'IDR', 'USD') */
+  currency?: string
   submittedAt: string
   quantitative: {
     ticketVolumePerDay: number | null

@@ -2,7 +2,7 @@
   "nav": {
     "agents": "Agen",
     "console": "Konsol",
-    "dashboard": "Dasbor",
+    "dashboard": "Overview",
     "diagnostics": "Diagnostik",
     "blueprint": "Cetak Biru",
     "roadmap": "Peta Jalan",
@@ -31,7 +31,7 @@
     "retry": "Coba Lagi",
     "viewAll": "Lihat Semua",
     "learnMore": "Pelajari Lebih Lanjut",
-    "backToDashboard": "Kembali ke Dasbor",
+    "backToDashboard": "Kembali ke Overview",
     "openConsole": "Buka Konsol"
   },
   "workflow": {

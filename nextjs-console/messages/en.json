@@ -2,7 +2,7 @@
   "nav": {
     "agents": "Agents",
     "console": "Console",
-    "dashboard": "Dashboard",
+    "dashboard": "Overview",
     "diagnostics": "Diagnostics",
     "blueprint": "Blueprint",
     "roadmap": "Roadmap",
@@ -31,7 +31,7 @@
     "retry": "Retry",
     "viewAll": "View All",
     "learnMore": "Learn More",
-    "backToDashboard": "Back to Dashboard",
+    "backToDashboard": "Back to Overview",
     "openConsole": "Open Console"
   },
   "workflow": {
