@@ -1,0 +1,185 @@
+.page {
+  min-height: 100vh;
+  background: #353531;
+  color: #e5e5e3;
+  font-family: 'Inter Tight', Inter, sans-serif;
+}
+
+.content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+}
+
+/* Section */
+.section {
+  margin-bottom: 48px;
+}
+
+.sectionTitle {
+  font-family: Nunito, 'Inter Tight', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #e5e5e3;
+  margin: 0 0 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #3a3a36;
+}
+
+/* Executive Scorecard */
+.scorecardGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: center;
+}
+
+@media (max-width: 1023px) {
+  .scorecardGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.scorecardLeft {
+  display: flex;
+  justify-content: center;
+}
+
+.assessmentBox {
+  background: #262623;
+  border: 1px solid #666864;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.assessmentText {
+  font-size: 14px;
+  color: #a1a1aa;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ROI Grid */
+.confidenceBanner {
+  border-left: 3px solid #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border-radius: 0 6px 6px 0;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+
+.confidenceBannerTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fbbf24;
+  margin: 0 0 6px;
+  text-transform: capitalize;
+}
+
+.confidenceBannerBody {
+  font-size: 13px;
+  color: #a1a1aa;
+  margin: 0 0 6px;
+}
+
+.confidenceMissing {
+  font-size: 12px;
+  color: #666864;
+  margin: 0;
+}
+
+.roiGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1023px) {
+  .roiGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 639px) {
+  .roiGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Opportunity Matrix */
+.matrixLayout {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (max-width: 767px) {
+  .matrixLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.opportunityList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.emptyMessage {
+  font-size: 14px;
+  color: #666864;
+  font-style: italic;
+  padding: 20px 0;
+}
+
+/* Risk Register */
+.riskList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Context Snapshot */
+.contextGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 639px) {
+  .contextGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.contextItem {
+  background: #262623;
+  border: 1px solid #3a3a36;
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+
+.contextLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #666864;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 6px;
+}
+
+.contextValue {
+  font-size: 14px;
+  color: #e5e5e3;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.contextEmpty {
+  font-size: 14px;
+  color: #666864;
+  font-style: italic;
+  margin: 0;
+}

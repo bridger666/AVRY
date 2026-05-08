@@ -101,7 +101,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = await response.json()
+    // Safely parse the response body — Zeroclaw can return an empty body on errors
+    let result: Record<string, any>
+    try {
+      const text = await response.text()
+      if (!text || text.trim() === '') {
+        console.error('[API] VPS Bridge returned empty response body')
+        return NextResponse.json(
+          { message: 'The diagnostic service returned an empty response. Please try again.' },
+          { status: 502 }
+        )
+      }
+      result = JSON.parse(text)
+    } catch (parseError) {
+      console.error('[API] Failed to parse VPS Bridge response as JSON:', parseError)
+      return NextResponse.json(
+        { message: 'The diagnostic service returned an invalid response. Please try again.' },
+        { status: 502 }
+      )
+    }
 
     // Normalize score field: VPS Bridge returns ai_readiness_score
     if (typeof (result as any).ai_readiness_score === 'number' && typeof result.score !== 'number') {

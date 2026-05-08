@@ -4,6 +4,7 @@ import { getSessionId, clearSession, generateSessionId, saveSession } from '@/li
 import { streamConsoleResponse, typewriterStream } from '@/lib/streaming'
 import { saveSessionMessages, loadSessionMessages, listSessions, ChatStorageError } from '@/lib/chatPersistence'
 import { normalizeAssistantText } from '@/lib/normalizeAssistantText'
+import { parseLLMResponse } from '@/lib/parseLLMResponse'
 import { useSession } from './useSession'
 import type { Attachment } from '@/components/UploadMenu'
 
@@ -38,6 +39,7 @@ export function useChat({
   const [currentSessionId, setCurrentSessionId] = useState<string>("")
   const [isStreaming, setIsStreaming] = useState(false)
   const [followUpSuggestions, setFollowUpSuggestions] = useState<string[]>([])
+  const [isClarification, setIsClarification] = useState(false)
   const messagesRef = useRef<Message[]>([])
   const session = useSession(addToast)
 
@@ -59,6 +61,7 @@ export function useChat({
   const handleSend = useCallback(async (text: string, atts: Attachment[]) => {
     if (!text.trim() && atts.length === 0) return
     setFollowUpSuggestions([])
+    setIsClarification(false)
 
     const imageAtts = atts.filter(a => a.content?.startsWith('data:image/'))
     const textAtts = atts.filter(a => a.content && !a.content.startsWith('data:image/'))
@@ -83,6 +86,8 @@ export function useChat({
     ])
     clearAttachments()
     setIsStreaming(true)
+    setFollowUpSuggestions([])
+    setIsClarification(false)
 
     let finalContent = ""
     let streamError = false
@@ -100,9 +105,11 @@ export function useChat({
           setMessages(p => p.map(m => m.id === assistantId ? { ...m, content: finalContent } : m))
         } else if (chunk.type === "done") {
           const normalized = normalizeAssistantText(finalContent)
-          finalContent = normalized
-          setFollowUpSuggestions(DEFAULT_SUGGESTIONS)
-          triggerClassification(text, normalized)
+          const parsed = parseLLMResponse(normalized)
+          finalContent = parsed.reply
+          setFollowUpSuggestions(parsed.suggestions)
+          setIsClarification(parsed.isClarification)
+          triggerClassification(text, parsed.reply)
         } else if (chunk.type === "error") {
           addToast("error", chunk.error || "Something went wrong.")
           setMessages(p => p.filter(m => m.id !== assistantId))
@@ -169,6 +176,7 @@ export function useChat({
     isStreaming,
     followUpSuggestions,
     setFollowUpSuggestions,
+    isClarification,
     handleSend,
     handleNewChat,
     switchSession,

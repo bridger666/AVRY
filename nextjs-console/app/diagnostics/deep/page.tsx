@@ -89,6 +89,7 @@ export default function DeepDiagnosticPage() {
     const confirmed = window.confirm('Are you sure you want to start fresh? All saved progress will be lost.')
     if (!confirmed) return
     DeepDiagnosticService.clearProgress()
+    localStorage.removeItem('aivory_diagnostic_context')
     setPhaseData(buildEmptyPhaseData())
     setCurrentPhase('business_objective_kpi')
     setCompanyName('')
