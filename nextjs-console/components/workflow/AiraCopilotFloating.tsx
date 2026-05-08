@@ -1,7 +1,17 @@
 'use client'
 
 import { useRef, useState, useEffect, useCallback } from 'react'
-import type { CopilotMessage, CopilotSuggestion } from '@/hooks/useWorkflowCopilot'
+import type { CopilotMessage } from '@/hooks/useWorkflowCopilot'
+
+// CopilotSuggestion — defined locally since it's only used by this component
+export interface CopilotSuggestion {
+  steps: Array<{ id: string; name: string; type: string; config?: Record<string, unknown> }>
+  description?: string
+  workflowName?: string
+}
+
+// Extend CopilotMessage locally to support optional suggestion attachment
+type CopilotMessageWithSuggestion = CopilotMessage & { suggestion?: CopilotSuggestion }
 
 const WORKFLOW_KEYWORDS = [
   'workflow', 'automate', 'automation', 'trigger', 'step', 'build', 'create',
@@ -17,7 +27,7 @@ function isWorkflowIntent(text: string): boolean {
 interface Props {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  messages: CopilotMessage[]
+  messages: CopilotMessageWithSuggestion[]
   loading: boolean
   error: string | null
   lastSuggestion: CopilotSuggestion | null

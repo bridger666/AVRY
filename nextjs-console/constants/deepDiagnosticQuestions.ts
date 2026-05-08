@@ -11,6 +11,77 @@ export const DEEP_DIAGNOSTIC_PHASES: PhaseConfig[] = [
     description: 'Define your business goals and how you measure success',
     questions: [
       {
+        id: 'currency',
+        question: 'Which currency do you want to use for cost and ROI estimates?',
+        type: 'select',
+        options: [
+          'USD — US Dollar ($)',
+          'EUR — Euro (€)',
+          'GBP — British Pound (£)',
+          'IDR — Indonesian Rupiah (Rp)',
+          'SGD — Singapore Dollar (S$)',
+          'MYR — Malaysian Ringgit (RM)',
+          'AUD — Australian Dollar (A$)',
+          'JPY — Japanese Yen (¥)',
+          'INR — Indian Rupee (₹)',
+          'Other'
+        ],
+        required: true
+      },
+      {
+        id: 'industry',
+        question: 'What industry does your company operate in?',
+        type: 'select',
+        options: [
+          'Technology / Software',
+          'E-commerce / Retail',
+          'Financial Services / Fintech',
+          'Healthcare / Medtech',
+          'Manufacturing',
+          'Logistics / Supply Chain',
+          'Education / Edtech',
+          'Media / Entertainment',
+          'Real Estate / Property',
+          'Professional Services / Consulting',
+          'Government / Public Sector',
+          'Non-profit / NGO',
+          'Other'
+        ],
+        required: true
+      },
+      {
+        id: 'company_size',
+        question: 'What is the size of your company?',
+        type: 'radio',
+        options: [
+          'Solo / Freelancer (1 person)',
+          'Micro (2–10 employees)',
+          'Small (11–50 employees)',
+          'Medium (51–250 employees)',
+          'Large (251–1,000 employees)',
+          'Enterprise (1,000+ employees)'
+        ],
+        required: true
+      },
+      {
+        id: 'annual_revenue',
+        question: 'What is your approximate annual revenue?',
+        type: 'select',
+        options: [
+          'Pre-revenue / Startup',
+          'Under $100k',
+          '$100k – $500k',
+          '$500k – $1M',
+          '$1M – $5M',
+          '$5M – $20M',
+          '$20M – $100M',
+          'Over $100M',
+          'Prefer not to say'
+        ],
+        helperText: 'This helps calibrate ROI estimates to your scale',
+        required: false
+      },
+      {
         id: 'primary_objective',
         question: 'What is your primary business objective for AI implementation?',
         type: 'textarea',

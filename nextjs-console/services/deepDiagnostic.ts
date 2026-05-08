@@ -291,6 +291,7 @@ import type {
   RiskFlag,
   OpportunityQuadrant,
 } from '@/types/diagnostic'
+import { parseCurrencyCode, formatCurrency, type CurrencyCode } from '@/lib/resultFormatters'
 
 // ---- Numeric extraction helpers ----
 
@@ -320,9 +321,20 @@ function parseTimelineMonths(val: string | undefined): number | null {
 
 // ---- ROI calculation ----
 
-const IDR_PER_USD = 15_600
+const CURRENCY_RATES: Record<CurrencyCode, number> = {
+  USD: 1,
+  EUR: 0.92,
+  GBP: 0.79,
+  IDR: 15_600,
+  SGD: 1.35,
+  MYR: 4.72,
+  AUD: 1.53,
+  JPY: 149,
+  INR: 83,
+}
 
-function calculateROI(q: DiagnosticContext['quantitative']): ROIProjection {
+function calculateROI(q: DiagnosticContext['quantitative'], currencyCode: CurrencyCode = 'USD'): ROIProjection {
+  const rate = CURRENCY_RATES[currencyCode] ?? 1
   const missing: string[] = []
 
   if (q.totalManualHoursWeekly === null) missing.push('manual hours/week')
@@ -358,13 +370,13 @@ function calculateROI(q: DiagnosticContext['quantitative']): ROIProjection {
   const costOfInaction90DaysUSD = totalAnnualSavingsUSD ? totalAnnualSavingsUSD * (90 / 365) : null
 
   return {
-    annualLaborSavingsIDR: annualLaborSavingsUSD ? annualLaborSavingsUSD * IDR_PER_USD : null,
-    annualProcessSavingsIDR: annualProcessSavingsUSD ? annualProcessSavingsUSD * IDR_PER_USD : null,
-    totalAnnualSavingsIDR: totalAnnualSavingsUSD ? totalAnnualSavingsUSD * IDR_PER_USD : null,
+    annualLaborSavingsIDR: annualLaborSavingsUSD ? annualLaborSavingsUSD * rate : null,
+    annualProcessSavingsIDR: annualProcessSavingsUSD ? annualProcessSavingsUSD * rate : null,
+    totalAnnualSavingsIDR: totalAnnualSavingsUSD ? totalAnnualSavingsUSD * rate : null,
     hoursReclaimedPerYear,
     paybackMonths,
     threeYearROIPercent,
-    costOfInaction90DaysIDR: costOfInaction90DaysUSD ? costOfInaction90DaysUSD * IDR_PER_USD : null,
+    costOfInaction90DaysIDR: costOfInaction90DaysUSD ? costOfInaction90DaysUSD * rate : null,
     hasEnoughDataForProjection: hasEnough,
     confidenceLevel: confidence,
     missingInputs: missing,
@@ -478,7 +490,7 @@ function classifyQuadrant(impact: number, effort: number): OpportunityQuadrant {
   return 'thankless_task'
 }
 
-function rankOpportunities(a: DiagnosticAnswers, scores: DimensionScores): RankedOpportunity[] {
+function rankOpportunities(a: DiagnosticAnswers, scores: DimensionScores, currencyCode: CurrencyCode = 'USD'): RankedOpportunity[] {
   const opps: RankedOpportunity[] = []
 
   const priorityAreas: string[] = Array.isArray(a.priority_areas) ? a.priority_areas : []
@@ -491,6 +503,9 @@ function rankOpportunities(a: DiagnosticAnswers, scores: DimensionScores): Ranke
   const complexity = (effort: number): RankedOpportunity['errorComplexity'] =>
     effort <= 3 ? 'low' : effort <= 6 ? 'medium' : 'high'
 
+  // Build a currency-aware ROI note helper
+  const roiNote = (annualUSD: number) => `Est. ${formatCurrency(annualUSD, currencyCode)}/yr savings at 80% automation`
+
   if (priorityAreas.includes('Customer service/support') || a.pain_points?.toLowerCase().includes('ticket') || a.pain_points?.toLowerCase().includes('support')) {
     const impact = 9; const effort = 5
     opps.push({
@@ -499,7 +514,7 @@ function rankOpportunities(a: DiagnosticAnswers, scores: DimensionScores): Ranke
       impactScore: impact, effortScore: effort,
       quadrant: classifyQuadrant(impact, effort),
       timeToValueWeeks: 8,
-      projectedROINote: `Est. Rp ${Math.round(15_610_400_000 / 1e9 * 10) / 10}B/yr savings at 80% automation`,
+      projectedROINote: roiNote(1_000_000),
       prerequisites: [],
       dataReadiness: dataReadiness(dataScore),
       errorComplexity: complexity(effort),
@@ -514,7 +529,7 @@ function rankOpportunities(a: DiagnosticAnswers, scores: DimensionScores): Ranke
       impactScore: impact, effortScore: effort,
       quadrant: classifyQuadrant(impact, effort),
       timeToValueWeeks: 5,
-      projectedROINote: `Est. Rp ${Math.round(15_610_400_000 / 1e9 * 10) / 10}B/yr savings at 80% automation`,
+      projectedROINote: roiNote(500_000),
       prerequisites: [],
       dataReadiness: dataReadiness(dataScore),
       errorComplexity: complexity(effort),
@@ -529,7 +544,7 @@ function rankOpportunities(a: DiagnosticAnswers, scores: DimensionScores): Ranke
       impactScore: impact, effortScore: effort,
       quadrant: classifyQuadrant(impact, effort),
       timeToValueWeeks: 8,
-      projectedROINote: `Est. Rp ${Math.round(15_610_400_000 / 1e9 * 10) / 10}B/yr savings at 80% automation`,
+      projectedROINote: roiNote(750_000),
       prerequisites: [],
       dataReadiness: dataReadiness(processScore),
       errorComplexity: complexity(effort),
@@ -560,7 +575,7 @@ function rankOpportunities(a: DiagnosticAnswers, scores: DimensionScores): Ranke
       impactScore: impact, effortScore: effort,
       quadrant: classifyQuadrant(impact, effort),
       timeToValueWeeks: 5,
-      projectedROINote: `Est. Rp ${Math.round(15_610_400_000 / 1e9 * 10) / 10}B/yr savings at 80% automation`,
+      projectedROINote: roiNote(400_000),
       prerequisites: [],
       dataReadiness: dataReadiness(dataScore),
       errorComplexity: complexity(effort),
@@ -649,6 +664,7 @@ function classifyRisks(a: DiagnosticAnswers, scores: DimensionScores): RiskFlag[
  */
 export function buildDiagnosticContext(answers: DiagnosticAnswers): DiagnosticContext {
   const companyName = answers.companyName || 'Your Organization'
+  const currencyCode = parseCurrencyCode(answers.currency)
 
   // Extract quantitative fields
   const currentAutoPct = parsePct(answers.automation_current)
@@ -671,8 +687,8 @@ export function buildDiagnosticContext(answers: DiagnosticAnswers): DiagnosticCo
   }
 
   const scores = calculateDimensionScores(answers)
-  const calculations = calculateROI(quantitative)
-  const opportunities = rankOpportunities(answers, scores)
+  const calculations = calculateROI(quantitative, currencyCode)
+  const opportunities = rankOpportunities(answers, scores, currencyCode)
   const risks = classifyRisks(answers, scores)
 
   const compliance: string[] = Array.isArray(answers.compliance_requirements)
@@ -695,6 +711,7 @@ export function buildDiagnosticContext(answers: DiagnosticAnswers): DiagnosticCo
 
   const context: DiagnosticContext = {
     company: companyName,
+    currency: currencyCode,
     submittedAt: new Date().toISOString(),
     quantitative,
     calculations,

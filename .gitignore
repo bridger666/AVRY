@@ -62,3 +62,7 @@ build/
 node_modules/
 .next/
 coverage/
+fix_zeroclaw_auth.py
+fix_zeroclaw_auth_v2.sh
+*.n8n
+full_scan_output.txt
