@@ -1,6 +1,4 @@
 "use client"
-
-"use client"
 import { useState, useRef, useEffect } from "react"
 import { Pin, MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { Conversation, ConversationGroup as GroupType } from "@/types/conversation"

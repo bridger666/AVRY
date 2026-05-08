@@ -3,11 +3,20 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { NextIntlClientProvider } from "next-intl"
 
+// Import English messages statically so they're available on first render (SSR + client)
+import enMessages from "@/messages/en.json"
+import idMessages from "@/messages/id.json"
+
 type Locale = "en" | "id"
 
 const SUPPORTED_LOCALES: Locale[] = ["en", "id"]
 const STORAGE_KEY = "aivory_locale"
 const DEFAULT_LOCALE: Locale = "en"
+
+const MESSAGES: Record<Locale, Record<string, unknown>> = {
+  en: enMessages as Record<string, unknown>,
+  id: idMessages as Record<string, unknown>,
+}
 
 interface LocaleContextValue {
   locale: Locale
@@ -35,37 +44,18 @@ export function getInitialLocale(): Locale {
   return DEFAULT_LOCALE
 }
 
-async function loadMessages(locale: Locale): Promise<Record<string, unknown>> {
-  try {
-    const msgs = await import(`@/messages/${locale}.json`)
-    return msgs.default ?? msgs
-  } catch {
-    // Fallback to English if import fails
-    if (locale !== DEFAULT_LOCALE) {
-      const fallback = await import(`@/messages/${DEFAULT_LOCALE}.json`)
-      return fallback.default ?? fallback
-    }
-    return {}
-  }
-}
-
 export function LocaleProvider({ children }: { children: ReactNode }) {
+  // Start with English — available immediately on both server and client
   const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE)
-  const [messages, setMessages] = useState<Record<string, unknown> | null>(null)
-  const [mounted, setMounted] = useState(false)
 
-  // Read initial locale from localStorage on mount
+  // After mount, read the user's stored preference and switch if needed
   useEffect(() => {
-    const initial = getInitialLocale()
-    setLocaleState(initial)
-    setMounted(true)
+    const stored = getInitialLocale()
+    if (stored !== locale) {
+      setLocaleState(stored)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  // Load messages when locale changes
-  useEffect(() => {
-    if (!mounted) return
-    loadMessages(locale).then(setMessages)
-  }, [locale, mounted])
 
   const setLocale = (newLocale: Locale) => {
     if (!SUPPORTED_LOCALES.includes(newLocale)) return
@@ -77,12 +67,23 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     setLocaleState(newLocale)
   }
 
-  // Don't render until messages are loaded
-  if (!messages) return null
-
   return (
     <LocaleContext.Provider value={{ locale, setLocale }}>
-      <NextIntlClientProvider locale={locale} messages={messages}>
+      <NextIntlClientProvider
+        locale={locale}
+        messages={MESSAGES[locale]}
+        timeZone="Asia/Jakarta"
+        onError={(error) => {
+          // Suppress missing-message errors during SSR/prerendering.
+          // These are non-fatal: the client will hydrate with the correct messages.
+          if (error.code === "MISSING_MESSAGE") return
+          if (error.code === "ENVIRONMENT_FALLBACK") return
+          console.error(error)
+        }}
+        getMessageFallback={({ namespace, key }) =>
+          [namespace, key].filter(Boolean).join(".")
+        }
+      >
         {children}
       </NextIntlClientProvider>
     </LocaleContext.Provider>

@@ -1,6 +1,4 @@
 "use client"
-
-"use client"
 import { useConversationHistory } from "@/hooks/useConversationHistory"
 import SearchBar from "./SearchBar"
 import PinnedChats from "./PinnedChats"

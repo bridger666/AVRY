@@ -1,6 +1,4 @@
 "use client"
-
-"use client"
 import { useState, useRef } from "react"
 import { Terminal, LayoutTemplate, Activity, GitBranch, ChevronDown, Check } from "lucide-react"
 import { useClickOutside } from "@/hooks/useClickOutside"

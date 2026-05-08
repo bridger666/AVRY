@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import styles from './integrations.module.css'
@@ -219,7 +219,7 @@ function StatusBadge({ status }: { status: AivoryConnection['status'] }) {
 
 type AppWithEnabled = AivoryApp & { providerEnabled?: boolean }
 
-export default function IntegrationsPage() {
+function IntegrationsContent() {
   const searchParams = useSearchParams()
   const [apps, setApps] = useState<AppWithEnabled[]>([])
   const [connections, setConnections] = useState<AivoryConnection[]>([])
@@ -545,5 +545,13 @@ export default function IntegrationsPage() {
         />
       )}
     </div>
+  )
+}
+
+export default function IntegrationsPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '2rem', color: 'rgba(255,255,255,0.4)' }}>Loading...</div>}>
+      <IntegrationsContent />
+    </Suspense>
   )
 }

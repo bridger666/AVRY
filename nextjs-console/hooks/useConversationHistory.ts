@@ -1,5 +1,5 @@
 "use client"
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { Conversation, ConversationGroup } from "@/types/conversation"
 
 const STORAGE_KEY = "aivory_conversation_history"
@@ -18,25 +18,30 @@ const seedConversations: Conversation[] = [
 ]
 
 export function useConversationHistory() {
-  const [conversations, setConversations] = useState<Conversation[]>(() => {
-    if (typeof window === "undefined") return seedConversations
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      try {
+  const [conversations, setConversations] = useState<Conversation[]>(seedConversations)
+
+  // Load from localStorage after mount (client-only)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) {
         const parsed = JSON.parse(stored)
-        return parsed.map((c: any) => ({ ...c, updatedAt: new Date(c.updatedAt) }))
-      } catch {
-        return seedConversations
+        setConversations(parsed.map((c: any) => ({ ...c, updatedAt: new Date(c.updatedAt) })))
       }
+    } catch {
+      // localStorage unavailable or parse error — keep seed data
     }
-    return seedConversations
-  })
+  }, [])
 
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Persist to localStorage
-  useMemo(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations))
+  // Persist to localStorage (client-only, after mount)
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations))
+    } catch {
+      // localStorage unavailable
+    }
   }, [conversations])
 
   // Derived state

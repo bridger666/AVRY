@@ -1,17 +1,28 @@
 "use client"
-"use client"
 import { useState, useEffect, useCallback } from "react"
 
 const STORAGE_KEY = "aivory_sidebar_collapsed"
 
 export function useSidebarCollapse() {
-  const [collapsed, setCollapsed] = useState(() => {
-    if (typeof window === "undefined") return false
-    return localStorage.getItem(STORAGE_KEY) === "true"
-  })
+  // Start uncollapsed — safe for SSR. Client will correct after mount.
+  const [collapsed, setCollapsed] = useState(false)
+
+  // Read the stored preference after mount (client-only)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored === "true") setCollapsed(true)
+    } catch {
+      // localStorage unavailable
+    }
+  }, [])
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, String(collapsed))
+    try {
+      localStorage.setItem(STORAGE_KEY, String(collapsed))
+    } catch {
+      // localStorage unavailable
+    }
   }, [collapsed])
 
   const toggle = useCallback(() => {
