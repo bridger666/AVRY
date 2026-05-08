@@ -210,9 +210,16 @@ function PhaseSection({ phase, index, open, phaseRef, onToggle, onWorkflow }: {
 }) {
   const t = useTranslations("roadmap");
   const storageKey = `aivory_roadmap_checked_${phase.id}`;
-  const [checked, setChecked] = useState<Record<string, boolean>>(() => {
-    try { return JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch { return {}; }
-  });
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+
+  // Hydrate from localStorage after mount (localStorage is not available during SSR)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored) setChecked(JSON.parse(stored));
+    } catch { /* localStorage unavailable */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
   const [complete, setComplete] = useState(false);
   const [hov, setHov] = useState(false);
 
