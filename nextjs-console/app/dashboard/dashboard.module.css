@@ -1,22 +1,19 @@
 /* FIXED: DASHBOARD BG — matches global --bg-main */
 .dashboardContainer {
-  display: flex;
-  gap: 2rem;
-  max-width: 1280px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 2.5rem 2rem 3rem;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  /* inherits body bg */
+  padding: 2.5rem 1.5rem 3rem;
+  align-items: stretch;
 }
 
 .mainContent {
-  flex: 1;
-  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1.75rem;
+  gap: 0.875rem;
+  min-width: 0;
 }
 
 /* FIXED: PAGE TITLE — Inter Tight 300, strong hierarchy */
@@ -30,38 +27,56 @@
   letter-spacing: -0.3px;
 }
 
-/* ADDED: LIFECYCLE GRID — 2-col balanced */
+/* Right column: 2x2 grid of lifecycle + activity cards */
+.rightColumn {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr; /* baris sama tinggi */
+  gap: 0.875rem;
+  align-items: stretch;
+  align-self: stretch;
+  min-height: 0; /* penting agar 1fr bekerja dalam flex/grid parent */
+}
+
+/* Keep for backward compat but not used in new layout */
 .lifecycleGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1.25rem;
 }
 
-/* FIXED: ACTIVITY SIDEBAR — top-aligned with overview card */
+/* FIXED: ACTIVITY SIDEBAR — now part of right column grid */
 .activitySidebar {
-  width: 300px;
-  flex-shrink: 0;
-  align-self: flex-start; /* top-aligns with overview card, not full height */
+  display: contents;
+}
+
+@media (max-width: 1200px) {
+  .dashboardContainer {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 1100px) {
   .dashboardContainer {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    align-items: start;
   }
-  .activitySidebar {
-    width: 100%;
+  .rightColumn {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    height: auto;
   }
 }
 
 @media (max-width: 768px) {
   .dashboardContainer {
     padding: 1.5rem 1rem 2rem;
-    gap: 1.5rem;
+    gap: 1rem;
   }
   .pageTitle {
     font-size: 22px;
   }
-  .lifecycleGrid {
+  .rightColumn {
     grid-template-columns: 1fr;
   }
 }
