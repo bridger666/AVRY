@@ -51,6 +51,12 @@ export default function FinalResultPage() {
   const router = useRouter()
   const [state, setState] = useState<PageState>({ status: 'loading' })
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
+  const [blueprintState, setBlueprintState] = useState<
+    | { status: 'idle' }
+    | { status: 'generating' }
+    | { status: 'done' }
+    | { status: 'error'; message: string }
+  >({ status: 'idle' })
 
   useEffect(() => {
     const loadContext = async () => {
@@ -99,6 +105,61 @@ export default function FinalResultPage() {
 
   const { context } = state
   const { scores, calculations, opportunities, risks, qualitative } = context
+
+  const handleGenerateBlueprint = async () => {
+    setBlueprintState({ status: 'generating' })
+    try {
+      const orgId = context.company.toLowerCase().replace(/\s+/g, '_') || 'demo_org'
+
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 120_000)
+
+      let res: Response
+      try {
+        res = await fetch('/api/blueprints/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ diagnostic: context }),
+          signal: controller.signal,
+        })
+      } finally {
+        clearTimeout(timeout)
+      }
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '')
+        let errMsg = `Blueprint generation failed (${res.status})`
+        try {
+          const errJson = JSON.parse(errText)
+          errMsg = errJson.message || errJson.error?.message || errMsg
+        } catch { /* use status code message */ }
+        throw new Error(errMsg)
+      }
+
+      const blueprint = await res.json()
+
+      // Dual-write: Supabase + localStorage via the storage service
+      try {
+        const { saveBlueprint } = await import('@/lib/supabaseStorage')
+        await saveBlueprint(blueprint, orgId)
+      } catch {
+        // Supabase unavailable — fall back to localStorage only
+        try { localStorage.setItem('aivory_blueprint', JSON.stringify(blueprint)) } catch { /* ignore */ }
+      }
+
+      setBlueprintState({ status: 'done' })
+      // Small delay so the user sees the success state before navigating
+      setTimeout(() => router.push('/blueprint'), 800)
+    } catch (err: unknown) {
+      const isAbort = err instanceof Error && err.name === 'AbortError'
+      setBlueprintState({
+        status: 'error',
+        message: isAbort
+          ? 'Blueprint generation timed out. Please try again.'
+          : err instanceof Error ? err.message : 'Blueprint generation failed',
+      })
+    }
+  }
 
   // Bug 1 fix: derive currency from context, never hardcode IDR
   const currencyCode: CurrencyCode = parseCurrencyCode(context.currency)
@@ -369,6 +430,58 @@ export default function FinalResultPage() {
               </div>
             </div>
 
+          </div>
+        </div>
+
+        {/* ── Generate Blueprint CTA ── */}
+        <div className={styles.blueprintCta}>
+          <div className={styles.blueprintCtaLeft}>
+            <div className={styles.blueprintCtaIcon} aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+            </div>
+            <div>
+              <p className={styles.blueprintCtaTitle}>Generate AI Blueprint</p>
+              <p className={styles.blueprintCtaDesc}>
+                Turn this diagnostic into a full AI implementation roadmap — architecture, workflows, and deployment plan tailored to {context.company}.
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.blueprintCtaRight}>
+            {blueprintState.status === 'error' && (
+              <p className={styles.blueprintCtaError}>{blueprintState.message}</p>
+            )}
+            {blueprintState.status === 'done' ? (
+              <button className={`${styles.blueprintBtn} ${styles.blueprintBtnDone}`} disabled>
+                ✓ Blueprint ready — redirecting…
+              </button>
+            ) : (
+              <button
+                className={styles.blueprintBtn}
+                onClick={handleGenerateBlueprint}
+                disabled={blueprintState.status === 'generating'}
+              >
+                {blueprintState.status === 'generating' ? (
+                  <>
+                    <span className={styles.blueprintSpinner} aria-hidden="true" />
+                    Generating blueprint…
+                  </>
+                ) : (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    Generate Blueprint
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
 

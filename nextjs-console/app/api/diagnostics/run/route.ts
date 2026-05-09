@@ -126,6 +126,25 @@ export async function POST(request: NextRequest) {
       result.score = result.ai_readiness_score
     }
 
+    // Bug 2 fix: Strip any numeric ROI fields from the LLM/backend response.
+    // ROI numbers MUST be computed exclusively by the pure TypeScript calculateROI()
+    // function on the client side. If the LLM accidentally returns ROI numbers,
+    // they would be non-deterministic and must never reach the UI.
+    const ROI_FIELDS_TO_STRIP = [
+      'annualLaborSavings', 'annualLaborSavingsIDR', 'annualLaborSavingsLocal',
+      'annualProcessSavings', 'annualProcessSavingsIDR', 'annualProcessSavingsLocal',
+      'totalAnnualSavings', 'totalAnnualSavingsIDR', 'totalAnnualSavingsLocal', 'totalAnnualSavingsUSD',
+      'costOfInaction90Days', 'costOfInaction90DaysIDR', 'costOfInaction90DaysLocal',
+      'paybackMonths', 'threeYearROI', 'threeYearROIPercent',
+      'hoursReclaimedPerYear', 'roiProjection', 'calculations',
+    ]
+    for (const field of ROI_FIELDS_TO_STRIP) {
+      if (field in result) {
+        console.warn(`[API] Stripping LLM-generated ROI field "${field}" from backend response — ROI must be formula-based only`)
+        delete result[field]
+      }
+    }
+
     return NextResponse.json({
       status: 'success',
       type: 'deep_diagnostic',

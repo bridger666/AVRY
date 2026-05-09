@@ -520,13 +520,36 @@ export default function RoadmapPage() {
   }, [pendingContext, clearPendingContext])
 
   useEffect(() => {
-    const rm = loadRoadmap();
-    setRoadmap(rm);
-    if (rm) {
-      setOpenPhases({ [rm.phases[0]?.id ?? '']: true });
-      phaseRefs.current = rm.phases.map(() => ({ current: null }));
+    // Load roadmap: try Supabase first, fall back to localStorage (Req 5.4–5.6)
+    const loadRoadmapData = async () => {
+      try {
+        const { loadRoadmapFromSupabase } = await import('@/lib/supabaseStorage')
+        const result = await loadRoadmapFromSupabase('demo_org')
+        if (result) {
+          setRoadmap(result)
+          setOpenPhases({ [result.phases[0]?.id ?? '']: true })
+          phaseRefs.current = result.phases.map(() => ({ current: null }))
+        } else {
+          // Supabase returned nothing — fall back to localStorage
+          const rm = loadRoadmap()
+          setRoadmap(rm)
+          if (rm) {
+            setOpenPhases({ [rm.phases[0]?.id ?? '']: true })
+            phaseRefs.current = rm.phases.map(() => ({ current: null }))
+          }
+        }
+      } catch {
+        // Supabase unavailable — fall back to localStorage
+        const rm = loadRoadmap()
+        setRoadmap(rm)
+        if (rm) {
+          setOpenPhases({ [rm.phases[0]?.id ?? '']: true })
+          phaseRefs.current = rm.phases.map(() => ({ current: null }))
+        }
+      }
+      setLoading(false)
     }
-    setLoading(false);
+    loadRoadmapData()
   }, []);
 
   const handleGenerate = async () => {

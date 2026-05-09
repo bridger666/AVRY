@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { FreeDiagnosticService } from '@/services/freeDiagnostic'
+import { DeepDiagnosticService } from '@/services/deepDiagnostic'
 import { useRouterContext } from '@/contexts/RouterContext'
 import { ContinuedFromConsole } from '@/components/routing/ContinuedFromConsole'
 import styles from './diagnostics.module.css'
@@ -11,6 +12,8 @@ import styles from './diagnostics.module.css'
 export default function DiagnosticsPage() {
   const [freeDiagnosticCompleted, setFreeDiagnosticCompleted] = useState(false)
   const [freeDiagnosticScore, setFreeDiagnosticScore] = useState<number | null>(null)
+  const [deepDiagnosticCompleted, setDeepDiagnosticCompleted] = useState(false)
+  const [deepDiagnosticInProgress, setDeepDiagnosticInProgress] = useState(false)
   const [routingNotice, setRoutingNotice] = useState<string | null>(null)
   const t = useTranslations('diagnostics')
 
@@ -28,10 +31,23 @@ export default function DiagnosticsPage() {
   }, [pendingContext, clearPendingContext])
 
   useEffect(() => {
-    const result = FreeDiagnosticService.getResult()
-    if (result) {
+    // Free diagnostic status
+    const freeResult = FreeDiagnosticService.getResult()
+    if (freeResult) {
       setFreeDiagnosticCompleted(true)
-      setFreeDiagnosticScore(result.score)
+      setFreeDiagnosticScore(freeResult.score)
+    }
+
+    // Deep diagnostic status — check for completed result context
+    const deepContext = localStorage.getItem('aivory_diagnostic_context')
+    if (deepContext) {
+      setDeepDiagnosticCompleted(true)
+    } else {
+      // Check if in-progress (has saved progress but no result yet)
+      const progress = DeepDiagnosticService.loadProgress()
+      if (progress) {
+        setDeepDiagnosticInProgress(true)
+      }
     }
   }, [])
 
@@ -94,17 +110,43 @@ export default function DiagnosticsPage() {
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>{t('deepDiagnostic')}</h2>
             <p className={styles.sectionDescription}>
-              Multi-phase deep dive to prepare your AI System Blueprint.
+              4-phase comprehensive assessment covering business objectives, data readiness, risk constraints, and AI opportunity mapping. Generates a full AI readiness report with ROI projections.
             </p>
           </div>
 
           <div className={styles.deepDiagnosticContent}>
-            <p className={styles.comingSoonText}>
-              The Deep Diagnostic provides comprehensive analysis across business context, operations, data readiness, and strategic goals.
-            </p>
-            <Link href="/diagnostics/deep" className={styles.diagnosticCta}>
-              {t('startDeep')}
-            </Link>
+            {deepDiagnosticCompleted ? (
+              <div className={styles.completedState}>
+                <div className={styles.scoreDisplay}>
+                  <span className={styles.scoreLabel}>Status:</span>
+                  <span className={styles.scoreValue} style={{ color: '#00e59e', fontSize: '0.9rem' }}>Report Ready</span>
+                </div>
+                <div className={styles.completedActions}>
+                  <Link href="/diagnostics/deep/final-result" className={styles.diagnosticCta}>
+                    View Full Report
+                  </Link>
+                  <Link href="/diagnostics/deep" className={styles.retakeButton} style={{ display: 'inline-block', textAlign: 'center' }}>
+                    Retake Diagnostic
+                  </Link>
+                </div>
+              </div>
+            ) : deepDiagnosticInProgress ? (
+              <div className={styles.completedState}>
+                <div className={styles.scoreDisplay}>
+                  <span className={styles.scoreLabel}>Status:</span>
+                  <span className={styles.scoreValue} style={{ color: '#fbbf24', fontSize: '0.9rem' }}>In Progress</span>
+                </div>
+                <div className={styles.completedActions}>
+                  <Link href="/diagnostics/deep" className={styles.diagnosticCta}>
+                    Continue Diagnostic
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <Link href="/diagnostics/deep" className={styles.diagnosticCta}>
+                {t('startDeep')}
+              </Link>
+            )}
           </div>
         </div>
       </div>

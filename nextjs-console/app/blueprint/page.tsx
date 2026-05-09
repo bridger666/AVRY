@@ -742,6 +742,8 @@ export default function BlueprintPage() {
   const [empty, setEmpty] = useState(false)
   const [currentVersionLabel, setCurrentVersionLabel] = useState<string | null>(null)
   const [routingNotice, setRoutingNotice] = useState<string | null>(null)
+  // Cloud sync warning banner (Req 4.3): shown when Supabase save fails but localStorage succeeds
+  const [cloudSyncWarning, setCloudSyncWarning] = useState(false)
 
   // Workflow generation state: keyed by workflow_id
   const [generatingWorkflow, setGeneratingWorkflow] = useState<Record<string, boolean>>({})
@@ -781,14 +783,37 @@ export default function BlueprintPage() {
   const [generatingRoadmap, setGeneratingRoadmap] = useState(false)
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('aivory_blueprint')
-      if (!raw) { setEmpty(true); return }
-      const parsed = JSON.parse(raw) as BlueprintV1
-      setBlueprint(parsed)
-    } catch {
-      setParseError(true)
+    // Load blueprint: try Supabase first (with 10s timeout), fall back to localStorage (Req 4.5–4.7)
+    const loadBlueprintData = async () => {
+      try {
+        const { loadBlueprint: _loadBlueprint } = await import('@/lib/supabaseStorage')
+        const result = await _loadBlueprint('demo_org')
+        if (result) {
+          setBlueprint(result)
+        } else {
+          // Supabase returned nothing — try localStorage directly
+          try {
+            const raw = localStorage.getItem('aivory_blueprint')
+            if (!raw) { setEmpty(true); return }
+            const parsed = JSON.parse(raw) as BlueprintV1
+            setBlueprint(parsed)
+          } catch {
+            setParseError(true)
+          }
+        }
+      } catch {
+        // Supabase unavailable — fall back to localStorage (Req 4.7)
+        try {
+          const raw = localStorage.getItem('aivory_blueprint')
+          if (!raw) { setEmpty(true); return }
+          const parsed = JSON.parse(raw) as BlueprintV1
+          setBlueprint(parsed)
+        } catch {
+          setParseError(true)
+        }
+      }
     }
+    loadBlueprintData()
     setVersions(loadVersions())
   }, [])
 
@@ -1038,6 +1063,29 @@ export default function BlueprintPage() {
     <div className={styles.page}>
       {routingNotice !== null && (
         <ContinuedFromConsole summary={routingNotice} onDismiss={() => setRoutingNotice(null)} />
+      )}
+      {/* Cloud sync warning banner (Req 4.3): shown when Supabase save fails but localStorage succeeds */}
+      {cloudSyncWarning && (
+        <div
+          role="alert"
+          style={{
+            position: 'sticky', top: 0, zIndex: 50,
+            background: '#78350f', color: '#fef3c7',
+            padding: '10px 16px', display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between', gap: 12, fontSize: '0.875rem',
+            borderBottom: '1px solid #92400e',
+          }}
+        >
+          <span>⚠️ Saved locally. Cloud sync failed — your blueprint won&apos;t appear on other devices.</span>
+          <button
+            onClick={() => setCloudSyncWarning(false)}
+            aria-label="Dismiss cloud sync warning"
+            style={{
+              background: 'transparent', border: 'none', color: '#fef3c7',
+              cursor: 'pointer', fontSize: '1rem', padding: '0 4px', lineHeight: 1,
+            }}
+          >✕</button>
+        </div>
       )}
       <div className={styles.content} ref={contentRef}>
 

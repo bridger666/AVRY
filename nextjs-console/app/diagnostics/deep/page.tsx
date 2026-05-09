@@ -200,10 +200,10 @@ export default function DeepDiagnosticPage() {
             {DEEP_DIAGNOSTIC_PHASES.find(p => p.id === savedProgress.currentPhase)?.title}
           </span>
           <div className={styles.resumeActions}>
-            <button className={`${styles.resumeButton} btn-style-a`} onClick={handleResume}>
+            <button className={styles.resumeButton} onClick={handleResume}>
               Resume
             </button>
-            <button className={`${styles.startFreshBannerButton} btn-style-b`} onClick={handleStartFresh}>
+            <button className={styles.startFreshBannerButton} onClick={handleStartFresh}>
               Start Fresh
             </button>
           </div>
@@ -273,16 +273,16 @@ export default function DeepDiagnosticPage() {
           {/* Bottom navigation */}
           <nav className={styles.bottomNav} aria-label="Phase navigation">
             <button
-              className={`${styles.prevButton} btn-style-a`}
+              className={styles.prevButton}
               onClick={handlePrevious}
               disabled={isFirstPhase}
               aria-disabled={isFirstPhase}
             >
-              Previous Phase
+              &lt; Previous Phase
             </button>
 
             <button
-              className={`${styles.startFreshButton} btn-style-b`}
+              className={styles.startFreshButton}
               onClick={handleStartFresh}
               type="button"
             >
@@ -290,11 +290,11 @@ export default function DeepDiagnosticPage() {
             </button>
 
             <button
-              className={`${styles.nextButton} btn-style-a`}
+              className={styles.nextButton}
               onClick={handleNext}
               type="button"
             >
-              {isLastPhase ? 'Complete & Review' : 'Next Phase'}
+              {isLastPhase ? 'Complete & Review' : 'Next Phase >'}
             </button>
           </nav>
         </main>

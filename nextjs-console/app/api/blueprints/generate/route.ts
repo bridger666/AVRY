@@ -11,27 +11,118 @@
 import { NextRequest } from 'next/server'
 import { getConfig } from '@/lib/config'
 import { createErrorResponse } from '@/types/errors'
-import type { BlueprintGenerateRequest, BlueprintGenerateResponse } from '@/types/blueprint'
+import type { BlueprintV1 } from '@/types/blueprint'
 
 export const maxDuration = 120
+
+function extractSseContent(raw: string): string {
+  return raw
+    .split('\n')
+    .filter(line => line.startsWith('data: '))
+    .map(line => {
+      try {
+        const data = JSON.parse(line.slice(6))
+        return data.type === 'chunk' ? data.content || '' : ''
+      } catch {
+        return ''
+      }
+    })
+    .join('')
+    .trim()
+}
+
+function parseBlueprintContent(content: string): BlueprintV1 | null {
+  try {
+    return JSON.parse(content) as BlueprintV1
+  } catch {
+    const match = content.match(/```(?:json)?\s*([\s\S]*?)```/) || content.match(/\{[\s\S]*\}/)
+    if (!match) return null
+
+    try {
+      return JSON.parse(match[1] || match[0]) as BlueprintV1
+    } catch {
+      return null
+    }
+  }
+}
+
+function buildBlueprintFromText(content: string, diagnostic: any): BlueprintV1 {
+  const company = typeof diagnostic?.company === 'string' && diagnostic.company.trim()
+    ? diagnostic.company
+    : 'Aivory Organization'
+  const qualitative = diagnostic?.qualitative || {}
+  const scores = diagnostic?.scores || {}
+  const opportunities = Array.isArray(diagnostic?.opportunities) ? diagnostic.opportunities : []
+  const risks = Array.isArray(diagnostic?.risks) ? diagnostic.risks : []
+
+  return {
+    blueprint_id: `BP_${Date.now()}`,
+    version: '1',
+    status: 'draft',
+    organization: {
+      name: company,
+      industry: qualitative.industry || 'General',
+      size: qualitative.companySize || 'sme'
+    },
+    diagnostic_summary: {
+      ai_readiness_score: scores.overall ?? scores.ai_readiness_score ?? 0,
+      maturity_level: scores.maturityLevel || 'Emerging',
+      primary_constraints: risks.slice(0, 3).map((risk: any) => risk.title || risk.name || String(risk))
+    },
+    strategic_objective: {
+      primary_goal: content || qualitative.primaryObjective || 'Generate an AI implementation blueprint from the diagnostic.',
+      kpi_targets: [
+        { metric: 'AI readiness', target: 'Improve readiness through prioritized automation initiatives' }
+      ]
+    },
+    system_architecture: {
+      data_sources: ['Diagnostic context'],
+      processing_layers: ['VPS Bridge', 'Zeroclaw AI Gateway'],
+      decision_engine: 'AI-assisted blueprint generation',
+      memory_layer: 'Supabase blueprint storage',
+      execution_layer: ['Aivory Console']
+    },
+    workflow_modules: opportunities.slice(0, 3).map((opportunity: any, index: number) => ({
+      workflow_id: `WF_${index + 1}`,
+      name: opportunity.title || opportunity.name || `Workflow ${index + 1}`,
+      trigger: 'Diagnostic opportunity selected',
+      steps: [
+        { type: 'ingestion', action: 'Collect relevant business context' },
+        { type: 'ai_processing', action: 'Generate workflow recommendation' },
+        { type: 'human_review', action: 'Review and approve implementation plan' }
+      ],
+      integrations_required: opportunity.integrations || []
+    })),
+    risk_assessment: {
+      data_risks: risks.slice(0, 3).map((risk: any) => risk.title || risk.name || String(risk)),
+      operational_risks: [],
+      mitigation_strategies: ['Review generated blueprint before implementation']
+    },
+    deployment_plan: {
+      phase: 'Blueprint draft',
+      estimated_impact: 'Prioritized AI implementation plan generated from diagnostic results',
+      estimated_roi_months: 6,
+      waves: [
+        { name: 'Validation', included_workflows: [], notes: 'Validate blueprint assumptions with stakeholders' }
+      ]
+    }
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
     // Parse request body
-    const body = await request.json() as BlueprintGenerateRequest
-    const { organization_id, diagnostic_id, objective } = body
-    // diagnostic_data: full result object passed from the result page
-    const diagnostic_data = (body as any).diagnostic_data
+    const body = await request.json() as { diagnostic?: any; diagnostic_data?: any }
+    const diagnostic = body.diagnostic || body.diagnostic_data
 
-    // Validate required fields — diagnostic_data OR diagnostic_id must be present
-    if (!organization_id || (!diagnostic_id && !diagnostic_data) || !objective) {
+    if (!diagnostic) {
       return Response.json(
         createErrorResponse(
           'ValidationError',
           'Missing required fields',
           {
-            required: ['organization_id', 'diagnostic_id or diagnostic_data', 'objective'],
-            received: { organization_id, diagnostic_id, objective }
+            required: ['diagnostic'],
+            received: Object.keys(body)
           }
         ),
         { status: 400 }
@@ -47,18 +138,18 @@ export async function POST(request: NextRequest) {
 
     let response: Response
     try {
-      response = await fetch(`${config.VPS_BRIDGE_URL}/blueprints/generate`, {
+      response = await fetch(`${config.VPS_BRIDGE_URL}/blueprint/generate`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Api-Key': config.VPS_BRIDGE_API_KEY
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          organization_id,
-          diagnostic_id,
-          // Pass full diagnostic_data so VPS Bridge can build the blueprint prompt
-          diagnostic_data: diagnostic_data || { diagnostic_id },
-          objective
+          messages: [
+            {
+              role: 'user',
+              content: `Generate an AI system blueprint from this diagnostic data. Return a complete blueprint.\n\n${JSON.stringify(diagnostic)}`
+            }
+          ]
         }),
         signal: controller.signal
       })
@@ -93,8 +184,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Parse and return successful response
-    const data = await response.json() as BlueprintGenerateResponse
+    const raw = await response.text()
+    const content = extractSseContent(raw)
+    const data = parseBlueprintContent(content) || buildBlueprintFromText(content, diagnostic)
 
     return Response.json(data)
 
