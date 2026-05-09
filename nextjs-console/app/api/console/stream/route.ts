@@ -74,32 +74,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: true, message: msg }, { status: bridgeResponse.status })
     }
 
-    // Zeroclaw returns JSON: { model, response } — always use JSON path
-    // The VPS Bridge sets Content-Type: text/event-stream but the body is plain JSON,
-    // not actual SSE events. We must parse it and wrap in SSE format ourselves.
-    const bridgeData = await bridgeResponse.json() as {
-      response?: string
-      raw_agent_response?: string
-      final_text?: string
-      mode?: string
-      model?: string
-      skill?: string
-    }
-    const text = bridgeData.response ?? bridgeData.final_text ?? bridgeData.raw_agent_response ?? ''
-    console.log('[console/stream] extracted text length:', text.length, 'preview:', text.slice(0, 100))
-    const enc = new TextEncoder()
-
+    // Bridge now returns proper SSE format - forward it directly to client
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
+    const reader = bridgeResponse.body!.getReader()
+    const decoder = new TextDecoder()
 
     ;(async () => {
       try {
-        await writer.write(enc.encode(
-          `data: ${JSON.stringify({ type: 'chunk', content: text })}\n\n`
-        ))
-        await writer.write(enc.encode(
-          `data: ${JSON.stringify({ type: 'done' })}\n\n`
-        ))
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          
+          const chunk = decoder.decode(value, { stream: true })
+          await writer.write(new TextEncoder().encode(chunk))
+        }
       } finally {
         try { await writer.close() } catch { /* already closed */ }
       }

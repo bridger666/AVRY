@@ -5,7 +5,7 @@
  *
  * Path: AiraFloatingAssistant → POST /api/aira/stream → /bridge/aira → Zeroclaw → OpenRouter
  *
- * Tab-specific context (source_tab + pageContext) is forwarded via the `context` field.
+ * Tab-specific context (source_tab + pageContext) is forwarded via `context` field.
  * Proxies to /bridge/aira on the VPS bridge (Zeroclaw-orchestrated).
  * Keeps /api/console/stream untouched for the main AI Console tab.
  */
@@ -61,29 +61,21 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: true, message: msg }, { status: bridgeResponse.status })
     }
 
-    // Zeroclaw returns JSON: { model, response } — convert to SSE for the frontend
-    const bridgeData = await bridgeResponse.json() as {
-      response?: string
-      raw_agent_response?: string
-      final_text?: string
-      mode?: string
-      model?: string
-      skill?: string
-    }
-    const text = bridgeData.response ?? bridgeData.final_text ?? bridgeData.raw_agent_response ?? ''
-    const enc = new TextEncoder()
-
+    // Bridge now returns proper SSE format - forward it directly to client
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
+    const reader = bridgeResponse.body!.getReader()
+    const decoder = new TextDecoder()
 
     ;(async () => {
       try {
-        await writer.write(enc.encode(
-          `data: ${JSON.stringify({ type: 'chunk', content: text })}\n\n`
-        ))
-        await writer.write(enc.encode(
-          `data: ${JSON.stringify({ type: 'done' })}\n\n`
-        ))
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          
+          const chunk = decoder.decode(value, { stream: true })
+          await writer.write(new TextEncoder().encode(chunk))
+        }
       } finally {
         try { await writer.close() } catch { /* already closed */ }
       }
@@ -92,7 +84,7 @@ export async function POST(request: NextRequest) {
     return new Response(readable, {
       headers: {
         'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-cache, no-transform',
         'Connection': 'keep-alive',
         'X-Accel-Buffering': 'no',
       },
