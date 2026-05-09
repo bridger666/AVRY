@@ -161,13 +161,99 @@ function proxyStream(req, res) {
   proxyReq.end();
 }
 
+/**
+ * Handle streaming requests from Next.js
+ * Forwards to Zeroclaw /webhook, parses SSE response, and emits proper SSE format
+ */
+function handleStreamRequest(req, res) {
+  const targetUrl = new URL('/webhook', ZEROCLAW_URL);
+  
+  const options = {
+    hostname: targetUrl.hostname,
+    port: targetUrl.port || (targetUrl.protocol === 'https:' ? 443 : 80),
+    path: targetUrl.pathname,
+    method: 'POST',
+    headers: {
+      ...req.headers,
+      'X-Internal-Key': INTERNAL_KEY,
+      'Content-Type': 'application/json',
+      'host': targetUrl.host
+    }
+  };
+
+  const transport = targetUrl.protocol === 'https:' ? https : http;
+  
+  const proxyReq = transport.request(options, (proxyRes) => {
+    // Set SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('X-Accel-Buffering', 'no');
+    
+    let buffer = '';
+    
+    proxyRes.on('data', (chunk) => {
+      buffer += chunk.toString();
+      
+      // Process SSE lines
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Keep incomplete line in buffer
+      
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            
+            // Extract content from Zeroclaw SSE format: choices[0].delta.content
+            if (data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content) {
+              const content = data.choices[0].delta.content;
+              
+              // Emit proper SSE format for Next.js
+              res.write(`data: ${JSON.stringify({ type: 'chunk', content })}\n\n`);
+            }
+          } catch (e) {
+            // Ignore parse errors for non-JSON lines
+          }
+        }
+      }
+    });
+    
+    proxyRes.on('end', () => {
+      // Send done event
+      res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+      res.end();
+    });
+  });
+
+  proxyReq.on('error', (err) => {
+    console.error('[handle stream request] error:', err.message);
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('Access-Control-Allow-Allow-Origin', CORS_ORIGIN);
+    }
+    res.write(`data: ${JSON.stringify({ type: 'error', error: 'Proxy error' })}\n\n`);
+    res.end();
+  });
+
+  // Forward request body
+  if (req.body && Object.keys(req.body).length > 0) {
+    proxyReq.write(JSON.stringify(req.body));
+  }
+  
+  proxyReq.end();
+}
+
 // ============================================================================
 // ROUTES - Forward all requests to Zeroclaw
 // ============================================================================
 
-// Console streaming (SSE)
-app.post('/console/stream', proxyStream);
-app.post('/aria/stream', proxyStream);
+// Console streaming (SSE) - use handleStreamRequest for proper SSE parsing
+app.post('/console/stream', handleStreamRequest);
+app.post('/aria/stream', handleStreamRequest);
 
 // ============================================================================
 // ENTITLEMENT & BILLING ENDPOINTS

@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     const config = getConfig()
-    // Route through /aria/stream — the correct thin-proxy endpoint
+    // Route through /aria/stream — correct thin-proxy endpoint
     const bridgeUrl = `${config.VPS_BRIDGE_URL}/aria/stream`
 
     // FIXED: TIMEOUT INCREASE — abort after 115s
@@ -56,38 +56,21 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: true, message: msg }, { status: bridgeResponse.status })
     }
 
-    // Zeroclaw returns JSON: { model, response } — convert to SSE for the frontend
-    const bridgeData = await bridgeResponse.json() as {
-      response?: string
-      raw_agent_response?: string
-      final_text?: string
-      mode?: string
-      model?: string
-      skill?: string
-    }
-    const text = bridgeData.response ?? bridgeData.final_text ?? bridgeData.raw_agent_response ?? ''
-    const enc = new TextEncoder()
-
+    // Bridge now returns proper SSE format - forward it directly to client
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
+    const reader = bridgeResponse.body!.getReader()
+    const decoder = new TextDecoder()
 
     ;(async () => {
       try {
-        // Stream the response in chunks of 20 characters
-        const step = 20
-        for (let i = 0; i < text.length; i += step) {
-          const piece = text.slice(i, i + step)
-
-          await writer.write(
-            enc.encode(
-              `data: ${JSON.stringify({ type: 'chunk', content: piece })}\n\n`
-            )
-          )
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          
+          const chunk = decoder.decode(value, { stream: true })
+          await writer.write(new TextEncoder().encode(chunk))
         }
-
-        await writer.write(enc.encode(
-          `data: ${JSON.stringify({ type: 'done' })}\n\n`
-        ))
       } finally {
         try { await writer.close() } catch { /* already closed */ }
       }
@@ -96,7 +79,7 @@ export async function POST(request: NextRequest) {
     return new Response(readable, {
       headers: {
         'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-cache, no-transform',
         'Connection': 'keep-alive',
         'X-Accel-Buffering': 'no',
       },
