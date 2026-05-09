@@ -467,11 +467,11 @@ function IntegrationsContent() {
                   <span className={styles.tableLastUsed}>{relativeTime(conn.lastUsedAt)}</span>
                   <span className={styles.tableActions}>
                     <button
-                      className={styles.actionBtn}
+                      className={`${styles.actionBtn} ${conn.status === 'needs_reauth' ? styles.actionBtnReauth : ''}`}
                       onClick={() => handleReconnect(conn)}
-                      title={t("reconnect")}
+                      title={conn.status === 'needs_reauth' ? 'Re-authenticate required' : t("reconnect")}
                     >
-                      {t("reconnect")}
+                      {conn.status === 'needs_reauth' ? 'Re-authenticate' : t("reconnect")}
                     </button>
                     <button
                       className={`${styles.actionBtn} ${styles.actionBtnDanger}`}

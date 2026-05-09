@@ -8,11 +8,11 @@
   overflow: visible;
 }
 
-.guide {
-  fill: none;
-  stroke: #444;
-  stroke-width: 1;
-}
+  .guide {
+    fill: none;
+    stroke: #ffffff;
+    stroke-width: 0.5;
+  }
 
 .dataPolygon {
   fill: rgba(0, 229, 158, 0.15);
@@ -20,10 +20,10 @@
   stroke-width: 2;
 }
 
-.axisLine {
-  stroke: #3a3a36;
-  stroke-width: 1;
-}
+  .axisLine {
+    stroke: #ffffff;
+    stroke-width: 0.5;
+  }
 
 .axisLabel {
   font-size: 11px;

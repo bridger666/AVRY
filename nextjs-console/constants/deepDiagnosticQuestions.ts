@@ -217,6 +217,36 @@ export const DEEP_DIAGNOSTIC_PHASES: PhaseConfig[] = [
           '75-100%'
         ],
         required: true
+      },
+      {
+        id: 'manual_hours_weekly',
+        question: 'Approximately how many manual hours per week does your team spend on repetitive tasks?',
+        type: 'select',
+        options: [
+          'Under 10 hours/week',
+          '10-25 hours/week',
+          '25-50 hours/week',
+          '50-100 hours/week',
+          'Over 100 hours/week',
+          'Not sure'
+        ],
+        helperText: 'Across all team members in scope — used to calculate ROI projections',
+        required: false
+      },
+      {
+        id: 'fte_count',
+        question: 'How many full-time employees (FTEs) are in scope for AI automation?',
+        type: 'select',
+        options: [
+          '1-5 FTEs',
+          '6-15 FTEs',
+          '16-50 FTEs',
+          '51-200 FTEs',
+          'Over 200 FTEs',
+          'Not sure'
+        ],
+        helperText: 'Used to calibrate ROI and savings estimates',
+        required: false
       }
     ]
   },
@@ -302,6 +332,33 @@ export const DEEP_DIAGNOSTIC_PHASES: PhaseConfig[] = [
           'Very low - extremely cautious'
         ],
         required: true
+      },
+      {
+        id: 'target_automation',
+        question: 'What is your target automation level within 12 months?',
+        type: 'select',
+        options: [
+          '10-25%',
+          '25-50%',
+          '50-75%',
+          '75-90%',
+          '90%+'
+        ],
+        helperText: 'Used to calculate projected ROI and savings',
+        required: false
+      },
+      {
+        id: 'data_residency',
+        question: 'Do you have data residency or data sovereignty requirements?',
+        type: 'radio',
+        options: [
+          'Yes — data must stay in-country',
+          'Yes — specific cloud regions required',
+          'No specific requirements',
+          'Not sure'
+        ],
+        helperText: 'Affects which AI infrastructure options are available',
+        required: false
       }
     ]
   },
@@ -386,6 +443,33 @@ export const DEEP_DIAGNOSTIC_PHASES: PhaseConfig[] = [
         ],
         helperText: 'Select all that apply',
         required: true
+      },
+      {
+        id: 'prior_ai_attempts',
+        question: 'Have you previously attempted AI or automation implementation?',
+        type: 'radio',
+        options: [
+          'Yes — successful, currently in use',
+          'Yes — partially successful, some still running',
+          'Yes — unsuccessful or abandoned',
+          'No — this is our first attempt',
+          'Currently in pilot/evaluation'
+        ],
+        helperText: 'Prior experience helps calibrate implementation risk',
+        required: false
+      },
+      {
+        id: 'delay_consequence',
+        question: 'What is the consequence of delaying AI implementation by 6-12 months?',
+        type: 'radio',
+        options: [
+          'Significant competitive disadvantage',
+          'Continued operational inefficiency and cost',
+          'Missed revenue or growth opportunity',
+          'Minimal impact — timing is flexible',
+          'Not sure'
+        ],
+        required: false
       }
     ]
   }

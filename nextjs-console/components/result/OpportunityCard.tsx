@@ -1,11 +1,25 @@
 import type { RankedOpportunity } from '@/types/diagnostic'
-import { humanizeQuadrant } from '@/lib/resultFormatters'
+import { formatCurrency, humanizeQuadrant, type CurrencyCode } from '@/lib/resultFormatters'
 import styles from './OpportunityCard.module.css'
 
 interface OpportunityCardProps {
   opportunity: RankedOpportunity
   isHighlighted: boolean
+  colorIndex?: number
+  currencyCode: CurrencyCode
 }
+
+// Must stay in sync with DOT_COLORS in OpportunityMatrix.tsx
+const DOT_COLORS = [
+  '#00e59e',
+  '#60a5fa',
+  '#f59e0b',
+  '#f472b6',
+  '#a78bfa',
+  '#34d399',
+  '#fb923c',
+  '#e879f9',
+]
 
 const dataReadinessLabel: Record<string, string> = {
   ready: 'Data Ready',
@@ -19,24 +33,49 @@ const dataReadinessClass: Record<string, string> = {
   not_ready: styles.badgeNotReady,
 }
 
-export default function OpportunityCard({ opportunity, isHighlighted }: OpportunityCardProps) {
-  const cardClass = [styles.card, isHighlighted ? styles.highlighted : ''].filter(Boolean).join(' ')
+export default function OpportunityCard({
+  opportunity,
+  isHighlighted,
+  colorIndex = 0,
+  currencyCode,
+}: OpportunityCardProps) {
+  const color = DOT_COLORS[colorIndex % DOT_COLORS.length]
+  const cardStyle = isHighlighted
+    ? { borderColor: color, boxShadow: `0 0 0 1px ${color}` }
+    : {}
+
+  // Use estimatedSavingsLocal (new field); fall back to deprecated estimatedSavingsIDR
+  // for contexts stored before this fix was deployed.
+  const estimatedSavings =
+    opportunity.estimatedSavingsLocal ?? opportunity.estimatedSavingsIDR ?? null
+  const savingsLine =
+    typeof estimatedSavings === 'number'
+      ? `Est. ${formatCurrency(estimatedSavings, currencyCode)}/yr savings`
+      : null
 
   return (
-    <div className={cardClass}>
+    <div className={styles.card} style={cardStyle}>
       <div className={styles.header}>
-        <h3 className={styles.name}>{opportunity.name}</h3>
-        <span className={styles.quadrantBadge}>{humanizeQuadrant(opportunity.quadrant)}</span>
+        <div className={styles.nameRow}>
+          <span className={styles.colorDot} style={{ background: color }} />
+          {/* FIX 3: opportunity.name → opportunity.title */}
+          <h3 className={styles.name}>{opportunity.title}</h3>
+        </div>
+        <span className={styles.quadrantBadge}>
+          {humanizeQuadrant(opportunity.quadrant)}
+        </span>
       </div>
 
       <div className={styles.metrics}>
         <div className={styles.metric}>
           <span className={styles.metricLabel}>Impact</span>
-          <span className={styles.metricValue}>{opportunity.impactScore}/10</span>
+          {/* FIX 4: opportunity.impactScore → opportunity.impact */}
+          <span className={styles.metricValue}>{opportunity.impact}/10</span>
         </div>
         <div className={styles.metric}>
           <span className={styles.metricLabel}>Effort</span>
-          <span className={styles.metricValue}>{opportunity.effortScore}/10</span>
+          {/* FIX 5: opportunity.effortScore → opportunity.effort */}
+          <span className={styles.metricValue}>{opportunity.effort}/10</span>
         </div>
         <div className={styles.metric}>
           <span className={styles.metricLabel}>Time to Value</span>
@@ -44,19 +83,34 @@ export default function OpportunityCard({ opportunity, isHighlighted }: Opportun
         </div>
         <div className={styles.metric}>
           <span className={styles.metricLabel}>Complexity</span>
-          <span className={styles.metricValue} style={{ textTransform: 'capitalize' }}>{opportunity.errorComplexity}</span>
+          {/* FIX 6: opportunity.errorComplexity → opportunity.complexity */}
+          <span
+            className={styles.metricValue}
+            style={{ textTransform: 'capitalize' }}
+          >
+            {opportunity.complexity}
+          </span>
         </div>
       </div>
 
+      {/* FIX 2 (lanjutan): Tampilkan savings unik per-kartu */}
+      {savingsLine && <p className={styles.roiNote}>{savingsLine}</p>}
+
+      {/* projectedROINote tetap tampil sebagai sub-note jika ada */}
       {opportunity.projectedROINote && (
-        <p className={styles.roiNote}>{opportunity.projectedROINote}</p>
+        <p className={styles.roiSubNote}>{opportunity.projectedROINote}</p>
       )}
 
       <div className={styles.badges}>
-        <span className={`${styles.badge} ${dataReadinessClass[opportunity.dataReadiness] ?? ''}`}>
+        <span
+          className={`${styles.badge} ${
+            dataReadinessClass[opportunity.dataReadiness] ?? ''
+          }`}
+        >
           {dataReadinessLabel[opportunity.dataReadiness] ?? opportunity.dataReadiness}
         </span>
-        {opportunity.prerequisites.length > 0 && (
+        {/* FIX 7: optional chaining — prerequisites bisa undefined/null */}
+        {opportunity.prerequisites?.length > 0 && (
           <span className={styles.badge}>
             Prereqs: {opportunity.prerequisites.join(', ')}
           </span>

@@ -1,17 +1,12 @@
 .card {
   background: #262623;
-  border: 1px solid #666864;
+  border: 1px solid #4a4a46;
   border-radius: 8px;
   padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  transition: border-color 0.2s ease;
-}
-
-.highlighted {
-  border-color: #00e59e;
-  box-shadow: 0 0 0 1px #00e59e;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .header {
@@ -20,6 +15,19 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.colorDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .name {

@@ -78,12 +78,19 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       const connections = await entity.getConnections()
 
       const connectedApps = Array.isArray(connections)
-        ? connections.map((c: Record<string, unknown>) => ({
-            appName:     c.appName     ?? c.appUniqueId ?? null,
-            status:      c.status      ?? 'connected',
-            connectedAt: c.createdAt   ?? null,
-            accountId:   c.id          ?? null,
-          }))
+        ? connections.map((c: Record<string, unknown>) => {
+            const composioStatus = String(c.status ?? '').toUpperCase()
+            const normalizedStatus =
+              composioStatus === 'ACTIVE' ? 'connected' :
+              composioStatus === 'NEEDS_REAUTH' || composioStatus === 'EXPIRED' ? 'needs_reauth' :
+              'needs_reauth'
+            return {
+              appName:     c.appName     ?? c.appUniqueId ?? null,
+              status:      normalizedStatus,
+              connectedAt: c.createdAt   ?? null,
+              accountId:   c.id          ?? null,
+            }
+          })
         : []
 
       const now = new Date().toISOString()
@@ -145,10 +152,51 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     }
 
     try {
-      const composio   = getComposioClient()
-      const entity     = composio.getEntity(userId)
-      const connections = await entity.getConnections()
-      return NextResponse.json(Array.isArray(connections) ? connections : [])
+      const composio    = getComposioClient()
+      const entity      = composio.getEntity(userId)
+      const rawConns    = await entity.getConnections()
+      const connections = Array.isArray(rawConns) ? rawConns : []
+
+      // Map Composio's raw connection objects → AivoryConnection shape.
+      // Composio status values: ACTIVE | INITIATED | FAILED | EXPIRED | NEEDS_REAUTH
+      // AivoryConnection status: connected | revoked | needs_reauth
+      const mapped = connections.map((c: Record<string, unknown>) => {
+        const composioStatus = String(c.status ?? '').toUpperCase()
+        let status: 'connected' | 'revoked' | 'needs_reauth'
+        if (composioStatus === 'ACTIVE') {
+          status = 'connected'
+        } else if (composioStatus === 'NEEDS_REAUTH' || composioStatus === 'EXPIRED') {
+          status = 'needs_reauth'
+        } else {
+          // INITIATED, FAILED, or unknown → treat as needs_reauth so user can reconnect
+          status = 'needs_reauth'
+        }
+
+        // Derive a stable appId: prefer appUniqueId, fall back to lowercased appName
+        const rawAppName = String(c.appName ?? c.appUniqueId ?? '')
+        const appId = rawAppName.toLowerCase().replace(/\s+/g, '-')
+
+        return {
+          id:                String(c.id ?? c.connectedAccountId ?? ''),
+          tenantId:          userId,
+          appId,
+          appName:           rawAppName,
+          appIcon:           '',
+          displayName:       String(c.displayName ?? rawAppName),
+          status,
+          authType:          'oauth' as const,
+          storageRef:        '',
+          createdAt:         String(c.createdAt ?? new Date().toISOString()),
+          updatedAt:         String(c.updatedAt ?? new Date().toISOString()),
+          lastUsedAt:        (c.lastUsedAt as string | null) ?? null,
+          accountIdentifier: (c.accountIdentifier as string | null) ??
+                             (c.email as string | null) ??
+                             (c.username as string | null) ?? null,
+          oauthProvider:     appId,
+        }
+      })
+
+      return NextResponse.json(mapped)
     } catch (err: unknown) {
       const details = err instanceof Error ? err.message : String(err)
       console.error('[integrations/oauth?action=status] Composio error:', details)

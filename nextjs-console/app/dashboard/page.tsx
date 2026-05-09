@@ -1,17 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
 import { useTranslations } from "next-intl"
 import { DashboardData, getPlaceholderData } from "@/types/dashboard"
 import { FreeDiagnosticService } from "@/services/freeDiagnostic"
+import { DeepDiagnosticService } from "@/services/deepDiagnostic"
 import OverviewCard from "@/components/dashboard/OverviewCard"
 import LifecycleCard from "@/components/dashboard/LifecycleCard"
 import RecentActivity from "@/components/dashboard/RecentActivity"
 import LoadingState from "@/components/dashboard/LoadingState"
 import ErrorState from "@/components/dashboard/ErrorState"
 import styles from "./dashboard.module.css"
-
 import { useRouterContext } from '@/contexts/RouterContext'
 import { ContinuedFromConsole } from '@/components/routing/ContinuedFromConsole'
 
@@ -20,6 +19,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [freeDiagnosticScore, setFreeDiagnosticScore] = useState<number | null>(null)
   const [freeDiagnosticCompleted, setFreeDiagnosticCompleted] = useState(false)
+  const [deepDiagnosticCompleted, setDeepDiagnosticCompleted] = useState(false)
   const t = useTranslations("dashboard")
 
   const { pendingContext, clearPendingContext } = useRouterContext()
@@ -35,18 +35,22 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardData()
-    
+
     // Check free diagnostic status
     const result = FreeDiagnosticService.getResult()
     if (result) {
       setFreeDiagnosticCompleted(true)
       setFreeDiagnosticScore(result.score)
     }
+
+    // Check deep diagnostic status — presence of aivory_diagnostic_context means complete
+    const deepContext = localStorage.getItem('aivory_diagnostic_context')
+    if (deepContext) {
+      setDeepDiagnosticCompleted(true)
+    }
   }, [])
 
   const fetchDashboardData = async () => {
-    // For now, use placeholder data
-    // TODO: Replace with actual API call
     setData(getPlaceholderData())
     setLoading(false)
   }
@@ -59,6 +63,26 @@ export default function DashboardPage() {
     return <ErrorState onRetry={fetchDashboardData} />
   }
 
+  // Determine diagnostics card state — deep takes priority over free
+  const diagnosticsStatus = deepDiagnosticCompleted ? 'completed' : freeDiagnosticCompleted ? 'completed' : data.diagnostic.status
+  const diagnosticsHref = deepDiagnosticCompleted
+    ? '/diagnostics/deep/final-result'
+    : freeDiagnosticCompleted
+    ? '/diagnostics/free/result'
+    : '/diagnostics'
+  const diagnosticsCta = deepDiagnosticCompleted
+    ? 'View AI Report'
+    : freeDiagnosticCompleted
+    ? t('diagnosticsCard.viewResults')
+    : data.diagnostic.status === 'not_started'
+    ? t('diagnosticsCard.startDiagnostic')
+    : t('diagnosticsCard.continueDiagnostic')
+  const diagnosticsDescription = deepDiagnosticCompleted
+    ? 'Deep diagnostic complete — your AI readiness report is ready.'
+    : freeDiagnosticCompleted
+    ? t('diagnosticsCard.descriptionCompleted', { score: Math.round(freeDiagnosticScore || 0) })
+    : t('diagnosticsCard.descriptionNotStarted')
+
   return (
     <div className={styles.dashboardContainer}>
       {routingNotice !== null && (
@@ -66,8 +90,7 @@ export default function DashboardPage() {
       )}
       <div className={styles.mainContent}>
         <h1 className={styles.pageTitle}>{t('title')}</h1>
-        
-        {/* FIXED: OVERVIEW CARD — pass score props for progress ring */}
+
         <OverviewCard
           data={data}
           freeDiagnosticScore={freeDiagnosticScore}
@@ -77,20 +100,10 @@ export default function DashboardPage() {
         <div className={styles.lifecycleGrid}>
           <LifecycleCard
             title={t('diagnosticsCard.title')}
-            description={
-              freeDiagnosticCompleted
-                ? t('diagnosticsCard.descriptionCompleted', { score: Math.round(freeDiagnosticScore || 0) })
-                : t('diagnosticsCard.descriptionNotStarted')
-            }
-            status={freeDiagnosticCompleted ? 'completed' : data.diagnostic.status}
-            cta={
-              freeDiagnosticCompleted
-                ? t('diagnosticsCard.viewResults')
-                : data.diagnostic.status === 'not_started'
-                ? t('diagnosticsCard.startDiagnostic')
-                : t('diagnosticsCard.continueDiagnostic')
-            }
-            href={freeDiagnosticCompleted ? "/diagnostics/free/result" : "/diagnostics"}
+            description={diagnosticsDescription}
+            status={diagnosticsStatus}
+            cta={diagnosticsCta}
+            href={diagnosticsHref}
           />
           <LifecycleCard
             title={t('blueprintCard.title')}
