@@ -382,7 +382,7 @@ body {
 
 .app-main-content {
   flex: 1;
-  margin-left: 240px;
+  margin-left: 220px;
   min-width: 0;
   overflow-y: auto;
   height: 100vh;

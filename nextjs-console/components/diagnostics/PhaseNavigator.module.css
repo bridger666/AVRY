@@ -1,26 +1,30 @@
 .phaseNavigator {
   margin-bottom: 0;
+  /* Isolate from any inherited font-size inflation */
+  font-size: 16px;
 }
 
 .phaseList {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding: 0;
+  gap: 4px;
+  padding: 0 4px;
 }
 
 .phaseItem {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
-  padding: 1.25rem 1.5rem;
-  background: transparent;
-  border: none;
+  gap: 8px;
+  min-height: auto;
+  padding: 8px 8px 9px 8px;
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid rgba(255, 255, 255, 0.035);
   border-left: 3px solid transparent;
-  border-radius: 0;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.18s ease;
   position: relative;
+  box-sizing: border-box;
 }
 
 .phaseItem:focus-visible {
@@ -30,15 +34,17 @@
 
 /* Current phase */
 .phaseItem.current {
-  background: rgba(0, 229, 158, 0.05);
-  border-left-color: #00e59e;
+  background: #252622;
+  border-color: rgba(255, 255, 255, 0.025);
+  border-left-color: #66e5a6;
   cursor: default;
 }
 
 .phaseItem.current .phaseNumber {
-  background: rgba(0, 229, 158, 0.15);
-  color: #00e59e;
-  box-shadow: 0 0 12px rgba(0, 229, 158, 0.2);
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #f5f5f4;
+  box-shadow: none;
 }
 
 .phaseItem.current .phaseTitle {
@@ -52,13 +58,14 @@
 }
 
 .phaseItem.completed:hover {
-  background: rgba(255, 255, 255, 0.03);
-  border-left-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.06);
 }
 
 .phaseItem.completed .phaseNumber {
-  background: rgba(0, 229, 158, 0.12);
-  color: #00e59e;
+  background: transparent;
+  border-color: rgba(102, 229, 166, 0.55);
+  color: #66e5a6;
 }
 
 /* Available phase */
@@ -68,89 +75,105 @@
 }
 
 .phaseItem.available:hover {
-  background: rgba(255, 255, 255, 0.03);
-  border-left-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.06);
 }
 
 /* Locked phase */
 .phaseItem.locked {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.015);
   border-left-color: transparent;
   cursor: not-allowed;
-  opacity: 0.45;
+  opacity: 0.58;
 }
 
 .phaseNumber {
   flex-shrink: 0;
-  width: 2rem;
-  height: 2rem;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1.5px solid transparent;
+  color: rgba(255, 255, 255, 0.42);
   border-radius: 50%;
   font-family: 'Inter Tight', sans-serif;
-  font-size: 0.8125rem;
+  font-size: 10px;
   font-weight: 600;
   transition: all 0.18s ease;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .checkIcon {
-  width: 1rem;
-  height: 1rem;
+  width: 10px;
+  height: 10px;
 }
 
 .lockIcon {
-  width: 1rem;
-  height: 1rem;
-  color: rgba(255, 255, 255, 0.2);
+  width: 11px;
+  height: 11px;
+  color: rgba(255, 255, 255, 0.16);
   flex-shrink: 0;
   margin-left: auto;
-  margin-top: 4px;
+  margin-top: 1px;
 }
 
 .phaseContent {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .phaseTitle {
-  font-family: 'Inter Tight', sans-serif;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.55);
-  margin: 0 0 0.3rem 0;
+  font-family: 'Inter Tight', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.46);
+  margin: 0 0 2px 0;
   line-height: 1.3;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .phaseDescription {
   font-family: 'Inter Tight', sans-serif;
-  font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.35);
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.62);
   margin: 0;
-  line-height: 1.45;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+
+.phaseItem.current .phaseDescription {
+  color: rgba(255, 255, 255, 0.92);
 }
 
 @media (max-width: 768px) {
   .phaseItem {
-    padding: 1rem 1.25rem;
-    gap: 0.75rem;
+    padding: 10px 12px;
+    gap: 8px;
   }
 
   .phaseNumber {
-    width: 1.75rem;
-    height: 1.75rem;
-    font-size: 0.75rem;
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+
+  .lockIcon {
+    margin-top: 2px;
   }
 
   .phaseTitle {
-    font-size: 0.875rem;
+    font-size: 12px !important;
   }
 
   .phaseDescription {
-    font-size: 0.75rem;
+    font-size: 11px;
   }
 }
 

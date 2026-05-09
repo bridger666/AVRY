@@ -88,6 +88,8 @@ export default function DashboardPage() {
       {routingNotice !== null && (
         <ContinuedFromConsole summary={routingNotice} onDismiss={() => setRoutingNotice(null)} />
       )}
+
+      {/* Left column: page title + overview card */}
       <div className={styles.mainContent}>
         <h1 className={styles.pageTitle}>{t('title')}</h1>
 
@@ -96,35 +98,33 @@ export default function DashboardPage() {
           freeDiagnosticScore={freeDiagnosticScore}
           freeDiagnosticCompleted={freeDiagnosticCompleted}
         />
-
-        <div className={styles.lifecycleGrid}>
-          <LifecycleCard
-            title={t('diagnosticsCard.title')}
-            description={diagnosticsDescription}
-            status={diagnosticsStatus}
-            cta={diagnosticsCta}
-            href={diagnosticsHref}
-          />
-          <LifecycleCard
-            title={t('blueprintCard.title')}
-            description={t('blueprintCard.description')}
-            status={data.blueprint.status}
-            cta={data.blueprint.status === 'none' ? t('blueprintCard.generateBlueprint') : t('blueprintCard.viewBlueprint')}
-            href="/blueprint"
-          />
-          <LifecycleCard
-            title={t('workflowsCard.title')}
-            description={t('workflowsCard.description')}
-            status={data.workflows.active > 0 ? 'active' : 'none'}
-            cta={t('workflowsCard.viewWorkflows')}
-            href="/workflows"
-          />
-        </div>
       </div>
 
-      <aside className={styles.activitySidebar}>
+      {/* Right column: 2x2 grid of lifecycle cards + recent activity */}
+      <div className={styles.rightColumn}>
+        <LifecycleCard
+          title={t('diagnosticsCard.title')}
+          description={diagnosticsDescription}
+          status={diagnosticsStatus}
+          cta={diagnosticsCta}
+          href={diagnosticsHref}
+        />
+        <LifecycleCard
+          title={t('blueprintCard.title')}
+          description={t('blueprintCard.description')}
+          status={data.blueprint.status}
+          cta={data.blueprint.status === 'none' ? t('blueprintCard.generateBlueprint') : t('blueprintCard.viewBlueprint')}
+          href="/blueprint"
+        />
+        <LifecycleCard
+          title={t('workflowsCard.title')}
+          description={t('workflowsCard.description')}
+          status={data.workflows.active > 0 ? 'active' : 'none'}
+          cta={t('workflowsCard.viewWorkflows')}
+          href="/workflows"
+        />
         <RecentActivity events={data.recentActivity} />
-      </aside>
+      </div>
     </div>
   )
 }

@@ -3,52 +3,58 @@
 }
 
 .phaseHeader {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .phaseTitle {
   font-family: 'Inter Tight', sans-serif;
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: #f5f5f4;
-  margin: 0 0 0.5rem 0;
+  font-size: 18px;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.86);
+  margin: 0 0 6px 0;
+  letter-spacing: 0;
 }
 
 .phaseDescription {
   font-family: 'Inter Tight', sans-serif;
-  font-size: 0.9375rem;
-  color: rgba(255, 255, 255, 0.45);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.88);
   margin: 0;
   line-height: 1.5;
+  letter-spacing: 0;
 }
 
 .questionsList {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 16px;
 }
 
 .questionItem {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .questionLabel {
   display: flex;
-  gap: 0.5rem;
+  gap: 8px;
   font-family: 'Inter Tight', sans-serif;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   color: #f5f5f4;
   cursor: pointer;
+  line-height: 1.4;
+  letter-spacing: 0;
 }
 
 .questionNumber {
   flex-shrink: 0;
-  color: #00e59e;
+  color: #66e5a6;
   font-weight: 600;
 }
 
@@ -57,17 +63,18 @@
 }
 
 .requiredIndicator {
-  color: #f87171;
+  color: #f08f86;
   margin-left: 0.25rem;
   font-weight: 600;
 }
 
 .helperText {
   font-family: 'Inter Tight', sans-serif;
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.86);
   margin: 0;
   line-height: 1.5;
+  letter-spacing: 0;
 }
 
 .inputWrapper {
@@ -78,12 +85,13 @@
 .textInput,
 .numberInput {
   width: 100%;
-  padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: auto;
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   font-family: 'Inter Tight', sans-serif;
-  font-size: 0.9375rem;
+  font-size: 13px;
   color: #f5f5f4;
   transition: all 0.18s ease;
   box-sizing: border-box;
@@ -92,8 +100,8 @@
 .textInput:focus,
 .numberInput:focus {
   outline: none;
-  border-color: rgba(0, 229, 158, 0.4);
-  box-shadow: 0 0 0 3px rgba(0, 229, 158, 0.08);
+  border-color: rgba(102, 229, 166, 0.55);
+  box-shadow: 0 0 0 3px rgba(102, 229, 166, 0.08);
 }
 
 .textInput::placeholder,
@@ -103,23 +111,23 @@
 
 .textareaInput {
   width: 100%;
-  padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   font-family: 'Inter Tight', sans-serif;
-  font-size: 0.9375rem;
+  font-size: 13px;
   color: #f5f5f4;
   resize: vertical;
-  min-height: 100px;
+  min-height: 80px;
   transition: all 0.18s ease;
   box-sizing: border-box;
 }
 
 .textareaInput:focus {
   outline: none;
-  border-color: rgba(0, 229, 158, 0.4);
-  box-shadow: 0 0 0 3px rgba(0, 229, 158, 0.08);
+  border-color: rgba(102, 229, 166, 0.55);
+  box-shadow: 0 0 0 3px rgba(102, 229, 166, 0.08);
 }
 
 .textareaInput::placeholder {
@@ -128,27 +136,28 @@
 
 .selectInput {
   width: 100%;
-  padding: 0.75rem 2.5rem 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: auto;
+  padding: 9px 36px 9px 12px;
+  background-color: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   font-family: 'Inter Tight', sans-serif;
-  font-size: 0.9375rem;
+  font-size: 13px;
   color: #f5f5f4;
   cursor: pointer;
   transition: all 0.18s ease;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23ffffff40' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
-  background-position: right 0.75rem center;
+  background-position: right 12px center;
   background-repeat: no-repeat;
-  background-size: 1.25rem;
+  background-size: 16px;
   box-sizing: border-box;
 }
 
 .selectInput:focus {
   outline: none;
-  border-color: rgba(0, 229, 158, 0.4);
-  box-shadow: 0 0 0 3px rgba(0, 229, 158, 0.08);
+  border-color: rgba(102, 229, 166, 0.55);
+  box-shadow: 0 0 0 3px rgba(102, 229, 166, 0.08);
 }
 
 .selectInput option {
@@ -160,17 +169,17 @@
 .radioGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 6px;
 }
 
 .radioLabel {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.875rem 1rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
+  gap: 10px;
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.18s ease;
 }
@@ -181,8 +190,8 @@
 }
 
 .radioLabel:has(.radioInput:checked) {
-  background: rgba(0, 229, 158, 0.06);
-  border-color: rgba(0, 229, 158, 0.3);
+  background: rgba(102, 229, 166, 0.07);
+  border-color: rgba(102, 229, 166, 0.36);
 }
 
 .radioLabel:has(.radioInput:focus) {
@@ -192,17 +201,17 @@
 
 .radioInput {
   flex-shrink: 0;
-  width: 1.25rem;
-  height: 1.25rem;
-  margin-top: 0.125rem;
-  accent-color: #00e59e;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  accent-color: #66e5a6;
   cursor: pointer;
 }
 
 .radioText {
   flex: 1;
   font-family: 'Inter Tight', sans-serif;
-  font-size: 0.9375rem;
+  font-size: 13px;
   color: #f5f5f4;
   line-height: 1.5;
 }
@@ -211,17 +220,17 @@
 .multiselectGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 6px;
 }
 
 .checkboxLabel {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.875rem 1rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
+  gap: 10px;
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.18s ease;
 }
@@ -232,8 +241,8 @@
 }
 
 .checkboxLabel:has(.checkboxInput:checked) {
-  background: rgba(0, 229, 158, 0.06);
-  border-color: rgba(0, 229, 158, 0.3);
+  background: rgba(102, 229, 166, 0.07);
+  border-color: rgba(102, 229, 166, 0.36);
 }
 
 .checkboxLabel:has(.checkboxInput:focus) {
@@ -243,17 +252,17 @@
 
 .checkboxInput {
   flex-shrink: 0;
-  width: 1.25rem;
-  height: 1.25rem;
-  margin-top: 0.125rem;
-  accent-color: #00e59e;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  accent-color: #66e5a6;
   cursor: pointer;
 }
 
 .checkboxText {
   flex: 1;
   font-family: 'Inter Tight', sans-serif;
-  font-size: 0.9375rem;
+  font-size: 13px;
   color: #f5f5f4;
   line-height: 1.5;
 }

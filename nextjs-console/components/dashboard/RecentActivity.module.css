@@ -4,26 +4,29 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 18px;
-  padding: 1.5rem;
-  height: fit-content;
+  border-radius: 16px;
+  padding: 0.875rem;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  position: sticky;
-  top: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* ADDED: HEADER ROW with icon */
 .headerRow {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 1.25rem;
+  gap: 8px;
+  margin-bottom: 0.625rem;
 }
 
 .headerIcon {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
@@ -34,7 +37,7 @@
 }
 
 .title {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
   margin: 0;
@@ -46,6 +49,7 @@
   flex-direction: column;
   gap: 0;
   margin-bottom: 1.25rem;
+  flex: 1; /* isi ruang kosong supaya viewAll tetap di bawah */
 }
 
 /* ADDED: EMPTY STATE — with icon */
@@ -72,8 +76,8 @@
 /* FIXED: EVENT ROW — icon + content + time */
 .event {
   display: flex;
-  gap: 12px;
-  padding: 0.875rem 0;
+  gap: 10px;
+  padding: 0.625rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   transition: background 0.12s;
 }
@@ -127,14 +131,14 @@
 }
 
 .eventMessage {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-primary);
-  margin: 0 0 4px 0;
-  line-height: 1.55;
+  margin: 0 0 3px 0;
+  line-height: 1.5;
 }
 
 .eventTime {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-tertiary);
   line-height: 1.4;
 }
