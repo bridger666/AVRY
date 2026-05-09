@@ -165,6 +165,32 @@ function proxyStream(req, res) {
  * Handle streaming requests from Next.js
  * Forwards to Zeroclaw /webhook, parses SSE response, and emits proper SSE format
  */
+function buildZeroclawWebhookBody(body) {
+  if (!body || typeof body !== 'object') {
+    return body;
+  }
+
+  if (typeof body.message === 'string' && body.message.trim()) {
+    return { message: body.message };
+  }
+
+  if (Array.isArray(body.messages)) {
+    const lastUserMessage = [...body.messages]
+      .reverse()
+      .find(message => message?.role === 'user' && typeof message.content === 'string' && message.content.trim());
+
+    if (lastUserMessage) {
+      return { message: lastUserMessage.content };
+    }
+  }
+
+  if (typeof body.intent === 'string' && body.intent.trim()) {
+    return { message: body.intent };
+  }
+
+  return body;
+}
+
 function handleStreamRequest(req, res) {
   const targetUrl = new URL('/webhook', ZEROCLAW_URL);
   
@@ -241,7 +267,7 @@ function handleStreamRequest(req, res) {
 
   // Forward request body
   if (req.body && Object.keys(req.body).length > 0) {
-    proxyReq.write(JSON.stringify(req.body));
+    proxyReq.write(JSON.stringify(buildZeroclawWebhookBody(req.body)));
   }
   
   proxyReq.end();
