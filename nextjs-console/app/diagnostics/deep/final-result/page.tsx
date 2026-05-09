@@ -13,10 +13,12 @@ import RiskCard from '@/components/result/RiskCard'
 import LoadingState from '@/components/result/LoadingState'
 import ErrorCard from '@/components/result/ErrorCard'
 import {
-  formatIDR,
+  formatCurrency,
   formatPercent,
   formatMonths,
   humanizeDimensionKey,
+  parseCurrencyCode,
+  type CurrencyCode,
 } from '@/lib/resultFormatters'
 import styles from './final-result.module.css'
 
@@ -51,24 +53,44 @@ export default function FinalResultPage() {
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
 
   useEffect(() => {
-    const raw = localStorage.getItem('aivory_diagnostic_context')
-    if (!raw) {
-      router.push('/diagnostics/deep')
-      return
+    const loadContext = async () => {
+      // Try Supabase first (Req 6.5–6.8), fall back to localStorage
+      let raw: string | null = null
+      try {
+        const { loadDiagnosticContext } = await import('@/lib/supabaseStorage')
+        const supabaseCtx = await loadDiagnosticContext('demo_org')
+        if (supabaseCtx) {
+          const context = validateContext(supabaseCtx)
+          if (context) {
+            setState({ status: 'loaded', context })
+            return
+          }
+        }
+      } catch {
+        // Supabase unavailable — fall through to localStorage
+      }
+
+      // localStorage fallback (Req 6.7)
+      raw = localStorage.getItem('aivory_diagnostic_context')
+      if (!raw) {
+        router.push('/diagnostics/deep')
+        return
+      }
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(raw)
+      } catch (e) {
+        setState({ status: 'error', message: 'Failed to parse diagnostic data. Please run the diagnostic again.' })
+        return
+      }
+      const context = validateContext(parsed)
+      if (!context) {
+        setState({ status: 'error', message: 'Diagnostic data is malformed or incomplete. Please run the diagnostic again.' })
+        return
+      }
+      setState({ status: 'loaded', context })
     }
-    let parsed: unknown
-    try {
-      parsed = JSON.parse(raw)
-    } catch (e) {
-      setState({ status: 'error', message: 'Failed to parse diagnostic data. Please run the diagnostic again.' })
-      return
-    }
-    const context = validateContext(parsed)
-    if (!context) {
-      setState({ status: 'error', message: 'Diagnostic data is malformed or incomplete. Please run the diagnostic again.' })
-      return
-    }
-    setState({ status: 'loaded', context })
+    loadContext()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -78,10 +100,32 @@ export default function FinalResultPage() {
   const { context } = state
   const { scores, calculations, opportunities, risks, qualitative } = context
 
+  // Bug 1 fix: derive currency from context, never hardcode IDR
+  const currencyCode: CurrencyCode = parseCurrencyCode(context.currency)
+  const fmtCurrency = (v: number | null | undefined) => formatCurrency(v, currencyCode)
+
+  // Bug 1 fix: support both new *Local field names and legacy *IDR names from
+  // stored DiagnosticContext objects that were saved before this fix was deployed.
+  const totalAnnualSavingsLocal =
+    calculations.totalAnnualSavingsLocal ?? calculations.totalAnnualSavingsIDR ?? null
+  const annualLaborSavingsLocal =
+    calculations.annualLaborSavingsLocal ?? calculations.annualLaborSavingsIDR ?? null
+  const annualProcessSavingsLocal =
+    calculations.annualProcessSavingsLocal ?? calculations.annualProcessSavingsIDR ?? null
+  const costOfInaction90DaysLocal =
+    calculations.costOfInaction90DaysLocal ?? calculations.costOfInaction90DaysIDR ?? null
+
   const highRiskCount = risks.filter(r => r.severity === 'HIGH').length
   const quickWinCount = opportunities.filter(o => o.quadrant === 'quick_win').length
 
-  const assessmentText = `${context.company} scores ${scores.composite}/100, placing it at ${scores.maturityLevel} maturity. Strongest dimension: ${humanizeDimensionKey(scores.strongestDimension)}. Greatest gap: ${humanizeDimensionKey(scores.weakestDimension)}. ${highRiskCount} high-severity risk${highRiskCount !== 1 ? 's' : ''} identified. ${quickWinCount} quick-win opportunit${quickWinCount !== 1 ? 'ies' : 'y'} available.`
+  // Assessment broken into individual bullet lines matching the screenshot
+  const assessmentBullets: { icon: string; color: string; text: string }[] = [
+    { icon: '▲', color: '#00e59e', text: `${context.company} scores ${scores.composite}/100, placing it at ${scores.maturityLevel} maturity.` },
+    { icon: '▲', color: '#00e59e', text: `Strongest dimension: ${humanizeDimensionKey(scores.strongestDimension)}.` },
+    { icon: '▽', color: '#fbbf24', text: `Greatest gap: ${humanizeDimensionKey(scores.weakestDimension)}.` },
+    { icon: '▽', color: '#fbbf24', text: `${highRiskCount} high-severity risk${highRiskCount !== 1 ? 's' : ''} identified.` },
+    { icon: '▶', color: '#00e59e', text: `${quickWinCount} quick-win opportunit${quickWinCount !== 1 ? 'ies' : 'y'} available.` },
+  ]
 
   const sortedRisks = [...risks].sort((a, b) => {
     const order = { HIGH: 0, MEDIUM: 1, LOW: 2 }
@@ -100,32 +144,50 @@ export default function FinalResultPage() {
 
       <div className={styles.content}>
 
-        {/* Executive Scorecard */}
-        <section className={styles.section}>
+        {/* ── Executive Scorecard ── */}
+        <div className={styles.card}>
           <h2 className={styles.sectionTitle}>Executive Scorecard</h2>
-          <div className={styles.scorecardGrid}>
-            <div>
+
+          {/* Top row: ScoreRing | RadarChart */}
+          <div className={styles.scorecardTopRow}>
+            <div className={styles.scorecardRingCol}>
               <ScoreRing score={scores.composite} maturityLevel={scores.maturityLevel} />
             </div>
-            <div className={styles.scorecardSummary}>
+            <div className={styles.scorecardChartCol}>
               <RadarChart scores={scores} />
-              <div className={styles.summaryRow}>
-                <div className={styles.summaryItem}>
-                  <span className={styles.summaryLabel}>Strongest</span>
-                  <span className={styles.summaryValue}>{humanizeDimensionKey(scores.strongestDimension)}</span>
-                </div>
-                <div className={styles.summaryItem}>
-                  <span className={styles.summaryLabel}>Weakest</span>
-                  <span className={styles.summaryValue}>{humanizeDimensionKey(scores.weakestDimension)}</span>
-                </div>
-              </div>
-              <p className={styles.assessmentText}>{assessmentText}</p>
             </div>
           </div>
-        </section>
 
-        {/* ROI Projection */}
-        <section className={styles.section}>
+          {/* Bottom row: Strongest/Weakest | Assessment bullets */}
+          <div className={styles.scorecardBottomRow}>
+            {/* Left: Strongest + Weakest with colored underline bars */}
+            <div className={styles.summaryRow}>
+              <div className={styles.summaryItem}>
+                <span className={styles.summaryLabel}>Strongest</span>
+                <span className={styles.summaryValue}>{humanizeDimensionKey(scores.strongestDimension)}</span>
+                <span className={styles.summaryBar} style={{ background: '#00e59e' }} />
+              </div>
+              <div className={styles.summaryItem}>
+                <span className={styles.summaryLabel}>Weakest</span>
+                <span className={styles.summaryValue}>{humanizeDimensionKey(scores.weakestDimension)}</span>
+                <span className={styles.summaryBar} style={{ background: '#fbbf24' }} />
+              </div>
+            </div>
+
+            {/* Right: bullet list with colored triangle icons */}
+            <ul className={styles.assessmentList}>
+              {assessmentBullets.map((b, i) => (
+                <li key={i} className={styles.assessmentItem}>
+                  <span className={styles.assessmentIcon} style={{ color: b.color }}>{b.icon}</span>
+                  <span className={styles.assessmentText}>{b.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* ── ROI Projection ── */}
+        <div className={styles.card}>
           <h2 className={styles.sectionTitle}>ROI Projection</h2>
 
           {!calculations.hasEnoughDataForProjection && (
@@ -143,22 +205,35 @@ export default function FinalResultPage() {
           )}
 
           <div className={styles.roiGrid}>
-            <ROIMetricTile label="Total Annual Savings" value={calculations.totalAnnualSavingsIDR} formatter={formatIDR} />
-            <ROIMetricTile label="Annual Labor Savings" value={calculations.annualLaborSavingsIDR} formatter={formatIDR} />
-            <ROIMetricTile label="Annual Process Savings" value={calculations.annualProcessSavingsIDR} formatter={formatIDR} />
+            <ROIMetricTile label="Total Annual Savings" value={totalAnnualSavingsLocal} formatter={fmtCurrency} />
+            <ROIMetricTile label="Annual Labor Savings" value={annualLaborSavingsLocal} formatter={fmtCurrency} />
+            <ROIMetricTile label="Annual Process Savings" value={annualProcessSavingsLocal} formatter={fmtCurrency} />
             <ROIMetricTile
               label="Hours Reclaimed / Year"
               value={calculations.hoursReclaimedPerYear}
-              formatter={(v) => `${Math.round(v).toLocaleString()} hours`}
+              formatter={(v) => `${Math.round(v).toLocaleString('en-US')} hours`}
             />
             <ROIMetricTile label="Payback Period" value={calculations.paybackMonths} formatter={formatMonths} />
-            <ROIMetricTile label="3-Year ROI" value={calculations.threeYearROIPercent} formatter={formatPercent} />
-            <ROIMetricTile label="Cost of Inaction (90 days)" value={calculations.costOfInaction90DaysIDR} formatter={formatIDR} />
+            <ROIMetricTile
+              label="3-Year ROI"
+              value={calculations.threeYearROIPercent}
+              formatter={(v) => v >= 999 ? '>999%' : formatPercent(v)}
+            />
+            <ROIMetricTile
+              label="Cost of Inaction (90 days)"
+              value={costOfInaction90DaysLocal}
+              formatter={fmtCurrency}
+              subtitle={
+                qualitative.annualRevenue?.toLowerCase().includes('pre-revenue')
+                  ? 'Estimated opportunity cost if delayed'
+                  : 'Revenue at risk if delayed'
+              }
+            />
           </div>
-        </section>
+        </div>
 
-        {/* Opportunity Priority Matrix */}
-        <section className={styles.section}>
+        {/* ── Opportunity Priority Matrix ── */}
+        <div className={styles.card}>
           <h2 className={styles.sectionTitle}>Opportunity Priority Matrix</h2>
           {opportunities.length === 0 ? (
             <p className={styles.emptyMessage}>No opportunities identified.</p>
@@ -170,20 +245,22 @@ export default function FinalResultPage() {
                 onDotClick={(id) => setHighlightedId(prev => prev === id ? null : id)}
               />
               <div className={styles.opportunityList}>
-                {opportunities.map(opp => (
+                {opportunities.map((opp, idx) => (
                   <OpportunityCard
                     key={opp.id}
                     opportunity={opp}
                     isHighlighted={opp.id === highlightedId}
+                    colorIndex={idx}
+                    currencyCode={currencyCode}
                   />
                 ))}
               </div>
             </div>
           )}
-        </section>
+        </div>
 
-        {/* Risk Register */}
-        <section className={styles.section}>
+        {/* ── Risk Register ── */}
+        <div className={styles.card}>
           <h2 className={styles.sectionTitle}>Risk Register</h2>
           {sortedRisks.length === 0 ? (
             <p className={styles.emptyMessage}>No risks detected.</p>
@@ -194,68 +271,106 @@ export default function FinalResultPage() {
               ))}
             </div>
           )}
-        </section>
+        </div>
 
-        {/* Diagnostic Context Snapshot */}
-        <section className={styles.section}>
+        {/* ── Diagnostic Context — 2-column free-flow ── */}
+        <div className={styles.card}>
           <h2 className={styles.sectionTitle}>Diagnostic Context</h2>
-          <div className={styles.contextGrid}>
-            <div className={styles.contextItem}>
-              <span className={styles.contextLabel}>Primary Objective</span>
-              <span className={`${styles.contextValue} ${!qualitative.primaryObjective ? styles.notProvided : ''}`}>
-                {qualVal(qualitative.primaryObjective)}
-              </span>
+          <div className={styles.contextColumns}>
+
+            {/* Left column */}
+            <div className={styles.contextCol}>
+              <div className={styles.contextItem}>
+                <span className={styles.contextLabel}>Primary Objective</span>
+                <span className={`${styles.contextValue} ${!qualitative.primaryObjective ? styles.notProvided : ''}`}>
+                  {qualVal(qualitative.primaryObjective)}
+                </span>
+              </div>
+              <div className={styles.contextItem}>
+                <span className={styles.contextLabel}>Compliance</span>
+                {qualitative.compliance && qualitative.compliance.length > 0 ? (
+                  <span className={styles.contextValueBullet}>
+                    <span className={styles.contextBulletIcon}>▶</span>
+                    <span className={styles.contextValue}>{qualVal(qualitative.compliance)}</span>
+                  </span>
+                ) : (
+                  <span className={`${styles.contextValue} ${styles.notProvided}`}>Not provided</span>
+                )}
+              </div>
+              <div className={styles.contextItem}>
+                <span className={styles.contextLabel}>AI Capability</span>
+                <span className={`${styles.contextValue} ${!qualitative.aiCapability ? styles.notProvided : ''}`}>
+                  {qualVal(qualitative.aiCapability)}
+                </span>
+              </div>
+              <div className={styles.contextItem}>
+                <span className={styles.contextLabel}>Prior AI Attempts</span>
+                <span className={`${styles.contextValue} ${!qualitative.priorAIAttempts ? styles.notProvided : ''}`}>
+                  {qualVal(qualitative.priorAIAttempts)}
+                </span>
+              </div>
+              <div className={styles.contextItem}>
+                <span className={styles.contextLabel}>Delay Consequence</span>
+                <span className={`${styles.contextValue} ${!qualitative.delayConsequence ? styles.notProvided : ''}`}>
+                  {qualVal(qualitative.delayConsequence)}
+                </span>
+              </div>
+              <div className={styles.contextItem}>
+                <span className={styles.contextLabel}>Data Residency</span>
+                <span className={`${styles.contextValue} ${!qualitative.dataResidency ? styles.notProvided : ''}`}>
+                  {qualVal(qualitative.dataResidency)}
+                </span>
+              </div>
             </div>
-            <div className={styles.contextItem}>
-              <span className={styles.contextLabel}>Top Pain Points</span>
-              <span className={`${styles.contextValue} ${!qualitative.topPainPoints ? styles.notProvided : ''}`}>
-                {qualVal(qualitative.topPainPoints)}
-              </span>
+
+            {/* Right column */}
+            <div className={styles.contextCol}>
+              <div className={styles.contextItem}>
+                <span className={styles.contextLabel}>Top Pain Points</span>
+                {qualitative.topPainPoints ? (
+                  <ul className={styles.contextBulletList}>
+                    {qualVal(qualitative.topPainPoints)
+                      .split(/\d+\.\s+/)
+                      .filter(s => s.trim())
+                      .map((point, i) => (
+                        <li key={i} className={styles.contextBulletItem}>
+                          <span className={styles.contextBulletIcon}>▶</span>
+                          <span className={styles.contextValue}>{point.trim()}</span>
+                        </li>
+                      ))}
+                  </ul>
+                ) : (
+                  <span className={`${styles.contextValue} ${styles.notProvided}`}>Not provided</span>
+                )}
+              </div>
+              <div className={styles.contextItem}>
+                <span className={styles.contextLabel}>Implementation Approach</span>
+                <span className={`${styles.contextValue} ${!qualitative.implementApproach ? styles.notProvided : ''}`}>
+                  {qualVal(qualitative.implementApproach)}
+                </span>
+              </div>
+              <div className={styles.contextItem}>
+                <span className={styles.contextLabel}>Leadership Alignment</span>
+                <span className={`${styles.contextValue} ${!qualitative.leadershipAlignment ? styles.notProvided : ''}`}>
+                  {qualVal(qualitative.leadershipAlignment)}
+                </span>
+              </div>
+              <div className={styles.contextItem}>
+                <span className={styles.contextLabel}>Resistance Sources</span>
+                <span className={`${styles.contextValue} ${!qualitative.resistanceSources || qualitative.resistanceSources.length === 0 ? styles.notProvided : ''}`}>
+                  {qualVal(qualitative.resistanceSources)}
+                </span>
+              </div>
+              <div className={styles.contextItem}>
+                <span className={styles.contextLabel}>Error Tolerance</span>
+                <span className={`${styles.contextValue} ${!qualitative.errorTolerance ? styles.notProvided : ''}`}>
+                  {qualVal(qualitative.errorTolerance)}
+                </span>
+              </div>
             </div>
-            <div className={styles.contextItem}>
-              <span className={styles.contextLabel}>Compliance</span>
-              <span className={styles.contextValue}>{qualVal(qualitative.compliance)}</span>
-            </div>
-            <div className={styles.contextItem}>
-              <span className={styles.contextLabel}>Implementation Approach</span>
-              <span className={styles.contextValue}>{qualVal(qualitative.implementApproach)}</span>
-            </div>
-            <div className={styles.contextItem}>
-              <span className={styles.contextLabel}>AI Capability</span>
-              <span className={styles.contextValue}>{qualVal(qualitative.aiCapability)}</span>
-            </div>
-            <div className={styles.contextItem}>
-              <span className={styles.contextLabel}>Leadership Alignment</span>
-              <span className={styles.contextValue}>{qualVal(qualitative.leadershipAlignment)}</span>
-            </div>
-            <div className={styles.contextItem}>
-              <span className={styles.contextLabel}>Prior AI Attempts</span>
-              <span className={`${styles.contextValue} ${!qualitative.priorAIAttempts ? styles.notProvided : ''}`}>
-                {qualVal(qualitative.priorAIAttempts)}
-              </span>
-            </div>
-            <div className={styles.contextItem}>
-              <span className={styles.contextLabel}>Resistance Sources</span>
-              <span className={styles.contextValue}>{qualVal(qualitative.resistanceSources)}</span>
-            </div>
-            <div className={styles.contextItem}>
-              <span className={styles.contextLabel}>Delay Consequence</span>
-              <span className={`${styles.contextValue} ${!qualitative.delayConsequence ? styles.notProvided : ''}`}>
-                {qualVal(qualitative.delayConsequence)}
-              </span>
-            </div>
-            <div className={styles.contextItem}>
-              <span className={styles.contextLabel}>Error Tolerance</span>
-              <span className={styles.contextValue}>{qualVal(qualitative.errorTolerance)}</span>
-            </div>
-            <div className={styles.contextItem}>
-              <span className={styles.contextLabel}>Data Residency</span>
-              <span className={`${styles.contextValue} ${!qualitative.dataResidency ? styles.notProvided : ''}`}>
-                {qualVal(qualitative.dataResidency)}
-              </span>
-            </div>
+
           </div>
-        </section>
+        </div>
 
       </div>
     </div>

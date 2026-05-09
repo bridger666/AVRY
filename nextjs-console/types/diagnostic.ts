@@ -270,16 +270,27 @@ export type MaturityLevel = 'Nascent' | 'Initiating' | 'Developing' | 'Defined' 
 export type OpportunityQuadrant = 'quick_win' | 'major_project' | 'fill_in' | 'thankless_task'
 
 export interface ROIProjection {
-  annualLaborSavingsIDR: number | null
-  annualProcessSavingsIDR: number | null
-  totalAnnualSavingsIDR: number | null
+  /** Monetary savings stored in the user's selected local currency (never hardcoded IDR) */
+  annualLaborSavingsLocal: number | null
+  annualProcessSavingsLocal: number | null
+  totalAnnualSavingsLocal: number | null
+  costOfInaction90DaysLocal: number | null
+  /** Raw USD values — used for formula verification and audit logging (Bug 3 fix) */
+  totalAnnualSavingsUSD: number | null
   hoursReclaimedPerYear: number | null
   paybackMonths: number | null
   threeYearROIPercent: number | null
-  costOfInaction90DaysIDR: number | null
   hasEnoughDataForProjection: boolean
   confidenceLevel: 'high' | 'medium' | 'low'
   missingInputs: string[]
+  /** @deprecated Use annualLaborSavingsLocal — kept for backward compat with stored contexts */
+  annualLaborSavingsIDR?: number | null
+  /** @deprecated Use annualProcessSavingsLocal — kept for backward compat with stored contexts */
+  annualProcessSavingsIDR?: number | null
+  /** @deprecated Use totalAnnualSavingsLocal — kept for backward compat with stored contexts */
+  totalAnnualSavingsIDR?: number | null
+  /** @deprecated Use costOfInaction90DaysLocal — kept for backward compat with stored contexts */
+  costOfInaction90DaysIDR?: number | null
 }
 
 export interface DimensionScores {
@@ -304,15 +315,19 @@ export interface RiskFlag {
 
 export interface RankedOpportunity {
   id: string
-  name: string
-  impactScore: number
-  effortScore: number
+  title: string
+  impact: number
+  effort: number
   quadrant: OpportunityQuadrant
   timeToValueWeeks: number
+  /** Estimated savings in the user's selected local currency (currency-neutral). */
+  estimatedSavingsLocal: number | null
   projectedROINote: string
   prerequisites: string[]
   dataReadiness: 'ready' | 'needs_prep' | 'not_ready'
-  errorComplexity: 'low' | 'medium' | 'high'
+  complexity: 'low' | 'medium' | 'high'
+  /** @deprecated Use estimatedSavingsLocal — kept for backward compat with stored contexts */
+  estimatedSavingsIDR?: number | null
 }
 
 export interface DiagnosticContext {
@@ -349,6 +364,8 @@ export interface DiagnosticContext {
     delayConsequence: string
     errorTolerance: string
     dataResidency: string
+    /** Raw annual_revenue answer — used for pre-revenue framing in UI */
+    annualRevenue?: string
   }
 }
 
