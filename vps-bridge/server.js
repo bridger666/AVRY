@@ -193,6 +193,10 @@ function buildZeroclawWebhookBody(body) {
 
 function handleStreamRequest(req, res) {
   const targetUrl = new URL('/webhook', ZEROCLAW_URL);
+  const outboundBody = req.body && Object.keys(req.body).length > 0
+    ? JSON.stringify(buildZeroclawWebhookBody(req.body))
+    : '';
+  const { host, 'content-length': _contentLength, ...forwardHeaders } = req.headers;
   
   const options = {
     hostname: targetUrl.hostname,
@@ -200,9 +204,10 @@ function handleStreamRequest(req, res) {
     path: targetUrl.pathname,
     method: 'POST',
     headers: {
-      ...req.headers,
+      ...forwardHeaders,
       'X-Internal-Key': INTERNAL_KEY,
       'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(outboundBody),
       'host': targetUrl.host
     }
   };
@@ -293,8 +298,8 @@ function handleStreamRequest(req, res) {
   });
 
   // Forward request body
-  if (req.body && Object.keys(req.body).length > 0) {
-    proxyReq.write(JSON.stringify(buildZeroclawWebhookBody(req.body)));
+  if (outboundBody) {
+    proxyReq.write(outboundBody);
   }
   
   proxyReq.end();
