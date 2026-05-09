@@ -254,6 +254,7 @@ function handleStreamRequest(req, res) {
 // Console streaming (SSE) - use handleStreamRequest for proper SSE parsing
 app.post('/console/stream', handleStreamRequest);
 app.post('/aria/stream', handleStreamRequest);
+app.post('/blueprint/generate', handleStreamRequest);
 
 // ============================================================================
 // ENTITLEMENT & BILLING ENDPOINTS
