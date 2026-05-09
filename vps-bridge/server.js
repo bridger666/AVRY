@@ -219,9 +219,13 @@ function handleStreamRequest(req, res) {
     res.setHeader('X-Accel-Buffering', 'no');
     
     let buffer = '';
+    let rawResponse = '';
+    let wroteChunk = false;
     
     proxyRes.on('data', (chunk) => {
-      buffer += chunk.toString();
+      const text = chunk.toString();
+      rawResponse += text;
+      buffer += text;
       
       // Process SSE lines
       const lines = buffer.split('\n');
@@ -238,6 +242,7 @@ function handleStreamRequest(req, res) {
               
               // Emit proper SSE format for Next.js
               res.write(`data: ${JSON.stringify({ type: 'chunk', content })}\n\n`);
+              wroteChunk = true;
             }
           } catch (e) {
             // Ignore parse errors for non-JSON lines
@@ -247,6 +252,28 @@ function handleStreamRequest(req, res) {
     });
     
     proxyRes.on('end', () => {
+      if (!wroteChunk && rawResponse.trim()) {
+        try {
+          const data = JSON.parse(rawResponse);
+          const content =
+            data.response ||
+            data.content ||
+            data.message ||
+            data.choices?.[0]?.message?.content ||
+            data.choices?.[0]?.delta?.content;
+
+          if (content) {
+            res.write(`data: ${JSON.stringify({ type: 'chunk', content })}\n\n`);
+            wroteChunk = true;
+          } else if (data.error) {
+            res.write(`data: ${JSON.stringify({ type: 'error', error: data.error })}\n\n`);
+          }
+        } catch (e) {
+          res.write(`data: ${JSON.stringify({ type: 'chunk', content: rawResponse })}\n\n`);
+          wroteChunk = true;
+        }
+      }
+
       // Send done event
       res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
       res.end();
