@@ -55,7 +55,6 @@ export async function planWorkflowFromNaturalLanguage(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.VPS_BRIDGE_API_KEY || '',
       },
       body: JSON.stringify({
         message: fullMessage,

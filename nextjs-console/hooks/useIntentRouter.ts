@@ -33,9 +33,14 @@ export function useIntentRouter(): UseIntentRouterReturn {
   const { setPendingContext } = useRouterContext()
 
   const triggerClassification = useCallback((userMsg: string, aiReply: string): void => {
+    console.log('[useIntentRouter] triggerClassification called')
     // Deduplicate — skip if same message as last classification
     const key = userMsg.trim().slice(0, 100)
-    if (key === lastKeyRef.current) return
+    console.log('[useIntentRouter] key:', key, '| lastKeyRef.current:', lastKeyRef.current)
+    if (key === lastKeyRef.current) {
+      console.log('[useIntentRouter] deduplication — skipping')
+      return
+    }
     lastKeyRef.current = key
 
     // Cancel any in-flight classification
@@ -46,17 +51,26 @@ export function useIntentRouter(): UseIntentRouterReturn {
     cancelledRef.current = false
     setIsClassifying(true)
 
-    // Fire and forget — NEVER awaited, NEVER blocks the chat stream
+    // Fire and forget — NEVER awaited, NEVER blocks — chat stream
+    console.log('[useIntentRouter] calling classifyIntent...')
     classifyIntent(userMsg, aiReply)
       .then((result) => {
-        if (cancelledRef.current) return
+        console.log('[useIntentRouter] classifyIntent result:', result)
+        if (cancelledRef.current) {
+          console.log('[useIntentRouter] classification cancelled')
+          return
+        }
         setIsClassifying(false)
-        // Only show banner for non-console routes with sufficient confidence
-        if (result.route !== 'console' && result.confidence >= 0.75) {
+        // Show banner for all non-console routes regardless of confidence
+        if (result.route !== 'console') {
+          console.log('[useIntentRouter] ✅ setting pendingRoute:', result.route, '| confidence:', result.confidence)
           setPendingRoute(result)
+        } else {
+          console.log('[useIntentRouter] ❌ not setting pendingRoute — route:', result.route)
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.log('[useIntentRouter] classifyIntent error:', err)
         // Silent fail — intent classification is best-effort
         if (!cancelledRef.current) setIsClassifying(false)
       })
@@ -64,6 +78,7 @@ export function useIntentRouter(): UseIntentRouterReturn {
 
   const dismissRoute = useCallback((): void => {
     cancelledRef.current = true
+
     setPendingRoute(null)
     setIsClassifying(false)
   }, [])

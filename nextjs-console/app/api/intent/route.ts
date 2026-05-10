@@ -7,8 +7,8 @@ const FALLBACK = NextResponse.json(
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
+  console.log('[/api/intent] POST received, body:', JSON.stringify(body).slice(0, 300))
   const bridgeUrl = process.env.VPS_BRIDGE_URL ?? 'http://43.156.108.96:3003'
-  const apiKey = process.env.VPS_BRIDGE_API_KEY ?? ''
 
   try {
     // 8s hard timeout — intent classification is best-effort, never blocks the user
@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
       },
       body: JSON.stringify({
         message: body.message ?? '',
@@ -27,19 +26,53 @@ export async function POST(req: NextRequest) {
       signal: AbortSignal.timeout(8000),
     })
 
+    console.log('[/api/intent] bridge response status:', res.status, res.statusText)
+
     if (!res.ok) {
       // Non-2xx from bridge → silent fallback, never 503
       return FALLBACK
     }
 
-    // Zeroclaw returns JSON: { model, response }
-    const data = await res.json()
-    const raw: string = data?.response ?? data?.raw_agent_response ?? data?.final_text ?? ''
+    // Parse SSE stream to extract the final content
+    const reader = res.body?.getReader()
+    if (!reader) {
+      console.log('[/api/intent] no response body')
+      return FALLBACK
+    }
+
+    let raw = ''
+    const decoder = new TextDecoder()
+    
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      
+      const chunk = decoder.decode(value, { stream: true })
+      const lines = chunk.split('\n')
+      
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6))
+            // Extract content from SSE format
+            const content = data?.content || data?.choices?.[0]?.delta?.content || ''
+            if (content) {
+              raw += content
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        }
+      }
+    }
+
+    console.log('[/api/intent] extracted raw from SSE:', raw.slice(0, 200))
 
     if (!raw) return FALLBACK
 
     return NextResponse.json({ rawagentresponse: raw }, { status: 200 })
-  } catch {
+  } catch (err) {
+    console.log('[/api/intent] error:', err)
     // Timeout, network error, parse error → silent fallback, never 503
     return FALLBACK
   }

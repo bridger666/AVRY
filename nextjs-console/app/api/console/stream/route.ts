@@ -58,7 +58,6 @@ export async function POST(req: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Api-Key': config.VPS_BRIDGE_API_KEY,
         },
         body: JSON.stringify(bridgePayload),
         signal: controller.signal,

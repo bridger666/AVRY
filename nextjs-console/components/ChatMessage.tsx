@@ -350,11 +350,13 @@ export default function ChatMessage({ role, content, isStreaming = false, agenti
         </div>
         {/* Intent routing banner - sits below the message full-width */}
         {pendingRoute && (
-          <RoutingSuggestBanner 
-            intent={pendingRoute} 
-            onAccept={onAcceptRoute ?? noop} 
-            onDismiss={onDismissRoute ?? noop} 
-          />
+          <div className="mt-2">
+            <RoutingSuggestBanner 
+              intent={pendingRoute} 
+              onAccept={onAcceptRoute ?? noop} 
+              onDismiss={onDismissRoute ?? noop} 
+            />
+          </div>
         )}
         </>
       )}

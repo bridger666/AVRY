@@ -109,6 +109,7 @@ export function useChat({
           finalContent = parsed.reply
           setFollowUpSuggestions(parsed.suggestions)
           setIsClarification(parsed.isClarification)
+          console.log('[useChat] triggerClassification called with text:', text.slice(0, 100), '| parsed.reply:', parsed.reply.slice(0, 100))
           triggerClassification(text, parsed.reply)
         } else if (chunk.type === "error") {
           addToast("error", chunk.error || "Something went wrong.")

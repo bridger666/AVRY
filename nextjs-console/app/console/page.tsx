@@ -6,10 +6,8 @@ import Image from "next/image"
 import ChatMessage from "@/components/ChatMessage"
 import ChatInput from "@/components/ChatInput"
 import ConsoleTopBar from "@/components/console/ConsoleTopBar"
-import { CopilotTogglePanel } from "@/components/workflow/CopilotTogglePanel"
 import SuggestionChips from "@/components/chat/SuggestionChips"
 import ActionList from "@/components/chat/ActionList"
-import { STATIC_ACTIONS } from "@/config/staticActions"
 import { RoutingSuggestBanner } from "@/components/chat/RoutingSuggestBanner"
 import { useAgenticStream } from "@/hooks/useAgenticStream"
 import { useIntentRouter } from "@/hooks/useIntentRouter"
@@ -315,16 +313,13 @@ export default function ConsolePage() {
                 </div>
                 <div className="flex items-center justify-between px-3 pt-1 pb-3">
                   <div className="flex items-center gap-[6px]">
-                    <button className="console-icon-btn" title="More">
-                      +
-                    </button>
                     <button
                       className="console-icon-btn"
-                      title="Attach"
+                      title="Upload file"
                       onClick={() => setUploadMenuOpen(o => !o)}
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 5v14M5 12h14"/>
                       </svg>
                     </button>
                   </div>
@@ -399,14 +394,6 @@ export default function ConsolePage() {
               ref={chipsWrapRef}
               className="relative mt-3 flex w-full flex-col gap-4 [animation:fadeUp_0.55s_0.20s_cubic-bezier(0.22,1,0.36,1)_both]"
             >
-                {/* Static Action List for empty chat state */}
-                <ActionList
-                  items={STATIC_ACTIONS.map(a => ({ label: a.label }))}
-                  onSelect={(label) => {
-                    handleSend(label, [])
-                  }}
-                />
-
                 <div className="flex w-full flex-wrap justify-center gap-2">
                 {CHIPS.map((chip) => (
                   <button
@@ -457,19 +444,22 @@ export default function ConsolePage() {
           <>
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-8 py-8 pb-44">
               <div className="max-w-[800px] mx-auto gap-0 flex flex-col">
-                {messages.map(m => (
-                  <div key={m.id}>
-                    <ChatMessage 
-                      role={m.role} 
-                      content={m.content} 
-                      isStreaming={m.isStreaming} 
-                      attachments={m.attachments}
-                      agenticState={m.role === 'assistant' && m.id === messages[messages.length - 1]?.id ? agenticState : undefined}
-                      onAcceptRoute={acceptRoute}
-                      onDismissRoute={dismissRoute}
-                    />
-                  </div>
-                ))}
+                {messages.map(m => {
+                  console.log('[ConsolePage] rendering message:', m.role, '| isStreaming:', m.isStreaming, '| id:', m.id)
+                  return (
+                    <div key={m.id}>
+                      <ChatMessage 
+                        role={m.role} 
+                        content={m.content} 
+                        isStreaming={m.isStreaming} 
+                        attachments={m.attachments}
+                        agenticState={m.role === 'assistant' && m.id === messages[messages.length - 1]?.id ? agenticState : undefined}
+                        onAcceptRoute={acceptRoute}
+                        onDismissRoute={dismissRoute}
+                      />
+                    </div>
+                  )
+                })}
                 <div ref={messagesEndRef} />
                 {pendingRoute && messages.length > 0 && messages[messages.length - 1]?.role === 'assistant' && !messages[messages.length - 1]?.isStreaming && (
                   <div className="mt-2">
@@ -664,10 +654,6 @@ export default function ConsolePage() {
           </div>
         </div>
       )}
-
-      <div className="relative">
-        <CopilotTogglePanel currentSpec={null} />
-      </div>
     </div>
   )
 }

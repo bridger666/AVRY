@@ -41,9 +41,7 @@ export async function GET(request: NextRequest) {
       `${config.VPS_BRIDGE_URL}/agents?${queryParams.toString()}`,
       {
         method: 'GET',
-        headers: {
-          'X-Api-Key': config.VPS_BRIDGE_API_KEY,
-        },
+        headers: {},
       }
     )
 
@@ -138,7 +136,6 @@ export async function POST(request: NextRequest) {
     const response = await fetch(`${config.VPS_BRIDGE_URL}/agents`, {
       method: 'POST',
       headers: {
-        'X-Api-Key': config.VPS_BRIDGE_API_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),

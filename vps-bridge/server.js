@@ -315,6 +315,192 @@ app.post('/aria/stream', handleStreamRequest);
 app.post('/blueprint/generate', handleStreamRequest);
 
 // ============================================================================
+// COPILOT WORKFLOW ENDPOINTS (non-streaming JSON response)
+// ============================================================================
+// These call Zeroclaw internally (via /webhook) but buffer the full response
+// and return a single JSON body to the Next.js copilot route. This avoids the
+// SSE parsing bug where JSON.parse(rawBody) fails on multi-event SSE text.
+//
+// Response shape: { workflow: { workflowName, steps, ... }, message?: string }
+// ============================================================================
+
+function handleWorkflowRequest(req, res, fallbackName) {
+  const targetUrl = new URL('/webhook', ZEROCLAW_URL);
+  const outboundBody = req.body && Object.keys(req.body).length > 0
+    ? JSON.stringify(buildZeroclawWebhookBody(req.body))
+    : '';
+  const { host, 'content-length': _contentLength, ...forwardHeaders } = req.headers;
+
+  const options = {
+    hostname: targetUrl.hostname,
+    port: targetUrl.port || (targetUrl.protocol === 'https:' ? 443 : 80),
+    path: targetUrl.pathname,
+    method: 'POST',
+    headers: {
+      ...forwardHeaders,
+      'X-Internal-Key': INTERNAL_KEY,
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(outboundBody),
+      'host': targetUrl.host
+    }
+  };
+
+  const transport = targetUrl.protocol === 'https:' ? https : http;
+
+  const proxyReq = transport.request(options, (proxyRes) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+    let buffer = '';
+    let rawResponse = '';
+    let bufferedText = '';
+    let sseError = null;
+
+    proxyRes.on('data', (chunk) => {
+      const text = chunk.toString();
+      rawResponse += text;
+      buffer += text;
+
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.trim() || !line.startsWith('data: ')) continue;
+        try {
+          const data = JSON.parse(line.slice(6));
+          if (data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content) {
+            bufferedText += data.choices[0].delta.content;
+          } else if (data.type === 'chunk' && typeof data.content === 'string') {
+            bufferedText += data.content;
+          } else if (data.type === 'error') {
+            sseError = typeof data.error === 'string' ? data.error : (data.error && data.error.message) || 'Zeroclaw error';
+          }
+        } catch (e) {
+          // Ignore non-JSON SSE lines
+        }
+      }
+    });
+
+    proxyRes.on('end', () => {
+      // Fallback: if no SSE events parsed, try the raw response as JSON
+      if (!bufferedText && rawResponse.trim()) {
+        try {
+          const data = JSON.parse(rawResponse);
+          bufferedText =
+            data.response ||
+            data.content ||
+            data.message ||
+            (data.choices && data.choices[0] && (data.choices[0].message?.content || data.choices[0].delta?.content)) ||
+            '';
+          if (!bufferedText && data.error) {
+            sseError = typeof data.error === 'string' ? data.error : data.error.message || 'Zeroclaw error';
+          }
+        } catch (e) {
+          bufferedText = rawResponse;
+        }
+      }
+
+      if (sseError) {
+        res.status(502).json({ message: `Zeroclaw error: ${sseError}` });
+        return;
+      }
+
+      // Try to parse bufferedText as JSON workflow
+      const trimmed = (bufferedText || '').trim();
+      let workflow = null;
+
+      // Strategy 1: raw JSON
+      if (trimmed) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (parsed && typeof parsed === 'object') {
+            if (typeof parsed.workflowName === 'string') {
+              workflow = parsed;
+            } else if (parsed.workflow && typeof parsed.workflow.workflowName === 'string') {
+              workflow = parsed.workflow;
+            }
+          }
+        } catch (e) { /* fall through */ }
+      }
+
+      // Strategy 2: fenced code block
+      if (!workflow && trimmed) {
+        const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+        if (fence && fence[1]) {
+          try {
+            const parsed = JSON.parse(fence[1].trim());
+            if (parsed && typeof parsed === 'object' && typeof parsed.workflowName === 'string') {
+              workflow = parsed;
+            }
+          } catch (e) { /* fall through */ }
+        }
+      }
+
+      // Strategy 3: embedded JSON substring
+      if (!workflow && trimmed) {
+        const start = trimmed.indexOf('{');
+        if (start >= 0) {
+          let depth = 0, inString = false, escape = false;
+          for (let i = start; i < trimmed.length; i++) {
+            const ch = trimmed[i];
+            if (escape) { escape = false; continue; }
+            if (ch === '\\' && inString) { escape = true; continue; }
+            if (ch === '"') { inString = !inString; continue; }
+            if (inString) continue;
+            if (ch === '{') depth++;
+            else if (ch === '}') {
+              depth--;
+              if (depth === 0) {
+                const candidate = trimmed.slice(start, i + 1);
+                try {
+                  const parsed = JSON.parse(candidate);
+                  if (parsed && typeof parsed === 'object' && typeof parsed.workflowName === 'string') {
+                    workflow = parsed;
+                  }
+                } catch (e) { /* continue */ }
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      // Fallback: build placeholder
+      if (!workflow) {
+        workflow = {
+          workflowName: fallbackName,
+          steps: [],
+          estimate_hours: 2,
+          automation_score: 0.8,
+          summary: trimmed || `${fallbackName} — no content returned`,
+        };
+      }
+
+      console.log(`[workflow request] parsed workflow: "${workflow.workflowName}" with ${(workflow.steps || []).length} steps`);
+      res.status(200).json({ workflow, message: trimmed });
+    });
+  });
+
+  proxyReq.on('error', (err) => {
+    console.error('[handleWorkflowRequest] error:', err.message);
+    if (!res.headersSent) {
+      res.status(502).json({ message: `Proxy error: ${err.message}` });
+    }
+  });
+
+  if (outboundBody) {
+    proxyReq.write(outboundBody);
+  }
+  proxyReq.end();
+}
+
+app.post('/workflows/generate', (req, res) => handleWorkflowRequest(req, res, 'Generated Workflow'));
+app.post('/workflows/repair',   (req, res) => handleWorkflowRequest(req, res, 'Repaired Workflow'));
+app.post('/workflows/edit',     (req, res) => handleWorkflowRequest(req, res, 'Edited Workflow'));
+
+// ============================================================================
 // ENTITLEMENT & BILLING ENDPOINTS
 // ============================================================================
 
