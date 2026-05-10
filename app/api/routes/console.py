@@ -1,6 +1,6 @@
 """
 AIVORY AI Command Console API Routes
-Layer 5: Conversational Command Layer
+Layer 5: Conversational与其他命令层
 """
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
@@ -15,6 +15,7 @@ from app.services.tier_validator import TierValidator
 from app.services.document_parser import DocumentParser
 from app.services.workflow_generator import WorkflowGenerator
 from app.services.audit_logger import AuditLogger
+from app.services.intent_classifier import IntentClassifier
 from app.llm.openrouter_client import OpenRouterRateLimitError
 
 router = APIRouter(prefix="/api/console", tags=["console"])
@@ -27,6 +28,7 @@ tier_validator = TierValidator()
 document_parser = DocumentParser()
 workflow_generator = WorkflowGenerator()
 audit_logger = AuditLogger()
+intent_classifier = IntentClassifier()
 
 # ============================================================================
 # REQUEST/RESPONSE MODELS
@@ -66,8 +68,8 @@ async def get_prompt(request: PromptRequest):
     """
     Get ARIA system prompt with tier-specific additions.
     
-    Returns the complete ARIA Protocol v2.0 prompt configured
-    for the user's tier and state.
+    Returns complete ARIA Protocol v2.0 prompt configured
+    for user's tier and state.
     """
     try:
         from app.prompts.console_prompts import get_console_system_prompt
@@ -87,6 +89,37 @@ async def get_prompt(request: PromptRequest):
     except Exception as e:
         logger.error(f"Error fetching prompt: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch prompt")
+
+# ============================================================================
+# INTENT CLASSIFICATION ENDPOINT
+# ============================================================================
+
+@router.post("/classify-intent")
+async def classify_user_intent(request: MessageRequest):
+    """
+    Classify user message intent before streaming response.
+    
+    This endpoint analyzes the user's message to determine their intent,
+    which can be displayed as a banner before the AI response streams in.
+    """
+    try:
+        # Extract message text
+        message = request.message
+        
+        # Classify intent
+        classification = await intent_classifier.classify_intent(
+            message=message,
+            context=request.context
+        )
+        
+        # Add timestamp
+        classification["timestamp"] = datetime.utcnow().isoformat()
+        
+        return classification
+        
+    except Exception as e:
+        logger.error(f"Error classifying intent: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to classify intent")
 
 # ============================================================================
 # CONSOLE MESSAGE ENDPOINT
@@ -201,7 +234,7 @@ async def upload_file(
         return {
             "file_id": file_id,
             "filename": file.filename,
-            "size": len(content),
+            "size":. len(content),
             "type": file.content_type,
             "preview": parsed_content[:500] if parsed_content else "",
             "parsed": bool(parsed_content),
