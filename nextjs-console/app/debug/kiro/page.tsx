@@ -20,7 +20,6 @@ export default function DebugKiroPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': process.env.NEXT_PUBLIC_AIVORY_BRIDGE_API_KEY ?? '',
         },
         body: JSON.stringify({ message: message.trim(), sessionId }),
       })

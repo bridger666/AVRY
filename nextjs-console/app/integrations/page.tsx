@@ -346,16 +346,25 @@ function IntegrationsContent() {
   const handleRevoke = async (conn: AivoryConnection) => {
     if (!confirm(`Revoke "${conn.displayName}"? Workflows using this connection will stop working.`)) return
 
-    if (conn.authType === 'oauth' && conn.oauthProvider) {
-      await fetch('/api/integrations/oauth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'revoke', appId: conn.appId }),
-      })
-    } else {
-      await fetch(`/api/integrations/connections/${conn.id}`, { method: 'DELETE' })
+    try {
+      if (conn.authType === 'oauth' && conn.oauthProvider) {
+        const res = await fetch('/api/integrations/oauth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'revoke', connectedAccountId: conn.id }),
+        })
+        if (!res.ok) throw new Error('Failed to revoke OAuth connection')
+      } else {
+        const res = await fetch(`/api/integrations/connections/${conn.id}`, { method: 'DELETE' })
+        if (!res.ok) throw new Error('Failed to delete connection')
+      }
+      setFeedback({ type: 'success', message: `Successfully revoked ${conn.displayName}` })
+    } catch (err) {
+      console.error('[Revoke] Error:', err)
+      setFeedback({ type: 'error', message: 'Failed to revoke connection' })
+    } finally {
+      fetchConnections()
     }
-    fetchConnections()
   }
 
   // Reconnect: OAuth uses Composio flow, manual uses credential modal

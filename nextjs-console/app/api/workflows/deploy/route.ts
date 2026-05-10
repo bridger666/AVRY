@@ -131,9 +131,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }
-  if (VPS_BRIDGE_API_KEY) {
-    headers['x-api-key'] = VPS_BRIDGE_API_KEY
-  }
 
   let bridgeResponse: Response
   try {

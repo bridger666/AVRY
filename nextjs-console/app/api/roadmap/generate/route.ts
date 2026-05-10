@@ -69,7 +69,6 @@ Generate 3-4 phases. Each phase should have 2-4 milestones and 2-3 KPIs. Be spec
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': SERVICES.VPS_BRIDGE_API_KEY,
         },
         body: JSON.stringify({
           message: prompt,

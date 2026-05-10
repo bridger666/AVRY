@@ -18,8 +18,8 @@ export const SERVICES = {
   /** VPS Bridge — primary AI gateway */
   VPS_BRIDGE: process.env.VPS_BRIDGE_URL || 'https://api.aivory.id',
 
-  /** VPS Bridge API key */
-  VPS_BRIDGE_API_KEY: process.env.VPS_BRIDGE_API_KEY || 'supersecret-xyz123456789',
+  /** @deprecated VPS Bridge runs in internal-only mode (network isolation) and no longer validates API keys. Kept for legacy callers; always empty. */
+  VPS_BRIDGE_API_KEY: '',
 
   /** Zeroclaw Gateway — accessed via VPS Bridge, not directly */
   ZEROCLAW: process.env.ZEROCLAW_URL || 'https://api.aivory.id',

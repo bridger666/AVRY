@@ -7,20 +7,20 @@
 .phaseList {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 0 4px;
+  gap: 12px;
+  padding: 0 16px 0 0;
 }
 
 .phaseItem {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 16px;
   min-height: auto;
-  padding: 8px 8px 9px 8px;
-  background: rgba(255, 255, 255, 0.018);
-  border: 1px solid rgba(255, 255, 255, 0.035);
+  padding: 16px;
+  background: transparent;
+  border: 1px solid transparent;
   border-left: 3px solid transparent;
-  border-radius: 8px;
+  border-radius: 0 12px 12px 0;
   cursor: pointer;
   transition: all 0.18s ease;
   position: relative;
@@ -34,9 +34,9 @@
 
 /* Current phase */
 .phaseItem.current {
-  background: #252622;
-  border-color: rgba(255, 255, 255, 0.025);
-  border-left-color: #66e5a6;
+  background: rgba(43, 44, 40, 0.8);
+  border-color: rgba(255, 255, 255, 0.04);
+  border-left-color: #00e59e;
   cursor: default;
 }
 
@@ -81,7 +81,7 @@
 
 /* Locked phase */
 .phaseItem.locked {
-  background: rgba(255, 255, 255, 0.015);
+  background: transparent;
   border-left-color: transparent;
   cursor: not-allowed;
   opacity: 0.58;
@@ -89,20 +89,20 @@
 
 .phaseNumber {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.03);
-  border: 1.5px solid transparent;
-  color: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.6);
   border-radius: 50%;
   font-family: 'Inter Tight', sans-serif;
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 500;
   transition: all 0.18s ease;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .checkIcon {
@@ -126,9 +126,9 @@
 }
 
 .phaseTitle {
-  font-family: 'Inter Tight', sans-serif !important;
-  font-size: 11px !important;
-  font-weight: 500 !important;
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
   color: rgba(255, 255, 255, 0.46);
   margin: 0 0 2px 0;
   line-height: 1.3;
@@ -140,7 +140,7 @@
 
 .phaseDescription {
   font-family: 'Inter Tight', sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.62);
   margin: 0;
@@ -169,11 +169,11 @@
   }
 
   .phaseTitle {
-    font-size: 12px !important;
+    font-size: 14px;
   }
 
   .phaseDescription {
-    font-size: 11px;
+    font-size: 13px;
   }
 }
 

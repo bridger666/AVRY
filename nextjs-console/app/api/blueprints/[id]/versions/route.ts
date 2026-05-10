@@ -37,9 +37,7 @@ export async function GET(
     // Forward request to VPS bridge
     const response = await fetch(`${config.VPS_BRIDGE_URL}/blueprints/${id}/versions`, {
       method: 'GET',
-      headers: {
-        'X-Api-Key': config.VPS_BRIDGE_API_KEY
-      }
+      headers: {}
     })
 
     // Handle VPS bridge errors

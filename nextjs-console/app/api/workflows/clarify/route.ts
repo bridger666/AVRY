@@ -29,10 +29,6 @@ const VPS_BRIDGE_URL = (
   'http://43.156.108.96:3003'
 ).replace(/\/$/, '')
 
-const VPS_BRIDGE_API_KEY =
-  process.env.VPS_BRIDGE_API_KEY ||
-  process.env.NEXT_PUBLIC_VPS_BRIDGE_API_KEY ||
-  ''
 const UPSTREAM_PATH = '/console/stream'
 const TIMEOUT_MS    = 30_000   // 30s — route through Zeroclaw webhook
 
@@ -88,15 +84,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     has_history: Array.isArray(conversation_history) && conversation_history.length > 0,
   })
 
-  // ── Guard: API key must be configured ────────────────────────────────────
-  if (!VPS_BRIDGE_API_KEY) {
-    console.error('[/api/workflows/clarify] SERVER_MISCONFIG: VPS_BRIDGE_API_KEY is not set')
-    return NextResponse.json(
-      { error: { code: 'SERVER_MISCONFIG', message: 'VPS_BRIDGE_API_KEY is not set on the backend' } },
-      { status: 500 }
-    )
-  }
-
   // ── 3. Proxy to VPS Bridge ────────────────────────────────────────────────
   // /workflows/clarify doesn't exist on Zeroclaw — route through /console/stream
   // which proxies to Zeroclaw's /webhook endpoint
@@ -115,13 +102,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'x-api-key':    VPS_BRIDGE_API_KEY,
   }
 
   // ── Log outgoing VPS call ─────────────────────────────────────────────────
   console.log('[/api/workflows/clarify] upstream config', {
     vpsUrl:    targetUrl,
-    hasApiKey: !!VPS_BRIDGE_API_KEY,
     timeoutMs: TIMEOUT_MS,
   })
   console.log('[/api/workflows/clarify] → VPS', {

@@ -7,6 +7,7 @@ export interface ClassifiedIntent {
   confidence: number
   reason: string
   tabLabel: string
+  isLowConfidence?: boolean
 }
 
 const CONFIDENCE_THRESHOLD = 0.75
@@ -24,7 +25,7 @@ function buildClassifierPrompt(userMessage: string, aiReply: string): string {
   ).join('\n\n')
 
   return `You are an intent classifier for Aivory Console.
-Analyze the user message and AI reply, then determine which Aivory tab is most relevant.
+Analyze user message and AI reply, then determine which Aivory tab is most relevant.
 
 TAB DEFINITIONS:
 ${boundaryDefs}
@@ -48,24 +49,24 @@ JSON SHAPE:
 
 export async function classifyIntent(userMessage: string, aiReply: string): Promise<ClassifiedIntent> {
   try {
-    const apiKey = process.env.NEXT_PUBLIC_VPS_BRIDGE_API_KEY ?? process.env.VPS_BRIDGE_API_KEY ?? ''
-    console.log('[IntentClassifier] LOG #2 — sebelum fetch ke /api/intent, body:', {
-      message: buildClassifierPrompt(userMessage, aiReply).slice(0, 80),
-      conversationId: 'intent-classifier',
-    })
+    console.log('[IntentClassifier] START — userMessage:', userMessage.slice(0, 100), '| aiReply:', aiReply.slice(0, 100))
+    
+    const prompt = buildClassifierPrompt(userMessage, aiReply)
+    console.log('[IntentClassifier] LOG #1 — prompt built, length:', prompt.length)
     
     const response = await fetch(`/api/intent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
       },
       body: JSON.stringify({
-        message: buildClassifierPrompt(userMessage, aiReply),
+        message: prompt,
         context: { endpoint: 'intent-classifier' },
       }),
       signal: AbortSignal.timeout(5000),
     })
+
+    console.log('[IntentClassifier] LOG #2 — response status:', response.status, response.statusText)
 
     if (!response.ok) {
       console.log('[IntentClassifier] response tidak ok:', response.status)
@@ -73,13 +74,27 @@ export async function classifyIntent(userMessage: string, aiReply: string): Prom
     }
 
     const data = await response.json()
-    console.log('[IntentClassifier] LOG #3 — setelah res.json():', JSON.stringify(data))
+    console.log('[IntentClassifier] LOG #3 — response data:', JSON.stringify(data).slice(0, 200))
     
-    const raw: string = data?.rawagentresponse ?? ''
-    console.log('[IntentClassifier] extracted raw field:', raw.slice(0, 100))
+    const raw: string = data?.rawagentresponse ?? data?.response ?? ''
+    console.log('[IntentClassifier] LOG #3b — extracted raw field:', raw.slice(0, 100))
+    
+    if (!raw || raw.length < 10) {
+      console.log('[IntentClassifier] raw response too short or empty, returning FALLBACK')
+      return FALLBACK
+    }
     
     const cleaned = raw.replace(/^```json\s*/i, '').replace(/```$/i, '').trim()
-    const parsed = JSON.parse(cleaned)
+    console.log('[IntentClassifier] LOG #3c — cleaned response:', cleaned.slice(0, 100))
+    
+    let parsed: any
+    try {
+      parsed = JSON.parse(cleaned)
+      console.log('[IntentClassifier] LOG #3d — parsed JSON:', JSON.stringify(parsed))
+    } catch (parseErr) {
+      console.log('[IntentClassifier] JSON parse failed:', parseErr, '| raw was:', cleaned.slice(0, 200))
+      return FALLBACK
+    }
 
     const validRoutes: IntentRoute[] = ['diagnostic', 'blueprint', 'workflow', 'integration', 'roadmap', 'settings', 'dashboard', 'console']
 
@@ -96,21 +111,17 @@ export async function classifyIntent(userMessage: string, aiReply: string): Prom
       return FALLBACK
     }
 
-    if (parsed.confidence < CONFIDENCE_THRESHOLD) {
-      console.log('[IntentClassifier] ❌ confidence tidak cukup')
-      return FALLBACK
-    }
-
-    console.log('[IntentClassifier] ✅ set pendingRoute →', parsed.route)
+    // Return all intents regardless of confidence - let UI layer decide how to handle low confidence
+    console.log('[IntentClassifier] ✅ set pendingRoute →', parsed.route, '| confidence:', parsed.confidence)
     return {
       route: parsed.route as IntentRoute,
       confidence: parsed.confidence,
       reason: parsed.reason.slice(0, 60),
       tabLabel: parsed.tabLabel ?? INTENT_BOUNDARIES[parsed.route as IntentRoute].tabLabel,
+      isLowConfidence: parsed.confidence < CONFIDENCE_THRESHOLD,
     }
   } catch (err) {
     console.log('[IntentClassifier] catch error:', err)
     return FALLBACK
   }
 }
-

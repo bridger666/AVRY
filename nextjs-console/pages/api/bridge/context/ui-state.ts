@@ -11,10 +11,9 @@ export default async function handler(
 
   try {
     const vpsBridgeUrl = process.env.VPS_BRIDGE_URL
-    const vpsBridgeApiKey = process.env.VPS_BRIDGE_API_KEY
 
-    if (!vpsBridgeUrl || !vpsBridgeApiKey) {
-      console.error('[ui-state] Missing VPS_BRIDGE_URL or VPS_BRIDGE_API_KEY')
+    if (!vpsBridgeUrl) {
+      console.error('[ui-state] Missing VPS_BRIDGE_URL')
       return res.status(500).json({ error: 'Bridge configuration missing' })
     }
 
@@ -23,7 +22,6 @@ export default async function handler(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Api-Key': vpsBridgeApiKey,
       },
       body: JSON.stringify(req.body),
     })

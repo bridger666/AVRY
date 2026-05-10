@@ -23,8 +23,10 @@ const MAX_SUGGESTIONS = 5
  * - Caps suggestions at a maximum of 5 items.
  */
 export function parseLLMResponse(rawText: string): ParsedLLMResponse {
+  console.log('[parseLLMResponse] rawText:', rawText.slice(0, 200))
   try {
     const parsed = JSON.parse(rawText)
+    console.log('[parseLLMResponse] parsed JSON:', JSON.stringify(parsed))
 
     // Must be an object with a `reply` key
     if (
@@ -33,6 +35,7 @@ export function parseLLMResponse(rawText: string): ParsedLLMResponse {
       Array.isArray(parsed) ||
       !('reply' in parsed)
     ) {
+      console.log('[parseLLMResponse] no reply key, returning rawText')
       return {
         reply: rawText,
         suggestions: [],
@@ -41,6 +44,7 @@ export function parseLLMResponse(rawText: string): ParsedLLMResponse {
     }
 
     const reply = typeof parsed.reply === 'string' ? parsed.reply : String(parsed.reply)
+    console.log('[parseLLMResponse] extracted reply:', reply.slice(0, 100))
 
     // Filter suggestions to strings only, then cap at MAX_SUGGESTIONS
     let suggestions: string[] = []
@@ -55,6 +59,7 @@ export function parseLLMResponse(rawText: string): ParsedLLMResponse {
     return { reply, suggestions, isClarification }
   } catch {
     // JSON parse failed — return raw text as reply
+    console.log('[parseLLMResponse] JSON parse failed, returning rawText')
     return {
       reply: rawText,
       suggestions: [],

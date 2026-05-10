@@ -4,29 +4,30 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  padding: 0.875rem;
+  border-radius: 14px;
+  padding: 1.25rem 1.25rem 1.1rem;
   height: 100%;
   min-height: 0;
   box-sizing: border-box;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
   overflow: hidden;
 }
 
-/* ADDED: HEADER ROW with icon */
+/* HEADER ROW with icon */
 .headerRow {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 0.625rem;
+  gap: 10px;
+  margin-bottom: 0;
 }
 
 .headerIcon {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
@@ -41,24 +42,25 @@
   font-weight: 500;
   color: var(--text-primary);
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 .eventList {
   display: flex;
   flex-direction: column;
   gap: 0;
-  margin-bottom: 1.25rem;
-  flex: 1; /* isi ruang kosong supaya viewAll tetap di bawah */
+  margin-bottom: 0;
+  flex: 1;
+  overflow: hidden;
 }
 
-/* ADDED: EMPTY STATE — with icon */
+/* EMPTY STATE — with icon */
 .empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 2rem 1rem;
+  padding: 1.5rem 1rem;
   text-align: center;
 }
 
@@ -73,11 +75,11 @@
   line-height: 1.6;
 }
 
-/* FIXED: EVENT ROW — icon + content + time */
+/* EVENT ROW — icon + content + time */
 .event {
   display: flex;
   gap: 10px;
-  padding: 0.625rem 0;
+  padding: 0.5rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   transition: background 0.12s;
 }
@@ -86,11 +88,11 @@
   border-bottom: none;
 }
 
-/* ADDED: EVENT ICON — type-specific colored dot */
+/* EVENT ICON — type-specific colored dot */
 .eventIconWrap {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
@@ -131,45 +133,55 @@
 }
 
 .eventMessage {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-primary);
-  margin: 0 0 3px 0;
-  line-height: 1.5;
+  margin: 0 0 2px 0;
+  line-height: 1.45;
 }
 
 .eventTime {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-tertiary);
   line-height: 1.4;
 }
 
-/* FIXED: VIEW ALL LINK */
+/* VIEW ALL — full-width pill matching lifecycle card CTA */
 .viewAll {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 0.625rem;
-  border-radius: 9px;
-  font-size: 12.5px;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 500;
   text-decoration: none;
-  color: var(--text-tertiary);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.15s ease;
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.18s ease;
   font-family: 'Inter Tight', sans-serif;
   background: rgba(255, 255, 255, 0.02);
+  margin-top: auto;
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .viewAll:hover {
-  background: rgba(0, 229, 158, 0.06);
-  border-color: rgba(0, 229, 158, 0.2);
-  color: #00e59e;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--text-primary);
 }
 
 @media (max-width: 1100px) {
   .activityContainer {
     position: static;
     margin-top: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .activityContainer {
+    padding: 1rem;
   }
 }

@@ -42,9 +42,7 @@ export async function GET(
     // Forward request to VPS bridge
     const response = await fetch(`${config.VPS_BRIDGE_URL}/agents/${id}`, {
       method: 'GET',
-      headers: {
-        'X-Api-Key': config.VPS_BRIDGE_API_KEY,
-      },
+      headers: {},
     })
 
     // Handle VPS bridge errors
@@ -141,7 +139,6 @@ export async function PATCH(
     const response = await fetch(`${config.VPS_BRIDGE_URL}/agents/${id}`, {
       method: 'PATCH',
       headers: {
-        'X-Api-Key': config.VPS_BRIDGE_API_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
@@ -238,9 +235,7 @@ export async function DELETE(
     // Forward request to VPS bridge
     const response = await fetch(`${config.VPS_BRIDGE_URL}/agents/${id}`, {
       method: 'DELETE',
-      headers: {
-        'X-Api-Key': config.VPS_BRIDGE_API_KEY,
-      },
+      headers: {},
     })
 
     // Handle VPS bridge errors

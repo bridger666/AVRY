@@ -22,7 +22,6 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.VPS_BRIDGE_API_KEY || process.env.AIVORY_BRIDGE_API_KEY || '',
       },
       body: JSON.stringify(body),
     });

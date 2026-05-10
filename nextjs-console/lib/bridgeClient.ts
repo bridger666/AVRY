@@ -8,11 +8,10 @@
  *   import { postToBridge } from '@/lib/bridgeClient'
  *   const res = await postToBridge('/bridge/aira', { message: '...' })
  *
- * The base URL and API key are read from environment variables:
+ * The base URL is read from environment variables:
  *   VPS_BRIDGE_URL        — server-side (API routes)
- *   VPS_BRIDGE_API_KEY    — server-side (API routes)
  *
- * Never use NEXT_PUBLIC_* vars in server-side API routes.
+ * Auth: VPS Bridge runs internal-only (network isolation), no API key required.
  */
 
 const BASE_URL = (
@@ -21,18 +20,13 @@ const BASE_URL = (
   'http://43.156.108.96:3003'
 ).replace(/\/$/, '');
 
-const API_KEY =
-  process.env.VPS_BRIDGE_API_KEY ||
-  process.env.NEXT_PUBLIC_VPS_BRIDGE_API_KEY ||
-  '';
-
 if (!BASE_URL) {
   throw new Error('VPS_BRIDGE_URL is not defined. Set it in .env.local');
 }
 
 /**
  * POST to a VPS Bridge endpoint.
- * Automatically injects Content-Type and x-api-key headers.
+ * Automatically injects Content-Type header.
  *
  * @param path   - Endpoint path, e.g. '/bridge/aira'
  * @param body   - JSON-serializable request body
@@ -49,7 +43,6 @@ export async function postToBridge(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
       ...(extraHeaders as Record<string, string>),
     },
     body: JSON.stringify(body),
@@ -80,4 +73,4 @@ export async function postToBridgeJson<T = unknown>(
   return res.json() as Promise<T>;
 }
 
-export { BASE_URL as VPS_BRIDGE_BASE_URL, API_KEY as VPS_BRIDGE_API_KEY };
+export { BASE_URL as VPS_BRIDGE_BASE_URL };

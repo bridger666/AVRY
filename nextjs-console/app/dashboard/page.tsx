@@ -89,10 +89,11 @@ export default function DashboardPage() {
         <ContinuedFromConsole summary={routingNotice} onDismiss={() => setRoutingNotice(null)} />
       )}
 
-      {/* Left column: page title + overview card */}
-      <div className={styles.mainContent}>
-        <h1 className={styles.pageTitle}>{t('title')}</h1>
+      {/* Full-width page title spanning both columns */}
+      <h1 className={styles.pageTitle}>{t('title')}</h1>
 
+      {/* Left column: overview card (tall anchor) */}
+      <div className={styles.mainContent}>
         <OverviewCard
           data={data}
           freeDiagnosticScore={freeDiagnosticScore}

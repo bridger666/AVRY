@@ -27,7 +27,6 @@ export async function callBridge<T = unknown>(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': process.env.NEXT_PUBLIC_AIVORY_BRIDGE_API_KEY ?? '',
     },
     body: JSON.stringify(payload),
   })

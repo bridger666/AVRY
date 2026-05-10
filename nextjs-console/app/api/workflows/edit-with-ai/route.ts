@@ -38,7 +38,6 @@ Do not include markdown, code blocks, or commentary.`
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Api-Key': config.VPS_BRIDGE_API_KEY
         },
         body: JSON.stringify({
           workflow_id,

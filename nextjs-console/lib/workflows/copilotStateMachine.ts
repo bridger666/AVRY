@@ -308,12 +308,7 @@ class BridgeClient {
       response = await fetch(url, {
         method:  'POST',
         headers: {
-          'Content-Type':   'application/json',
-          // Pass the internal token so the VPS Bridge accepts the request
-          // without requiring a separate auth layer at each downstream hop.
-          'X-Internal-Key': (typeof process !== 'undefined' && process.env?.INTERNAL_TOKEN)
-            ? process.env.INTERNAL_TOKEN
-            : 'aivory-internal-2026',
+          'Content-Type': 'application/json',
         },
         body:    JSON.stringify(body),
         signal:  controller.signal,
@@ -588,8 +583,8 @@ export class CopilotStateMachine {
 
       // Normalize: Zeroclaw may return { model, response } instead of { workflow }.
       // The API route normalizes this, but we guard here too for safety.
-      let workflow = result.workflow
-      if (!workflow && (result as unknown as Record<string, unknown>).response) {
+      let workflow = result?.workflow
+      if (!workflow && result && (result as unknown as Record<string, unknown>).response) {
         const responseText = (result as unknown as Record<string, unknown>).response as string
         // Try to parse JSON from the response text first
         try {
@@ -610,13 +605,34 @@ export class CopilotStateMachine {
           }
         }
       }
-      if (!workflow) {
-        throw new Error('Zeroclaw did not return a workflow')
+
+      // Guard: workflow must have a valid workflowName AND at least one step.
+      // If we only got a placeholder (no steps), keep the user in a recoverable
+      // state instead of transitioning to AWAITING_CONFIRMATION with an empty
+      // workflow that would crash subsequent repair/edit calls.
+      const hasValidWorkflow =
+        workflow &&
+        typeof workflow.workflowName === 'string' &&
+        workflow.workflowName.trim().length > 0 &&
+        Array.isArray(workflow.steps) &&
+        workflow.steps.length > 0
+
+      if (!hasValidWorkflow) {
+        const fallbackMessage =
+          typeof result?.message === 'string' && result.message.trim()
+            ? result.message
+            : (workflow && typeof workflow.summary === 'string' && workflow.summary.trim())
+              ? workflow.summary
+              : 'Maaf, saya belum bisa menyusun workflow dari permintaan ini. Coba jelaskan lebih spesifik — misalnya trigger, apps yang dipakai, dan hasil yang diharapkan.'
+
+        this.state.stage = 'IDLE'
+        this.state.generatedWorkflow = null
+        return this.setAssistantMessage(fallbackMessage)
       }
 
       this.state.generatedWorkflow = {
-        workflowName: workflow.workflowName ?? 'Untitled Workflow',
-        steps: workflow.steps ?? [],
+        workflowName: workflow.workflowName,
+        steps: workflow.steps,
         estimate_hours: workflow.estimate_hours ?? 2,
         automation_score: workflow.automation_score ?? 0.8,
         summary: workflow.summary ?? '',
@@ -627,7 +643,7 @@ export class CopilotStateMachine {
 
       const displayMessage =
         result.message ??
-        this.buildWorkflowSummaryMessage(workflow.steps ?? [], workflow.workflowName ?? 'Untitled Workflow')
+        this.buildWorkflowSummaryMessage(workflow.steps, workflow.workflowName)
 
       return this.setAssistantMessage(displayMessage)
     } catch (error: unknown) {
@@ -796,16 +812,30 @@ export class CopilotStateMachine {
         })),
       })
 
-      // Re-inject MCP-resolved nodeTypes yang tidak dibawa ZeroClaw
-      this.state.generatedWorkflow.steps = result.workflow.steps.map((step) => {
+      // Re-inject MCP-resolved nodeTypes yang tidak dibawa ZeroClaw.
+      // Guard: kalau ZeroClaw tidak return workflow valid (steps kosong atau
+      // workflowName missing), pertahankan workflow saat ini supaya repair
+      // loop tidak menghapus steps yang sudah ada.
+      const repairedWorkflow = result?.workflow
+      const repairedStepsValid =
+        repairedWorkflow && Array.isArray(repairedWorkflow.steps) && repairedWorkflow.steps.length > 0
+
+      if (!repairedStepsValid) {
+        console.warn('[Copilot] repairWorkflow: ZeroClaw returned invalid workflow, keeping current steps')
+        return
+      }
+
+      this.state.generatedWorkflow.steps = repairedWorkflow.steps.map((step) => {
         const known = existingNodeTypes.get(step.id)
         return known && !step.nodeType ? { ...step, nodeType: known } : step
       })
 
-      this.state.generatedWorkflow.workflowName =
-        result.workflow.workflowName ?? this.state.generatedWorkflow.workflowName
-      this.state.generatedWorkflow.summary =
-        result.workflow.summary ?? this.state.generatedWorkflow.summary
+      if (typeof repairedWorkflow.workflowName === 'string' && repairedWorkflow.workflowName.trim()) {
+        this.state.generatedWorkflow.workflowName = repairedWorkflow.workflowName
+      }
+      if (typeof repairedWorkflow.summary === 'string') {
+        this.state.generatedWorkflow.summary = repairedWorkflow.summary
+      }
     } catch (error: unknown) {
       // Jangan crash retry loop — runTests berikutnya pakai steps saat ini
       console.error('[Copilot] repairWorkflow error:', error)
@@ -826,11 +856,26 @@ export class CopilotStateMachine {
         edit_request: userMessage,
       })
 
-      this.state.generatedWorkflow.steps = result.workflow.steps
-      this.state.generatedWorkflow.workflowName =
-        result.workflow.workflowName ?? this.state.generatedWorkflow.workflowName
-      this.state.generatedWorkflow.summary =
-        result.workflow.summary ?? this.state.generatedWorkflow.summary
+      // Guard: only accept edit result if it has valid steps
+      const editedWorkflow = result?.workflow
+      const editedStepsValid =
+        editedWorkflow && Array.isArray(editedWorkflow.steps) && editedWorkflow.steps.length > 0
+
+      if (!editedStepsValid) {
+        console.warn('[Copilot] handleEditing: ZeroClaw returned invalid workflow, keeping current state')
+        const message = typeof result?.message === 'string' && result.message.trim()
+          ? result.message
+          : 'Saya belum bisa memproses perubahan itu. Coba jelaskan dengan lebih detail langkah yang ingin diubah.'
+        return this.setAssistantMessage(message)
+      }
+
+      this.state.generatedWorkflow.steps = editedWorkflow.steps
+      if (typeof editedWorkflow.workflowName === 'string' && editedWorkflow.workflowName.trim()) {
+        this.state.generatedWorkflow.workflowName = editedWorkflow.workflowName
+      }
+      if (typeof editedWorkflow.summary === 'string') {
+        this.state.generatedWorkflow.summary = editedWorkflow.summary
+      }
 
       // Reset test state — workflow berubah
       this.state.testResults = null

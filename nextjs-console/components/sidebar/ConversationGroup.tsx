@@ -127,7 +127,7 @@ export default function ConversationGroup({
                 {highlightText(chat.title, searchQuery)}
               </span>
             )}
-            <span className="text-[10px] text-white/25 group-hover:opacity-0 transition-opacity shrink-0">
+            <span suppressHydrationWarning className="text-[10px] text-white/25 group-hover:opacity-0 transition-opacity shrink-0">
               {new Date(chat.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </span>
             <div className="absolute right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
