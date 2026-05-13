@@ -292,7 +292,7 @@
 .navbar-signin-btn,
 .navbar-logout-btn {
     padding: 8px 20px;
-    border-radius: 6px;
+    border-radius: 0;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -322,10 +322,10 @@
 }
 
 .super-admin-badge {
-    background: #FF0000;
-    color: #FFFFFF;
+    background: #FFD700;
+    color: #000000;
     padding: 6px 12px;
-    border-radius: 6px;
+    border-radius: 0;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.5px;

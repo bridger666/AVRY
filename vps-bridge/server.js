@@ -766,10 +766,10 @@ app.use((err, req, res, next) => {
 // START SERVER
 // ============================================================================
 
-const server = app.listen(PORT, '127.0.0.1', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('✅ VPS Bridge Thin Proxy is running');
   console.log(`   Port: ${PORT}`);
-  console.log(`   Host: 127.0.0.1`);
+  console.log(`   Host: 0.0.0.0`);
   console.log(`   Zeroclaw URL: ${ZEROCLAW_URL}`);
   console.log(`   CORS Origin: ${CORS_ORIGIN}`);
   console.log('');

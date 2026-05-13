@@ -1,82 +1,57 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { VPS_BRIDGE_CONFIG } from '@/lib/config'
+  import { NextRequest, NextResponse } from 'next/server'
+  import { computeDiagnostic } from '@/lib/freeDiagnosticEngine'
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { organization_id, answers } = body
+  export async function POST(request: NextRequest) {
+    try {
+      const body = await request.json()
+      const { organization_id, answers } = body
 
-    // Validate request
-    if (!organization_id || !answers) {
-      return NextResponse.json(
-        { message: 'Missing required fields: organization_id and answers' },
-        { status: 400 }
-      )
-    }
+      // Validate request
+      if (!organization_id || !answers) {
+        return NextResponse.json(
+          { message: 'Missing required fields: organization_id and answers' },
+          { status: 400 }
+        )
+      }
 
-    // Validate answers structure
-    if (typeof answers !== 'object' || Object.keys(answers).length !== 12) {
-      return NextResponse.json(
-        { message: 'Invalid answers format. Expected 12 question answers.' },
-        { status: 400 }
-      )
-    }
+      // Validate answers structure
+      if (typeof answers !== 'object' || Object.keys(answers).length !== 12) {
+        return NextResponse.json(
+          { message: 'Invalid answers format. Expected 12 question answers.' },
+          { status: 400 }
+        )
+      }
 
-    // Call VPS Bridge
-    const response = await fetch(`${VPS_BRIDGE_CONFIG.baseUrl}/diagnostics/free/run`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        organization_id,
-        mode: 'free',
-        answers,
-        language: 'en'
+      // Validate answer values are 0-3
+      for (const [key, value] of Object.entries(answers)) {
+        if (typeof value !== 'number' || value < 0 || value > 3) {
+          return NextResponse.json(
+            { 
+              message: `Invalid answer value for ${key}: ${value}. Values must be 0, 1, 2, or 3.` 
+            },
+            { status: 400 }
+          )
+        }
+      }
+
+      // Compute diagnostic using deterministic engine
+      const result = computeDiagnostic(answers as Record<string, 0 | 1 | 2 | 3>)
+
+      // Return response
+      return NextResponse.json({
+        status: 'success',
+        type: 'free_diagnostic',
+        version: 'v2',
+        data: result,
+        timestamp: new Date().toISOString(),
+        // Also spread top-level for backward compat with service validation
+        ...result
       })
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ 
-        error: true,
-        code: 'VPS_BRIDGE_ERROR',
-        message: 'VPS Bridge request failed' 
-      }))
+    } catch (error) {
+      console.error('[API] Free diagnostic error:', error)
       return NextResponse.json(
-        { 
-          message: errorData.message || 'Failed to process diagnostic',
-          error: errorData.error,
-          code: errorData.code
-        },
-        { status: response.status }
+        { message: 'Internal server error' },
+        { status: 500 }
       )
     }
-
-    const result = await response.json()
-
-    // Normalize field names from VPS Bridge to frontend expectations
-    const normalized = {
-      ...result,
-      // Normalize score field
-      score: result.score ?? result.ai_readiness_score ?? 0,
-      // Normalize narrative field
-      narrative: result.narrative ?? result.narrative_summary ?? '',
-    }
-
-    return NextResponse.json({
-      status: 'success',
-      type: 'free_diagnostic',
-      version: 'v2',
-      data: normalized,
-      timestamp: new Date().toISOString(),
-      // Also spread top-level for backward compat with service validation
-      ...normalized
-    })
-  } catch (error) {
-    console.error('[API] Free diagnostic error:', error)
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    )
   }
-}
