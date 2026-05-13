@@ -1,9 +1,7 @@
 /**
- * LED Hero Background Animation
- * Matrix-style digital rain with chaotic cascading dots
- * Masks text/CTA areas to prevent overlap
+ * Holographic Wave Mesh Animation (Composio Style)
+ * Always looping, continuous wave animation.
  */
-
 class LEDHeroBackground {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
@@ -13,303 +11,154 @@ class LEDHeroBackground {
         }
 
         this.ctx = this.canvas.getContext('2d');
-        this.dots = [];
-        this.columns = [];
+        this.time = 0;
+        this.points = [];
         this.animationFrame = null;
-        
+
         // Configuration
         this.config = {
-            dotRadius: 2,
-            dotSpacing: 15,
-            defaultColor: '#4a3df4',
-            litColors: ['#7b7bff', '#3dd3a8', '#4a3df4'],
-            cascadeSpeed: 0.15, // Speed of rain drops
-            spawnChance: 0.03, // Chance to spawn new cascade per frame
-            trailLength: 8, // How many dots trail behind
-            fadeSpeed: 0.08
+            cols: 50,
+            rows: 30,
+            spacingX: 80,
+            spacingZ: 80,
+            waveSpeed: 0.015,
+            waveHeight: 120,
+            fov: 600,
+            baseY: 250, // Move grid down
+            colors: {
+                cyan: [0, 229, 158],   // Aivory Accent #00e59e
+                purple: [123, 123, 255], // Soft purple/blue
+                dark: [5, 5, 5]
+            }
         };
-
-        // Animation state
-        this.state = {
-            frameCount: 0,
-            activeCascades: [],
-            litDotsCount: 0
-        };
-
-        // Text masking areas (will be calculated)
-        this.maskAreas = [];
 
         this.init();
     }
 
     init() {
-        // Wait for canvas to have dimensions
         if (!this.setupCanvas()) {
-            console.log('Canvas not ready, retrying in 100ms...');
             setTimeout(() => this.init(), 100);
             return;
         }
-        
-        this.calculateMaskAreas();
-        this.generateDotGrid();
-        this.initializeColumns();
+
+        this.createGrid();
         this.startAnimation();
-        
-        // Handle resize
+
         window.addEventListener('resize', () => {
             if (this.setupCanvas()) {
-                this.calculateMaskAreas();
-                this.generateDotGrid();
-                this.initializeColumns();
+                this.createGrid();
             }
         });
 
-        console.log('LED Hero Background initialized - Matrix Rain Mode');
-        console.log(`Grid: ${this.dots.length} dots`);
-        console.log(`Columns: ${this.columns.length}`);
+        console.log('Holographic Wave Mesh initialized');
     }
 
     setupCanvas() {
         const hero = this.canvas.parentElement;
+        if (!hero) return false;
+
         const rect = hero.getBoundingClientRect();
-        
-        // Set canvas size to match hero section
         this.canvas.width = rect.width;
         this.canvas.height = rect.height;
-        
-        // Guard against zero dimensions
-        if (this.canvas.width === 0 || this.canvas.height === 0) {
-            console.warn('Canvas has zero dimensions, waiting for layout...');
-            return false;
-        }
-        
-        console.log(`Canvas size: ${this.canvas.width}x${this.canvas.height}`);
+
+        if (this.canvas.width === 0 || this.canvas.height === 0) return false;
         return true;
     }
 
-    calculateMaskAreas() {
-        // Calculate areas where text and buttons are located
-        const hero = this.canvas.parentElement;
-        
-        // Get text elements
-        const tagline = hero.querySelector('.hero-tagline');
-        const title = hero.querySelector('.hero-title');
-        const subline = hero.querySelector('.hero-subline');
-        const ctaGroup = hero.querySelector('.hero-cta-group');
-        
-        this.maskAreas = [];
-        
-        // Add mask for each text element
-        [tagline, title, subline, ctaGroup].forEach(el => {
-            if (el) {
-                const rect = el.getBoundingClientRect();
-                const heroRect = hero.getBoundingClientRect();
-                
-                this.maskAreas.push({
-                    x: rect.left - heroRect.left - 20,
-                    y: rect.top - heroRect.top - 10,
-                    width: rect.width + 40,
-                    height: rect.height + 20
+    createGrid() {
+        this.points = [];
+        const { cols, rows, spacingX, spacingZ, baseY } = this.config;
+
+        for (let z = 0; z < rows; z++) {
+            for (let x = 0; x < cols; x++) {
+                this.points.push({
+                    x: (x - cols / 2) * spacingX,
+                    z: z * spacingZ + 200, // Start slightly away from camera
+                    baseY: baseY,
+                    col: x,
+                    row: z
                 });
             }
-        });
-
-        console.log(`Mask areas calculated: ${this.maskAreas.length} regions`);
-    }
-
-    isInMaskArea(x, y) {
-        return this.maskAreas.some(area => {
-            return x >= area.x && 
-                   x <= area.x + area.width && 
-                   y >= area.y && 
-                   y <= area.y + area.height;
-        });
-    }
-
-    generateDotGrid() {
-        this.dots = [];
-        const { dotSpacing } = this.config;
-        
-        // Guard against zero dimensions
-        if (this.canvas.width === 0 || this.canvas.height === 0) {
-            console.warn('Cannot generate dot grid: canvas has zero dimensions');
-            return;
-        }
-        
-        const cols = Math.ceil(this.canvas.width / dotSpacing);
-        const rows = Math.ceil(this.canvas.height / dotSpacing);
-        
-        // Create 2D array for easy column/row access
-        this.dotGrid = [];
-        
-        for (let row = 0; row < rows; row++) {
-            this.dotGrid[row] = [];
-            for (let col = 0; col < cols; col++) {
-                const x = col * dotSpacing + dotSpacing / 2;
-                const y = row * dotSpacing + dotSpacing / 2;
-                
-                // Skip dots in mask areas
-                if (!this.isInMaskArea(x, y)) {
-                    const dot = {
-                        x,
-                        y,
-                        row,
-                        col,
-                        opacity: 0,
-                        color: this.config.defaultColor,
-                        lastLitTime: 0,
-                        intensity: 0
-                    };
-                    this.dots.push(dot);
-                    this.dotGrid[row][col] = dot;
-                } else {
-                    this.dotGrid[row][col] = null;
-                }
-            }
-        }
-
-        this.gridCols = cols;
-        this.gridRows = rows;
-
-        console.log(`Generated ${this.dots.length} dots (${cols}x${rows} grid, masked areas excluded)`);
-    }
-
-    initializeColumns() {
-        // Initialize column data for cascades
-        this.columns = [];
-        for (let col = 0; col < this.gridCols; col++) {
-            this.columns.push({
-                col,
-                lastCascadeTime: 0,
-                activeCascade: null
-            });
         }
     }
 
-    getRandomLitColor() {
-        const colors = this.config.litColors;
-        return colors[Math.floor(Math.random() * colors.length)];
-    }
-
-    spawnCascade() {
-        // Randomly spawn new cascades
-        if (Math.random() < this.config.spawnChance) {
-            const col = Math.floor(Math.random() * this.gridCols);
-            const columnData = this.columns[col];
-            
-            // Don't spawn if column already has active cascade
-            if (!columnData.activeCascade) {
-                columnData.activeCascade = {
-                    col,
-                    position: 0, // Start at top
-                    speed: this.config.cascadeSpeed + Math.random() * 0.1,
-                    color: this.getRandomLitColor(),
-                    trailLength: this.config.trailLength + Math.floor(Math.random() * 5),
-                    intensity: 0.7 + Math.random() * 0.3
-                };
-                this.state.activeCascades.push(columnData.activeCascade);
-            }
-        }
-    }
-
-    updateCascades() {
-        // Update all active cascades
-        this.state.activeCascades = this.state.activeCascades.filter(cascade => {
-            cascade.position += cascade.speed;
-            
-            // Light up dots in the cascade trail
-            for (let i = 0; i < cascade.trailLength; i++) {
-                const row = Math.floor(cascade.position - i);
-                
-                if (row >= 0 && row < this.gridRows) {
-                    const dot = this.dotGrid[row][cascade.col];
-                    
-                    if (dot) {
-                        // Calculate intensity based on position in trail
-                        const trailPosition = i / cascade.trailLength;
-                        const intensity = cascade.intensity * (1 - trailPosition * 0.7);
-                        
-                        dot.opacity = intensity;
-                        dot.color = cascade.color;
-                        dot.lastLitTime = Date.now();
-                        dot.intensity = intensity;
-                    }
-                }
-            }
-            
-            // Remove cascade if it's past the bottom
-            if (cascade.position - cascade.trailLength > this.gridRows) {
-                const columnData = this.columns[cascade.col];
-                if (columnData) {
-                    columnData.activeCascade = null;
-                }
-                return false;
-            }
-            
-            return true;
-        });
-    }
-
-    updateAnimation() {
-        this.state.frameCount++;
-        const now = Date.now();
-        
-        // Spawn new cascades randomly
-        this.spawnCascade();
-        
-        // Update existing cascades
-        this.updateCascades();
-        
-        // Fade out dots that aren't being actively lit
-        this.state.litDotsCount = 0;
-        this.dots.forEach(dot => {
-            if (dot.opacity > 0 && now - dot.lastLitTime > 50) {
-                dot.opacity = Math.max(0, dot.opacity - this.config.fadeSpeed);
-            }
-            if (dot.opacity > 0.1) {
-                this.state.litDotsCount++;
-            }
-        });
-        
-        // Add some random sparkles for extra chaos
-        if (Math.random() < 0.02) {
-            const randomDot = this.dots[Math.floor(Math.random() * this.dots.length)];
-            if (randomDot && randomDot.opacity < 0.3) {
-                randomDot.opacity = 0.4 + Math.random() * 0.3;
-                randomDot.color = this.getRandomLitColor();
-                randomDot.lastLitTime = now;
-            }
-        }
+    interpolateColor(color1, color2, factor) {
+        return [
+            Math.round(color1[0] + (color2[0] - color1[0]) * factor),
+            Math.round(color1[1] + (color2[1] - color1[1]) * factor),
+            Math.round(color1[2] + (color2[2] - color1[2]) * factor)
+        ];
     }
 
     render() {
-        // Clear canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Draw dots
-        this.dots.forEach(dot => {
-            if (dot.opacity > 0.05) {
-                this.ctx.fillStyle = dot.color;
-                this.ctx.globalAlpha = dot.opacity;
-                
+
+        const { fov, waveHeight, colors } = this.config;
+        const w = this.canvas.width / 2;
+        const h = this.canvas.height / 2 - 100; // Shift up slightly
+
+        // We draw back to front (highest Z first)
+        for (let i = this.points.length - 1; i >= 0; i--) {
+            const p = this.points[i];
+
+            // Complex wave math combining multiple sine waves for a fluid look
+            const wave1 = Math.sin(p.x * 0.005 + this.time);
+            const wave2 = Math.cos(p.z * 0.008 + this.time * 1.2);
+            const wave3 = Math.sin((p.x + p.z) * 0.004 - this.time * 0.7);
+
+            // Normalize combined wave to roughly -1 to 1
+            const waveValue = (wave1 + wave2 + wave3) / 3;
+
+            const heightVariation = waveValue * waveHeight;
+            const topY = p.baseY - 80 - Math.max(0, heightVariation);
+
+            const scale = fov / p.z;
+            const screenX = w + p.x * scale;
+            const screenTopY = h + topY * scale;
+            const screenBottomY = h + p.baseY * scale;
+
+            // Frustum culling (skip drawing if off screen)
+            if (screenX < -100 || screenX > this.canvas.width + 100) continue;
+
+            // Calculate depth fade
+            const maxZ = this.config.rows * this.config.spacingZ;
+            const depthAlpha = Math.max(0, 1 - (p.z / maxZ));
+
+            // Color mapping based on wave height
+            // waveValue is -1 to 1. Map to 0 to 1
+            const t = (waveValue + 1) / 2;
+            const color = this.interpolateColor(colors.purple, colors.cyan, t);
+
+            // Draw vertical glowing bar
+            this.ctx.beginPath();
+            this.ctx.moveTo(screenX, screenBottomY);
+            this.ctx.lineTo(screenX, screenTopY);
+
+            // Perspective thickness
+            const thickness = Math.max(0.5, scale * 3);
+            this.ctx.lineWidth = thickness;
+            this.ctx.lineCap = 'round';
+
+            // Highlight peaks with higher opacity
+            const highlightAlpha = Math.max(0.1, t * 0.8);
+            const finalAlpha = depthAlpha * highlightAlpha;
+
+            this.ctx.strokeStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${finalAlpha})`;
+            this.ctx.stroke();
+
+            // Draw a tiny bright dot at the top of the bar to simulate LED node
+            if (t > 0.5) {
                 this.ctx.beginPath();
-                this.ctx.arc(dot.x, dot.y, this.config.dotRadius, 0, Math.PI * 2);
+                this.ctx.arc(screenX, screenTopY, thickness * 0.8, 0, Math.PI * 2);
+                this.ctx.fillStyle = `rgba(255, 255, 255, ${finalAlpha * 1.5})`;
                 this.ctx.fill();
             }
-        });
-        
-        this.ctx.globalAlpha = 1.0;
+        }
     }
 
     animate() {
-        this.updateAnimation();
+        this.time += this.config.waveSpeed;
         this.render();
-        
-        // Log stats every 120 frames (~2 seconds)
-        if (this.state.frameCount % 120 === 0) {
-            console.log(`Active cascades: ${this.state.activeCascades.length}, Lit dots: ${this.state.litDotsCount}, Frame: ${this.state.frameCount}`);
-        }
-        
         this.animationFrame = requestAnimationFrame(() => this.animate());
     }
 
@@ -317,30 +166,25 @@ class LEDHeroBackground {
         if (this.animationFrame) {
             cancelAnimationFrame(this.animationFrame);
         }
-        this.state.frameCount = 0;
         this.animate();
-        console.log('Matrix rain animation started');
     }
 
     stop() {
         if (this.animationFrame) {
             cancelAnimationFrame(this.animationFrame);
             this.animationFrame = null;
-            console.log('Animation stopped');
         }
     }
 }
 
-// Auto-initialize when DOM is ready and canvas has dimensions
+// Auto-initialize
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        // Wait a bit for layout to complete
         setTimeout(() => {
             window.ledHeroBackground = new LEDHeroBackground('led-hero-bg');
         }, 50);
     });
 } else {
-    // DOM already loaded, wait for next frame to ensure layout is complete
     requestAnimationFrame(() => {
         window.ledHeroBackground = new LEDHeroBackground('led-hero-bg');
     });

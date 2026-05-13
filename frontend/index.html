@@ -1,19 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aivory - AI Readiness Diagnostic</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
-    <link rel="stylesheet" href="design-system.css?v=1">
-    <link rel="stylesheet" href="styles.css?v=28">
-    <link rel="stylesheet" href="auth-modals.css?v=4">
-    <script src="hero-animation.js" defer></script>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    <link rel="stylesheet" href="design-system.css?v=2">
+    <link rel="stylesheet" href="styles.css?v=29">
+    <link rel="stylesheet" href="auth-modals.css?v=5">
     <script src="led-hero-background.js" defer></script>
     <script src="hero-typewriter.js" defer></script>
     <!-- html2canvas for badge PNG export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Inter Tight"', 'sans-serif'],
+                    },
+                    colors: {
+                        aivory: {
+                            dark: '#0a0a0a',
+                            darker: '#050505',
+                            card: '#111111',
+                            text: '#f5f5f5',
+                            muted: '#a3a3a3',
+                            accent: '#00e59e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
+
 <body>
     <!-- Navigation -->
     <nav class="navbar">
@@ -21,11 +53,7 @@
             <div class="nav-brand" onclick="showSection('homepage')">
                 <img src="aivory_logo.png" alt="Aivory">
             </div>
-            <div class="nav-links">
-                <a href="#" onclick="showSection('homepage')">Home</a>
-                <a href="#" onclick="startFreeDiagnostic()">Diagnostic</a>
-                <a href="#" onclick="showSection('contact')">Contact</a>
-            </div>
+
             <div class="nav-auth">
                 <a href="#" class="nav-signin-link" onclick="handleSignInClick(); return false;">Sign In</a>
                 <button class="secondary-button nav-dashboard-btn" onclick="handleDashboardClick()">Dashboard</button>
@@ -37,326 +65,722 @@
 
     <!-- Section 1: Homepage -->
     <section id="homepage" class="section active">
-        <div class="hero">
-            <!-- LED Background Canvas -->
+        <div
+            class="hero relative w-full min-h-screen flex flex-col justify-center items-center bg-aivory-darker text-aivory-text pt-24 pb-16">
             <canvas id="led-hero-bg"></canvas>
-            
-            <div class="hero-tagline">Make AI make sense</div>
-            <h1 class="hero-title" id="hero-title">Know what to build before you build it</h1>
-            <p class="hero-subline">Turn AI readiness into deployable systems, built on clarity.</p>
-            
-            <div class="hero-cta-group">
-                <button class="cta-button primary" onclick="startFreeDiagnostic()">Start free diagnostic</button>
-                <button class="secondary-button" onclick="document.getElementById('use-cases').scrollIntoView({behavior: 'smooth'})">View use cases</button>
+            <div class="relative z-10 text-center max-w-4xl px-4 flex flex-col items-center">
+                <h1 class="text-5xl md:text-7xl font-light mb-4 tracking-tight text-white/90">
+                    Make AI make sense<span class="text-aivory-accent">.</span>
+                </h1>
+                <h2 class="text-3xl md:text-5xl font-light text-[#05e5ba] text-left w-full mb-12 leading-tight">
+                    Start with clarity.<br>
+                    End with a system that runs.
+                </h2>
+
+                <button onclick="startFreeDiagnostic()"
+                    class="group flex items-center gap-3 text-white/60 hover:text-white transition-colors text-lg border-b border-transparent hover:border-white/50 pb-1">
+                    <svg class="w-5 h-5 text-white/40 group-hover:text-white transition-colors" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M17 7v10H7" />
+                        <path d="M7 7l10 10" />
+                    </svg>
+                    Start with free diagnostic
+                </button>
             </div>
         </div>
 
-        <!-- What You Can Build Section -->
-        <div class="use-cases-section" id="use-cases">
-            <div class="container">
-                <h2 class="use-cases-title">What You Can Build</h2>
-                <p class="use-cases-subtitle">Real AI systems. Designed and deployed from your diagnostic.</p>
-                
-                <div class="use-cases-grid">
-                    <!-- Card 1: Invoice Processing AI -->
-                    <div class="use-case-card" onclick="startFreeDiagnostic()">
-                        <h3 class="use-case-name">Invoice Processing AI</h3>
-                        <p class="use-case-description">Automatically extract, validate, and route invoice data from incoming documents.</p>
-                        <div class="capability-tags">
-                            <span class="tag">Document parsing</span>
-                            <span class="tag">Data extraction</span>
-                            <span class="tag">ERP integration</span>
-                            <span class="tag">Workflow automation</span>
+        <!-- Features Grid Section -->
+        <div class="w-full bg-white text-black py-24 font-sans" id="features">
+            <div class="max-w-7xl mx-auto px-6 md:px-12">
+                <div class="mb-24 max-w-5xl">
+                    <h2 class="text-5xl md:text-6xl font-bold tracking-tight mb-6 leading-tight">From knowing where you
+                        stand<br>to running AI that works.</h2>
+                    <p class="text-xl md:text-2xl text-gray-800 font-semibold mb-2">Every tool you need. In the order
+                        you need it.</p>
+                    <p class="text-gray-500 font-medium">Built to run your business not just impress in a demo.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-16">
+                    <!-- Item 1 -->
+                    <div class="border-t-2 border-black pt-6">
+                        <div class="flex justify-between items-start mb-8">
+                            <svg class="w-5 h-5 shrink-0 mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M7 7h10v10" />
+                                <path d="M7 17L17 7" />
+                            </svg>
+                            <h3 class="text-lg font-bold text-right leading-tight whitespace-nowrap">AI Readiness Deep
+                                Diagnostic</h3>
                         </div>
-                        <p class="use-case-outcome">Eliminates manual invoice handling and reduces processing time by up to 90%.</p>
+                        <div class="border-t border-gray-300 pt-6">
+                            <p class="text-gray-900 mb-6 font-semibold">Know exactly where you stand.</p>
+                            <p class="text-gray-600 text-sm leading-relaxed">Not a generic quiz. A structured
+                                multi-phase analysis across your business objective, data readiness, and constraints.
+                            </p>
+                        </div>
                     </div>
 
-                    <!-- Card 2: Sales Qualification Agent -->
-                    <div class="use-case-card" onclick="startFreeDiagnostic()">
-                        <h3 class="use-case-name">Sales Qualification Agent</h3>
-                        <p class="use-case-description">Analyze inbound leads and automatically qualify, score, and route them.</p>
-                        <div class="capability-tags">
-                            <span class="tag">Lead scoring</span>
-                            <span class="tag">CRM integration</span>
-                            <span class="tag">AI decision logic</span>
-                            <span class="tag">Automated routing</span>
+                    <!-- Item 2 -->
+                    <div class="border-t-2 border-black pt-6">
+                        <div class="flex justify-between items-start mb-8">
+                            <svg class="w-5 h-5 shrink-0 mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M7 7h10v10" />
+                                <path d="M7 17L17 7" />
+                            </svg>
+                            <h3 class="text-xl font-bold text-right leading-tight max-w-[200px]">AI System Blueprint
+                            </h3>
                         </div>
-                        <p class="use-case-outcome">Ensures your team only focuses on high-value opportunities.</p>
+                        <div class="border-t border-gray-300 pt-6">
+                            <p class="text-gray-900 mb-6 font-semibold">Your score. Your gaps. Your next move.</p>
+                            <p class="text-gray-600 text-sm leading-relaxed">Aivory turns your diagnostic into a
+                                readiness score with KPI targets and a recommended AI architecture built for your
+                                business.</p>
+                        </div>
                     </div>
 
-                    <!-- Card 3: Support Triage AI -->
-                    <div class="use-case-card" onclick="startFreeDiagnostic()">
-                        <h3 class="use-case-name">Support Triage AI</h3>
-                        <p class="use-case-description">Classify, prioritize, and route support tickets automatically.</p>
-                        <div class="capability-tags">
-                            <span class="tag">Intent classification</span>
-                            <span class="tag">Priority detection</span>
-                            <span class="tag">Ticket routing</span>
-                            <span class="tag">Response assistance</span>
+                    <!-- Item 3 -->
+                    <div class="border-t-2 border-black pt-6">
+                        <div class="flex justify-between items-start mb-8">
+                            <svg class="w-5 h-5 shrink-0 mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M7 7h10v10" />
+                                <path d="M7 17L17 7" />
+                            </svg>
+                            <h3 class="text-xl font-bold text-right leading-tight max-w-[200px]">AI Roadmap</h3>
                         </div>
-                        <p class="use-case-outcome">Reduces response time and improves support efficiency.</p>
+                        <div class="border-t border-gray-300 pt-6">
+                            <p class="text-gray-900 mb-6 font-semibold">A plan built to be executed, not presented.</p>
+                            <p class="text-gray-600 text-sm leading-relaxed">Month by month. Milestone by milestone.
+                                With KPI targets and sequenced actions so your team knows exactly what to do next.</p>
+                        </div>
                     </div>
 
-                    <!-- Card 4: Internal Knowledge AI -->
-                    <div class="use-case-card" onclick="startFreeDiagnostic()">
-                        <h3 class="use-case-name">Internal Knowledge AI</h3>
-                        <p class="use-case-description">Enable teams to query internal knowledge and get accurate AI answers.</p>
-                        <div class="capability-tags">
-                            <span class="tag">Knowledge retrieval</span>
-                            <span class="tag">Semantic search</span>
-                            <span class="tag">Internal data integration</span>
-                            <span class="tag">AI assistant</span>
+                    <!-- Item 4 -->
+                    <div class="border-t-2 border-black pt-6">
+                        <div class="flex justify-between items-start mb-8">
+                            <svg class="w-5 h-5 shrink-0 mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M7 7h10v10" />
+                                <path d="M7 17L17 7" />
+                            </svg>
+                            <h3 class="text-xl font-bold text-right leading-tight max-w-[200px]">Workflow builder</h3>
                         </div>
-                        <p class="use-case-outcome">Gives your team instant access to operational knowledge.</p>
+                        <div class="border-t border-gray-300 pt-6">
+                            <p class="text-gray-900 mb-6 font-semibold">Describe it. Aivory builds it.</p>
+                            <p class="text-gray-600 text-sm leading-relaxed">Tell the builder what you want to automate
+                                in plain language. It generates the entire flow, connects your tools, ready to export or
+                                deploy.</p>
+                        </div>
                     </div>
 
-                    <!-- Card 5: Operations Reporting AI -->
-                    <div class="use-case-card" onclick="startFreeDiagnostic()">
-                        <h3 class="use-case-name">Operations Reporting AI</h3>
-                        <p class="use-case-description">Generate operational insights and reports automatically from your systems.</p>
-                        <div class="capability-tags">
-                            <span class="tag">Data aggregation</span>
-                            <span class="tag">Insight generation</span>
-                            <span class="tag">Automated reporting</span>
-                            <span class="tag">Dashboard integration</span>
+                    <!-- Item 5 -->
+                    <div class="border-t-2 border-black pt-6">
+                        <div class="flex justify-between items-start mb-8">
+                            <svg class="w-5 h-5 shrink-0 mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M7 7h10v10" />
+                                <path d="M7 17L17 7" />
+                            </svg>
+                            <h3 class="text-xl font-bold text-right leading-tight max-w-[200px]">AI Agent</h3>
                         </div>
-                        <p class="use-case-outcome">Turns raw operational data into actionable insights.</p>
+                        <div class="border-t border-gray-300 pt-6">
+                            <p class="text-gray-900 mb-6 font-semibold">The right agent. Everywhere you work.</p>
+                            <p class="text-gray-600 text-sm leading-relaxed">Purpose-built agents for email, customer
+                                service, sales, and more. Deploy to Telegram, Slack.</p>
+                        </div>
                     </div>
 
-                    <!-- Card 6: Workflow Orchestration AI -->
-                    <div class="use-case-card" onclick="startFreeDiagnostic()">
-                        <h3 class="use-case-name">Workflow Orchestration AI</h3>
-                        <p class="use-case-description">Coordinate workflows across tools and systems automatically using AI-driven logic.</p>
-                        <div class="capability-tags">
-                            <span class="tag">Workflow automation</span>
-                            <span class="tag">Multi-tool integration</span>
-                            <span class="tag">Decision logic</span>
-                            <span class="tag">Agent orchestration</span>
+                    <!-- Item 6 -->
+                    <div class="border-t-2 border-black pt-6">
+                        <div class="flex justify-between items-start mb-8">
+                            <svg class="w-5 h-5 shrink-0 mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M7 7h10v10" />
+                                <path d="M7 17L17 7" />
+                            </svg>
+                            <h3 class="text-xl font-bold text-right leading-tight max-w-[200px]">Template Library</h3>
                         </div>
-                        <p class="use-case-outcome">Eliminates manual coordination and ensures operations run automatically end-to-end.</p>
+                        <div class="border-t border-gray-300 pt-6">
+                            <p class="text-gray-900 mb-6 font-semibold">Start fast. Customize later.</p>
+                            <p class="text-gray-600 text-sm leading-relaxed">Browse 50+ pre-built automation templates.
+                                Pick one, make it yours, deploy without starting from a blank canvas.</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- AI System Lifecycle Section -->
-        <div class="lifecycle-section" id="pricing-section">
-            <h2 class="section-title">Start with clarity. End with deployed AI systems.</h2>
-            <p class="section-subtitle">Aivory guides you from readiness → system design → deployment.</p>
-            
-            <div class="lifecycle-flow">
-                <!-- Step 1: Snapshot -->
-                <div class="lifecycle-card">
-                    <div class="step-label">STEP 1</div>
-                    <h3 class="lifecycle-title">AI Readiness Snapshot</h3>
-                    <div class="lifecycle-price">$15 <span class="price-period">one-time</span></div>
-                    <p class="lifecycle-description">Understand your AI readiness and identify the best systems to build.</p>
-                    <ul class="feature-list">
-                        <li>AI readiness score</li>
-                        <li>Gap analysis</li>
-                        <li>Automation opportunities</li>
-                        <li>AI system recommendations</li>
-                    </ul>
-                    <button class="pricing-button" onclick="startSnapshot()">Run AI Snapshot — $15</button>
+        <div class="w-full bg-white text-black py-24 font-sans" id="pricing-section">
+            <div class="max-w-7xl mx-auto px-6 md:px-12">
+                <div class="mb-20 text-center md:text-left">
+                    <h2 class="text-5xl md:text-6xl font-bold tracking-tight mb-6">Your AI system starts here.</h2>
+                    <p class="text-xl text-gray-700 font-medium leading-relaxed">
+                        Three steps. One system. No guesswork.<br>
+                        Pay once. Own the output. No subscription required.
+                    </p>
                 </div>
 
-                <!-- Flow Arrow -->
-                <div class="flow-arrow">→</div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-16 mb-20">
+                    <!-- Step 1 -->
+                    <div class="flex flex-col">
+                        <div class="flex items-start gap-4 mb-4 border-b-2 border-black pb-4">
+                            <svg class="w-5 h-5 shrink-0 mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M7 7h10v10" />
+                                <path d="M7 17L17 7" />
+                            </svg>
+                            <h3 class="text-lg font-bold leading-snug">AI Readiness Deep<br>Diagnostic</h3>
+                        </div>
+                        <div class="text-center py-6 border-b border-gray-300">
+                            <div class="text-4xl font-bold mb-1">$29 <span
+                                    class="text-sm font-normal text-gray-500 tracking-wide">One time</span></div>
+                        </div>
+                        <p class="text-gray-900 font-medium py-8 border-b border-gray-300 leading-relaxed text-sm">
+                            Know exactly where your business stands on AI before you build anything.
+                        </p>
+                        <ul class="py-8 space-y-3 text-sm text-gray-800 flex-grow">
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span> AI
+                                readiness score</li>
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span>
+                                Business objective mapping</li>
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span> Gap
+                                & constraint analysis</li>
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span> AI
+                                opportunity identification</li>
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span> Data
+                                & process readiness</li>
+                        </ul>
+                        <button onclick="startFreeDiagnostic()"
+                            class="group flex items-center justify-center gap-3 text-black font-bold text-xl hover:text-gray-600 transition-colors mt-8 w-full border-t-2 border-black pt-6">
+                            <svg class="w-5 h-5 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 7v10H7" />
+                                <path d="M7 7l10 10" />
+                            </svg>
+                            Start Deep Diagnostic
+                        </button>
+                    </div>
 
-                <!-- Step 2: Blueprint -->
-                <div class="lifecycle-card featured-lifecycle">
-                    <div class="popular-badge">MOST POPULAR</div>
-                    <div class="step-label">STEP 2</div>
-                    <h3 class="lifecycle-title">AI System Blueprint</h3>
-                    <div class="lifecycle-price">$79 <span class="price-period">one-time</span></div>
-                    <p class="lifecycle-description">Design your AI system architecture and prepare it for deployment.</p>
-                    <ul class="feature-list">
-                        <li>Full AI system blueprint</li>
-                        <li>Workflow architecture</li>
-                        <li>Agent structure design</li>
-                        <li>Deployment-ready plan</li>
-                    </ul>
-                    <button class="pricing-button" onclick="startBlueprint()">Generate AI Blueprint — $79</button>
+                    <!-- Step 2 -->
+                    <div class="flex flex-col">
+                        <div class="flex items-start gap-4 mb-4 border-b-2 border-black pb-4">
+                            <svg class="w-5 h-5 shrink-0 mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M7 7h10v10" />
+                                <path d="M7 17L17 7" />
+                            </svg>
+                            <h3 class="text-lg font-bold leading-snug">AI System<br>Blueprint + Roadmap</h3>
+                        </div>
+                        <div class="text-center py-6 border-b border-gray-300">
+                            <div class="text-4xl font-bold mb-1">$85 <span
+                                    class="text-sm font-normal text-gray-500 tracking-wide">One time</span></div>
+                        </div>
+                        <p class="text-gray-900 font-medium py-8 border-b border-gray-300 leading-relaxed text-sm">
+                            Your full AI architecture and execution plan, built around your business, not a template.
+                        </p>
+                        <ul class="py-8 space-y-3 text-sm text-gray-800 flex-grow">
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span> Full
+                                AI system blueprint</li>
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span>
+                                Workflow architecture</li>
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span>
+                                Agent structure design</li>
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span>
+                                Deployment-ready plan</li>
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span>
+                                Phased implementation roadmap</li>
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span> KPI
+                                targets per phase</li>
+                        </ul>
+                        <button onclick="startBlueprint()"
+                            class="group flex items-center justify-center gap-3 text-black font-bold text-xl hover:text-gray-600 transition-colors mt-8 w-full border-t-2 border-black pt-6">
+                            <svg class="w-5 h-5 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 7v10H7" />
+                                <path d="M7 7l10 10" />
+                            </svg>
+                            Generate Blueprint
+                        </button>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="flex flex-col">
+                        <div class="flex items-start gap-4 mb-4 border-b-2 border-black pb-4">
+                            <svg class="w-5 h-5 shrink-0 mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M7 7h10v10" />
+                                <path d="M7 17L17 7" />
+                            </svg>
+                            <h3 class="text-lg font-bold leading-snug">Deploy & Operate<br>your AI systems</h3>
+                        </div>
+                        <div class="text-center py-6 border-b border-gray-300">
+                            <div class="text-4xl font-bold mb-1">Subscription</div>
+                        </div>
+                        <p class="text-gray-900 font-medium py-8 border-b border-gray-300 leading-relaxed text-sm">
+                            Deploy your AI systems and run them in production. Console, workflow builder, and agents in
+                            one place.
+                        </p>
+                        <ul class="py-8 space-y-3 text-sm text-gray-800 flex-grow">
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span> AI
+                                Console</li>
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span>
+                                Workflow Builder</li>
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span> AI
+                                workflow deployment</li>
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span>
+                                Deployable agents</li>
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span>
+                                Agent orchestration</li>
+                        </ul>
+                        <button
+                            onclick="document.querySelector('.subscription-section').scrollIntoView({behavior: 'smooth'})"
+                            class="group flex items-center justify-center gap-3 text-black font-bold text-xl hover:text-gray-600 transition-colors mt-8 w-full border-t-2 border-black pt-6">
+                            <svg class="w-5 h-5 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 7v10H7" />
+                                <path d="M7 7l10 10" />
+                            </svg>
+                            View Deployment Plans
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Flow Arrow -->
-                <div class="flow-arrow">→</div>
-
-                <!-- Step 3: Deploy -->
-                <div class="lifecycle-card">
-                    <div class="step-label">STEP 3</div>
-                    <h3 class="lifecycle-title">Deploy and operate your AI systems</h3>
-                    <div class="lifecycle-price">Subscription</div>
-                    <p class="lifecycle-description">Deploy your AI systems and run them in production using Aivory.</p>
-                    <ul class="feature-list">
-                        <li>Automation Builder access</li>
-                        <li>AI workflow deployment</li>
-                        <li>Agent orchestration</li>
-                        <li>Continuous optimization</li>
-                    </ul>
-                    <button class="pricing-button" onclick="document.querySelector('.subscription-section').scrollIntoView({behavior: 'smooth'})">View Deployment Plans</button>
+                <!-- Full Stack Banner -->
+                <div
+                    class="border-t-2 border-black pt-6 flex flex-col md:flex-row justify-between items-start md:items-center mb-16">
+                    <div>
+                        <div class="text-lg font-bold mb-2">Full Stack > Deep Diagnostic + Blueprint + Roadmap</div>
+                        <div class="text-sm text-gray-600 mb-1">Everything in one. Know, plan, execute in order.</div>
+                        <div class="text-sm text-green-600 font-medium">Save $48 compare to buying separately</div>
+                    </div>
+                    <div class="mt-6 md:mt-0 text-left md:text-right">
+                        <div class="text-3xl font-bold mb-1">$99</div>
+                        <div class="text-sm text-gray-500 mb-4">One time</div>
+                        <button
+                            class="group flex items-center justify-start md:justify-end gap-2 text-black font-bold hover:text-gray-600 transition-colors">
+                            <svg class="w-4 h-4 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 7v10H7" />
+                                <path d="M7 7l10 10" />
+                            </svg>
+                            Get full stack
+                        </button>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Black full width banner -->
+            <div class="w-full bg-black text-white text-center py-6 px-4">
+                <p class="text-sm font-medium tracking-wide">
+                    Every output is generated specifically for your business. Not a template. Not a generic report.<br
+                        class="hidden md:block">
+                    No hidden costs. No upsell calls. Buy once, own the output.
+                </p>
             </div>
         </div>
 
         <!-- AI Operating Partner Section -->
-        <div class="pricing-section subscription-section">
-            <h2 class="section-title">AI Operating Partner</h2>
-            <p class="section-subtitle">Design your AI system. Then deploy it. Make AI make sense.</p>
-            
-            <div class="pricing-cards">
-                <!-- Foundation Tier -->
-                <div class="pricing-card pricing-card-builder">
-                    <h3>Foundation</h3>
-                    <div class="price-tag">$29<span class="period">/month</span></div>
-                    <p class="card-subtitle">For teams validating their first AI workflows.</p>
-                    
-                    <ul class="feature-list">
-                        <li>3 Active Workflows</li>
-                        <li>2,500 Executions / month</li>
-                        <li>50 Intelligence Credits <span class="tooltip-icon" data-tooltip="intelligence-credits">ⓘ</span></li>
-                        <li>Aivory Orchestrated Workflows</li>
-                        <li>Standard integrations</li>
-                        <li>Email support</li>
-                    </ul>
-                    <button class="pricing-button" onclick="selectPlan('foundation')">Choose Foundation</button>
+        <div class="w-full bg-white text-black py-24 font-sans subscription-section">
+            <div class="max-w-7xl mx-auto px-6 md:px-12">
+                <div class="mb-20 text-center md:text-left">
+                    <h2 class="text-5xl md:text-6xl font-bold tracking-tight mb-6">Where intent becomes operation.</h2>
+                    <p class="text-xl text-gray-700 font-medium leading-relaxed">
+                        Consult. Build. Deploy. From one place.<br>
+                        After your blueprint is ready, this is where it runs.
+                    </p>
                 </div>
 
-                <!-- Pro Tier (Featured) -->
-                <div class="pricing-card featured-card pricing-card-operator">
-                    <div class="popular-badge">MOST POPULAR</div>
-                    <h3>Pro</h3>
-                    <div class="price-tag">$149<span class="period">/month</span></div>
-                    <p class="card-subtitle">For teams running AI decisions daily.</p>
-                    
-                    <ul class="feature-list">
-                        <li>10 Active Workflows</li>
-                        <li>10,000 Executions</li>
-                        <li>300 Intelligence Credits <span class="tooltip-icon" data-tooltip="intelligence-credits">ⓘ</span></li>
-                        <li>Aivory Orchestrated Workflows</li>
-                        <li>Advanced integrations</li>
-                        <li>Conditional logic & branching</li>
-                        <li>Priority support</li>
-                    </ul>
-                    <button class="pricing-button primary" onclick="selectPlan('pro')">Choose Pro</button>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-16 mb-24">
+                    <!-- Foundation Tier -->
+                    <div class="flex flex-col">
+                        <div class="flex items-start gap-4 mb-4 border-b-2 border-black pb-4">
+                            <svg class="w-5 h-5 shrink-0 mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M7 7h10v10" />
+                                <path d="M7 17L17 7" />
+                            </svg>
+                            <div>
+                                <h3 class="text-xl font-bold">Foundation</h3>
+                                <p class="text-xs text-gray-600 mt-1 leading-relaxed">For individuals and
+                                    solo<br>professionals starting their AI journey.</p>
+                            </div>
+                        </div>
+                        <div class="text-center py-8 border-b border-gray-300">
+                            <div class="text-4xl font-bold mb-1">$20</div>
+                            <div class="text-sm text-gray-500">/month</div>
+                        </div>
+                        <ul class="py-8 space-y-3 text-sm text-gray-800 font-medium flex-grow">
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> 50 IC/month</li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> Aivory Agentic
+                                on-demand consultation</li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> 3 active workflows
+                            </li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> 5 JSON exports/month
+                            </li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> Deploy to n8n
+                                (optional)</li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> 1 active agent</li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> Telegram or Slack</li>
+                        </ul>
+                        <button onclick="selectPlan('foundation')"
+                            class="group flex items-center justify-center gap-3 text-black font-bold text-xl hover:text-gray-600 transition-colors mt-4 w-full border-t-2 border-black pt-6">
+                            <svg class="w-5 h-5 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 7v10H7" />
+                                <path d="M7 7l10 10" />
+                            </svg>
+                            Start With Foundation
+                        </button>
+                    </div>
+
+                    <!-- Pro Tier -->
+                    <div class="flex flex-col">
+                        <div class="flex items-start gap-4 mb-4 border-b-2 border-black pb-4">
+                            <svg class="w-5 h-5 shrink-0 mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M7 7h10v10" />
+                                <path d="M7 17L17 7" />
+                            </svg>
+                            <div>
+                                <h3 class="text-xl font-bold">Pro</h3>
+                                <p class="text-xs text-gray-600 mt-1 leading-relaxed">For SMEs and founders
+                                    running<br>AI operations daily.</p>
+                            </div>
+                        </div>
+                        <div class="text-center py-8 border-b border-gray-300">
+                            <div class="text-4xl font-bold mb-1">$44</div>
+                            <div class="text-sm text-gray-500">/month</div>
+                        </div>
+                        <ul class="py-8 space-y-3 text-sm text-gray-800 font-medium flex-grow">
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> 300 IC/month</li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> Aivory Agentic
+                                response</li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> 10 active workflows
+                            </li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> Unlimited JSON exports
+                            </li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> Conditional logic &
+                                branching</li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> 3 active agents</li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> Telegram & Slack</li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> Multi-step agent flows
+                            </li>
+                        </ul>
+                        <button onclick="selectPlan('pro')"
+                            class="group flex items-center justify-center gap-3 text-black font-bold text-xl hover:text-gray-600 transition-colors mt-4 w-full border-t-2 border-black pt-6">
+                            <svg class="w-5 h-5 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 7v10H7" />
+                                <path d="M7 7l10 10" />
+                            </svg>
+                            Start With Pro
+                        </button>
+                    </div>
+
+                    <!-- Enterprise Tier -->
+                    <div class="flex flex-col">
+                        <div class="flex items-start gap-4 mb-4 border-b-2 border-black pb-4">
+                            <svg class="w-5 h-5 shrink-0 mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M7 7h10v10" />
+                                <path d="M7 17L17 7" />
+                            </svg>
+                            <div>
+                                <h3 class="text-xl font-bold">Enterprise</h3>
+                                <p class="text-xs text-gray-600 mt-1 leading-relaxed">For SMEs and founders
+                                    running<br>AI operations daily.</p>
+                            </div>
+                        </div>
+                        <div class="text-center py-8 border-b border-gray-300">
+                            <div class="text-4xl font-bold mb-1">$499</div>
+                            <div class="text-sm text-gray-500">/month</div>
+                        </div>
+                        <ul class="py-8 space-y-3 text-sm text-gray-800 font-medium flex-grow">
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> 2,000 IC/month</li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> Dedicated account
+                                manager</li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> Unlimited workflows
+                            </li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> Unlimited exports</li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> Advanced orchestration
+                            </li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> Unlimited agents</li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> Custom integrations
+                            </li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> SLA guarantee</li>
+                            <li class="flex items-start gap-2"><span
+                                    class="shrink-0 mt-1.5 w-1 h-1 bg-black rounded-full"></span> Multi-team workspace
+                            </li>
+                        </ul>
+                        <button onclick="selectPlan('enterprise')"
+                            class="group flex items-center justify-center gap-3 text-black font-bold text-xl hover:text-gray-600 transition-colors mt-4 w-full border-t-2 border-black pt-6">
+                            <svg class="w-5 h-5 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 7v10H7" />
+                                <path d="M7 7l10 10" />
+                            </svg>
+                            Contact Sales
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Enterprise Tier -->
-                <div class="pricing-card pricing-card-enterprise">
-                    <h3>Enterprise</h3>
-                    <div class="price-tag">$499<span class="period">/month</span></div>
-                    <p class="card-subtitle">For organizations deploying AI at scale.</p>
-                    
-                    <ul class="feature-list">
-                        <li>Unlimited Workflows</li>
-                        <li>50,000 Executions included</li>
-                        <li>2,000 Intelligence Credits included <span class="tooltip-icon" data-tooltip="intelligence-credits">ⓘ</span></li>
-                        <li>Advanced Orchestration Controls</li>
-                        <li>Aivory CMR (Custom Mechanism Routing)</li>
-                        <li>Dedicated compute handling</li>
-                        <li>SLA guarantee</li>
-                        <li>Advanced audit logs</li>
-                        <li>Multi-team workspace</li>
-                        <li>Custom integrations</li>
-                        <li>Dedicated account manager</li>
-                    </ul>
-                    <button class="pricing-button" onclick="selectPlan('enterprise')">Talk to Enterprise</button>
+                <!-- Explanation Text -->
+                <div class="max-w-4xl mx-auto text-center mb-16 px-4">
+                    <p class="text-sm font-medium text-gray-900 leading-relaxed">
+                        Intelligence Credits (IC) fuel Aivory reasoning every consultation, workflow generation, and
+                        agent<br class="hidden md:block">
+                        configuration runs on IC. Think of it as the fuel tank for your AI system. Need more? Top up
+                        anytime.
+                    </p>
                 </div>
-            </div>
 
-            <!-- Tooltip -->
-            <div id="intelligence-credits-tooltip" class="ic-tooltip" style="display: none;">
-                <p>1 Intelligence Credit = 1 AI reasoning execution. Credits are consumed only when workflows require AI decision-making.</p>
+                <!-- Black full width banner -->
+                <div class="w-full bg-black text-white text-center py-6 px-4 max-w-5xl mx-auto">
+                    <p class="text-sm font-medium tracking-wide">
+                        No hidden fees. No locked contracts. Cancel anytime. Your AI system, your pace.
+                    </p>
+                </div>
             </div>
         </div>
 
         <!-- Intelligence Credit Marketplace (NEW SECTION) -->
-        <div class="ic-marketplace-section">
-            <h2 class="section-title">Intelligence Credit Marketplace</h2>
-            <p class="section-subtitle">Scale your AI reasoning capacity anytime.</p>
-            
-            <!-- Starter Packs -->
-            <div class="ic-packs-container">
-                <div class="ic-pack-grid">
-                    <div class="ic-pack-card">
-                        <div class="ic-amount">50 IC</div>
-                        <div class="ic-price">$5</div>
-                        <button class="ic-button" onclick="addCredits(50)">Add Credits</button>
-                    </div>
-                    <div class="ic-pack-card">
-                        <div class="ic-amount">100 IC</div>
-                        <div class="ic-price">$9</div>
-                        <button class="ic-button" onclick="addCredits(100)">Add Credits</button>
-                    </div>
-                    <div class="ic-pack-card">
-                        <div class="ic-amount">250 IC</div>
-                        <div class="ic-price">$20</div>
-                        <button class="ic-button" onclick="addCredits(250)">Add Credits</button>
-                    </div>
-                    <div class="ic-pack-card">
-                        <div class="ic-amount">500 IC</div>
-                        <div class="ic-price">$38</div>
-                        <button class="ic-button" onclick="addCredits(500)">Add Credits</button>
-                    </div>
-                    <div class="ic-pack-card">
-                        <div class="ic-amount">1,000 IC</div>
-                        <div class="ic-price">$70</div>
-                        <button class="ic-button" onclick="addCredits(1000)">Add Credits</button>
-                    </div>
+        <!-- Intelligence Credit Marketplace -->
+        <div class="w-full bg-gray-50 text-black py-24 font-sans border-t border-gray-200">
+            <div class="max-w-7xl mx-auto px-6 md:px-12">
+                <div class="mb-16 text-center md:text-left">
+                    <h2 class="text-4xl md:text-5xl font-bold tracking-tight mb-4">Intelligence Credit Marketplace</h2>
+                    <p class="text-lg text-gray-600 font-medium">Scale your AI reasoning capacity anytime.</p>
                 </div>
-                <p class="ic-pack-note">Ideal for light and experimental usage.</p>
-            </div>
 
-            <!-- Divider -->
-            <div class="ic-divider"></div>
-
-            <!-- Scale Packs -->
-            <div class="ic-packs-container">
-                <div class="ic-pack-grid">
-                    <div class="ic-pack-card">
-                        <div class="ic-amount">2,500 IC</div>
-                        <div class="ic-price">$165</div>
-                        <button class="ic-button" onclick="addCredits(2500)">Add Credits</button>
+                <!-- Starter Packs -->
+                <div class="mb-16">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                        <div
+                            class="bg-white border border-gray-200 p-6 flex flex-col items-center justify-center text-center">
+                            <div class="text-xl font-bold mb-1">50 IC</div>
+                            <div class="text-sm text-gray-500 mb-4">$5</div>
+                            <button onclick="addCredits(50)"
+                                class="w-full py-2 border border-black text-black text-sm font-semibold hover:bg-black hover:text-white transition-colors">Add</button>
+                        </div>
+                        <div
+                            class="bg-white border border-gray-200 p-6 flex flex-col items-center justify-center text-center">
+                            <div class="text-xl font-bold mb-1">100 IC</div>
+                            <div class="text-sm text-gray-500 mb-4">$9</div>
+                            <button onclick="addCredits(100)"
+                                class="w-full py-2 border border-black text-black text-sm font-semibold hover:bg-black hover:text-white transition-colors">Add</button>
+                        </div>
+                        <div
+                            class="bg-white border border-gray-200 p-6 flex flex-col items-center justify-center text-center">
+                            <div class="text-xl font-bold mb-1">250 IC</div>
+                            <div class="text-sm text-gray-500 mb-4">$20</div>
+                            <button onclick="addCredits(250)"
+                                class="w-full py-2 border border-black text-black text-sm font-semibold hover:bg-black hover:text-white transition-colors">Add</button>
+                        </div>
+                        <div
+                            class="bg-white border border-gray-200 p-6 flex flex-col items-center justify-center text-center">
+                            <div class="text-xl font-bold mb-1">500 IC</div>
+                            <div class="text-sm text-gray-500 mb-4">$38</div>
+                            <button onclick="addCredits(500)"
+                                class="w-full py-2 border border-black text-black text-sm font-semibold hover:bg-black hover:text-white transition-colors">Add</button>
+                        </div>
+                        <div
+                            class="bg-white border border-gray-200 p-6 flex flex-col items-center justify-center text-center">
+                            <div class="text-xl font-bold mb-1">1,000 IC</div>
+                            <div class="text-sm text-gray-500 mb-4">$70</div>
+                            <button onclick="addCredits(1000)"
+                                class="w-full py-2 border border-black text-black text-sm font-semibold hover:bg-black hover:text-white transition-colors">Add</button>
+                        </div>
                     </div>
-                    <div class="ic-pack-card ic-popular">
-                        <div class="ic-popular-label">MOST POPULAR</div>
-                        <div class="ic-amount">5,000 IC</div>
-                        <div class="ic-price">$300</div>
-                        <button class="ic-button" onclick="addCredits(5000)">Add Credits</button>
-                    </div>
-                    <div class="ic-pack-card">
-                        <div class="ic-amount">10,000 IC</div>
-                        <div class="ic-price">$550</div>
-                        <button class="ic-button" onclick="addCredits(10000)">Add Credits</button>
-                    </div>
+                    <p class="text-sm text-gray-500 font-medium text-center md:text-left">Ideal for light and
+                        experimental usage.</p>
                 </div>
-                <p class="ic-pack-note">Designed for sustained AI operations.</p>
-            </div>
 
-            <!-- Footer Note -->
-            <p class="ic-footer-note">Bulk discounts automatically applied for Enterprise customers.</p>
+                <!-- Scale Packs -->
+                <div class="mb-12">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div
+                            class="bg-white border border-gray-200 p-8 flex flex-col items-center justify-center text-center">
+                            <div class="text-2xl font-bold mb-1">2,500 IC</div>
+                            <div class="text-base text-gray-500 mb-6">$165</div>
+                            <button onclick="addCredits(2500)"
+                                class="w-full py-3 border border-black text-black font-semibold hover:bg-black hover:text-white transition-colors">Add
+                                Credits</button>
+                        </div>
+                        <div
+                            class="bg-black text-white p-8 flex flex-col items-center justify-center text-center relative border border-black">
+                            <div
+                                class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#05e5ba] text-black text-[10px] font-bold px-3 py-1 uppercase tracking-wider">
+                                Most Popular</div>
+                            <div class="text-2xl font-bold mb-1 mt-2">5,000 IC</div>
+                            <div class="text-base text-gray-400 mb-6">$300</div>
+                            <button onclick="addCredits(5000)"
+                                class="w-full py-3 bg-white text-black font-semibold hover:bg-gray-200 transition-colors">Add
+                                Credits</button>
+                        </div>
+                        <div
+                            class="bg-white border border-gray-200 p-8 flex flex-col items-center justify-center text-center">
+                            <div class="text-2xl font-bold mb-1">10,000 IC</div>
+                            <div class="text-base text-gray-500 mb-6">$550</div>
+                            <button onclick="addCredits(10000)"
+                                class="w-full py-3 border border-black text-black font-semibold hover:bg-black hover:text-white transition-colors">Add
+                                Credits</button>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500 font-medium text-center md:text-left">Designed for sustained AI
+                        operations.</p>
+                </div>
+
+                <p class="text-xs text-gray-400 font-medium text-center md:text-left">Bulk discounts automatically
+                    applied for Enterprise customers.</p>
+            </div>
         </div>
 
-        <!-- Build Now Section -->
-        <div class="action-cards-section">
-            <h2 class="section-title">Build Now</h2>
-            <div class="action-cards">
-                <div class="action-card">
-                    <h3>Run Free Diagnostic</h3>
-                    <p>12-question assessment to evaluate your AI readiness in under 3 minutes.</p>
-                    <button class="card-button" onclick="startFreeDiagnostic()">Start Free Diagnostic</button>
+        <!-- Privacy & Security Section -->
+        <div class="w-full bg-[#050505] text-white pt-24 pb-12 font-sans border-t border-gray-900">
+            <div class="max-w-7xl mx-auto px-6 md:px-12">
+                <div class="mb-4">
+                    <div class="text-sm font-medium mb-6">Privacy & Security</div>
+                    <h2 class="text-5xl md:text-6xl font-bold tracking-tight mb-10">Your data stays<br>where it belongs.
+                    </h2>
+
+                    <div class="border-t border-white/20 pt-8 mt-12">
+                        <p class="text-lg md:text-xl font-medium mb-12">No training. No logging. No exceptions.
+                            Everything runs in your browser.</p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 max-w-4xl">
+                            <div class="flex items-start gap-4">
+                                <svg class="w-6 h-6 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M17 7v10H7" />
+                                    <path d="M7 7l10 10" />
+                                </svg>
+                                <p class="text-xl font-medium leading-snug">We don't train<br>on your data.</p>
+                            </div>
+                            <div class="flex items-start gap-4">
+                                <svg class="w-6 h-6 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M17 7v10H7" />
+                                    <path d="M7 7l10 10" />
+                                </svg>
+                                <p class="text-xl font-medium leading-snug">Processed locally.<br>Stored locally.</p>
+                            </div>
+                            <div class="flex items-start gap-4">
+                                <svg class="w-6 h-6 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M17 7v10H7" />
+                                    <path d="M7 7l10 10" />
+                                </svg>
+                                <p class="text-xl font-medium leading-snug">GDPR compliant<br>by design.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-4">
+                            <div
+                                class="flex items-center gap-2 border border-white/20 px-4 py-2.5 text-xs md:text-sm font-medium">
+                                <svg class="w-4 h-4 text-[#05e5ba]" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M17 7v10H7" />
+                                    <path d="M7 7l10 10" />
+                                </svg>
+                                GDPR ready
+                            </div>
+                            <div
+                                class="flex items-center gap-2 border border-white/20 px-4 py-2.5 text-xs md:text-sm font-medium">
+                                <svg class="w-4 h-4 text-[#05e5ba]" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M17 7v10H7" />
+                                    <path d="M7 7l10 10" />
+                                </svg>
+                                No Data Training
+                            </div>
+                            <div
+                                class="flex items-center gap-2 border border-white/20 px-4 py-2.5 text-xs md:text-sm font-medium">
+                                <svg class="w-4 h-4 text-[#05e5ba]" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M17 7v10H7" />
+                                    <path d="M7 7l10 10" />
+                                </svg>
+                                Local Processing Only
+                            </div>
+                            <div
+                                class="flex items-center gap-2 border border-white/20 px-4 py-2.5 text-xs md:text-sm font-medium">
+                                <svg class="w-4 h-4 text-[#05e5ba]" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M17 7v10H7" />
+                                    <path d="M7 7l10 10" />
+                                </svg>
+                                Zero Server Logging
+                            </div>
+                            <div
+                                class="flex items-center gap-2 border border-white/20 px-4 py-2.5 text-xs md:text-sm font-medium">
+                                <svg class="w-4 h-4 text-[#05e5ba]" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M17 7v10H7" />
+                                    <path d="M7 7l10 10" />
+                                </svg>
+                                End to End Private
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="action-card">
-                    <h3>Design Your AI System</h3>
-                    <p>Strategic architecture planning using diagnostic signals.</p>
-                    <button class="card-button" onclick="showSection('design')">Design My AI System</button>
+            </div>
+        </div>
+
+        <!-- Pre-Footer CTA -->
+        <div class="w-full bg-[#050505] text-white pt-12 pb-24 font-sans">
+            <div class="max-w-7xl mx-auto px-6 md:px-12">
+                <h2 class="text-5xl md:text-6xl font-bold tracking-tight mb-10">Some decisions need<br>a conversation.
+                </h2>
+                <div class="max-w-2xl border-t border-white/20 pt-8 mb-10">
+                    <p class="text-white text-lg leading-relaxed font-medium">
+                        Book a strategy session with an Aivory expert. We'll review your diagnostic,
+                        sharpen your blueprint, and map your next move together.
+                    </p>
                 </div>
-                
-                <div class="action-card">
-                    <h3>Contact Our Team</h3>
-                    <p>Let's discuss how Aivory can help transform your organization.</p>
-                    <button class="card-button" onclick="showSection('contact')">Contact Us</button>
+                <div class="flex flex-wrap gap-12">
+                    <button onclick="showSection('contact')"
+                        class="group flex items-center gap-3 text-white font-bold text-xl hover:text-gray-300 transition-colors">
+                        <svg class="w-5 h-5 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 7v10H7" />
+                            <path d="M7 7l10 10" />
+                        </svg>
+                        Book a Session
+                    </button>
+                    <button onclick="showSection('contact')"
+                        class="group flex items-center gap-3 text-white font-bold text-xl hover:text-gray-300 transition-colors">
+                        <svg class="w-5 h-5 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 7v10H7" />
+                            <path d="M7 7l10 10" />
+                        </svg>
+                        Book a Corporate Training
+                    </button>
                 </div>
             </div>
         </div>
@@ -365,19 +789,22 @@
     <!-- Section 2: FREE AI Readiness Diagnostic (12 questions) -->
     <section id="free-diagnostic" class="section">
         <div class="container">
-            <div id="free-diagnostic-questions" class="diagnostic-container">
+            <div id="free-diagnostic-questions" class="diagnostic-container relative">
+                <button class="close-diagnostic" onclick="showSection('homepage')" aria-label="Close diagnostic">&times;</button>
                 <h2>Free AI Readiness Diagnostic</h2>
                 <div class="progress-bar">
                     <div id="free-progress-fill" class="progress-fill"></div>
                 </div>
                 <p class="progress-text">Question <span id="free-current-question">1</span> of 12</p>
-                
+
                 <div id="free-question-container"></div>
-                
+
                 <div class="navigation-buttons">
-                    <button id="free-prev-button" class="nav-button" onclick="previousFreeQuestion()" disabled>Previous</button>
+                    <button id="free-prev-button" class="nav-button" onclick="previousFreeQuestion()"
+                        disabled>Previous</button>
                     <button id="free-next-button" class="nav-button" onclick="nextFreeQuestion()" disabled>Next</button>
-                    <button id="free-submit-button" class="nav-button primary" onclick="submitFreeDiagnostic()" style="display:none;">Submit Diagnostic</button>
+                    <button id="free-submit-button" class="nav-button primary" onclick="submitFreeDiagnostic()"
+                        style="display:none;">Submit Diagnostic</button>
                 </div>
             </div>
 
@@ -421,16 +848,9 @@
                     <h3>Save Your Results</h3>
                     <p class="hint-text">Enter your email to receive your complete AI readiness report</p>
                     <div class="email-capture-form">
-                        <input 
-                            type="email" 
-                            id="free-result-email" 
-                            placeholder="your.email@company.com"
-                            class="email-input"
-                        />
-                        <button 
-                            id="save-results-button"
-                            class="cta-button primary" 
-                            onclick="saveAndEmailResults()">
+                        <input type="email" id="free-result-email" placeholder="your.email@company.com"
+                            class="email-input" />
+                        <button id="save-results-button" class="cta-button primary" onclick="saveAndEmailResults()">
                             Save & Email Results
                         </button>
                     </div>
@@ -452,20 +872,24 @@
     <!-- Section 2.5: AI SNAPSHOT DIAGNOSTIC (30 questions) -->
     <section id="snapshot-diagnostic" class="section">
         <div class="container">
-            <div id="snapshot-diagnostic-questions" class="diagnostic-container">
+            <div id="snapshot-diagnostic-questions" class="diagnostic-container relative">
+                <button class="close-diagnostic" onclick="showSection('homepage')" aria-label="Close diagnostic">&times;</button>
                 <h2>AI Snapshot Diagnostic ($15)</h2>
                 <p class="lead">30-question structured assessment for AI system design</p>
                 <div class="progress-bar">
                     <div id="snapshot-progress-fill" class="progress-fill"></div>
                 </div>
                 <p class="progress-text">Question <span id="snapshot-current-question">1</span> of 30</p>
-                
+
                 <div id="snapshot-question-container"></div>
-                
+
                 <div class="navigation-buttons">
-                    <button id="snapshot-prev-button" class="nav-button" onclick="previousSnapshotQuestion()" disabled>Previous</button>
-                    <button id="snapshot-next-button" class="nav-button" onclick="nextSnapshotQuestion()" disabled>Next</button>
-                    <button id="snapshot-submit-button" class="nav-button primary" onclick="submitSnapshotDiagnostic()" style="display:none;">Submit Snapshot Diagnostic</button>
+                    <button id="snapshot-prev-button" class="nav-button" onclick="previousSnapshotQuestion()"
+                        disabled>Previous</button>
+                    <button id="snapshot-next-button" class="nav-button" onclick="nextSnapshotQuestion()"
+                        disabled>Next</button>
+                    <button id="snapshot-submit-button" class="nav-button primary" onclick="submitSnapshotDiagnostic()"
+                        style="display:none;">Submit Snapshot Diagnostic</button>
                 </div>
             </div>
 
@@ -507,7 +931,8 @@
             <div class="loading-container">
                 <div class="spinner"></div>
                 <h2>Generating Your AI System Blueprint...</h2>
-                <p>Our AI is designing your custom system using your free diagnostic answers. This takes 10-15 seconds.</p>
+                <p>Our AI is designing your custom system using your free diagnostic answers. This takes 10-15 seconds.
+                </p>
             </div>
         </div>
     </section>
@@ -519,131 +944,21 @@
         </div>
     </section>
 
-    <!-- Section 3: Build Automation -->
-    <section id="automation" class="section">
-        <div class="container content-section">
-            <h1>Turn Diagnostic Insights into Real Automation</h1>
-            <p class="lead">You already know your gaps. Now turn diagnosis into real automation.</p>
-            
-            <div class="features-grid">
-                <div class="feature-item">
-                    <h3>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
-                            <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                        </svg>
-                        Workflow Automation
-                    </h3>
-                    <p>Automate repetitive processes and free up your team for strategic work.</p>
-                </div>
-                <div class="feature-item">
-                    <h3>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
-                            <circle cx="12" cy="12" r="10"/>
-                            <circle cx="12" cy="12" r="3"/>
-                            <line x1="12" y1="2" x2="12" y2="9"/>
-                            <line x1="12" y1="15" x2="12" y2="22"/>
-                            <line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/>
-                            <line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/>
-                            <line x1="2" y1="12" x2="9" y2="12"/>
-                            <line x1="15" y1="12" x2="22" y2="12"/>
-                            <line x1="4.93" y1="19.07" x2="9.17" y2="14.83"/>
-                            <line x1="14.83" y1="9.17" x2="19.07" y2="4.93"/>
-                        </svg>
-                        AI Agents
-                    </h3>
-                    <p>Deploy intelligent agents that handle complex tasks autonomously.</p>
-                </div>
-                <div class="feature-item">
-                    <h3>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
-                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-                        </svg>
-                        ERP Integration
-                    </h3>
-                    <p>Connect your systems and create seamless data flows.</p>
-                </div>
-                <div class="feature-item">
-                    <h3>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
-                            <line x1="18" y1="20" x2="18" y2="10"/>
-                            <line x1="12" y1="20" x2="12" y2="4"/>
-                            <line x1="6" y1="20" x2="6" y2="14"/>
-                        </svg>
-                        Decision Support
-                    </h3>
-                    <p>Get AI-powered insights for faster, better decision-making.</p>
-                </div>
-            </div>
 
-            <div class="cta-section">
-                <button class="cta-button primary" onclick="showSection('contact')">Build Automation with Aivory Team</button>
-            </div>
-        </div>
-    </section>
-
-    <!-- Section 4: Design AI System -->
-    <section id="design" class="section">
-        <div class="container content-section">
-            <h1>Design Your AI System Architecture</h1>
-            <p class="lead">Design your future AI system architecture with experts.</p>
-            
-            <div class="features-grid">
-                <div class="feature-item">
-                    <h3>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M12 6v6l4 2"/>
-                        </svg>
-                        Strategic Planning
-                    </h3>
-                    <p>Use diagnostic signals to inform your AI strategy and roadmap.</p>
-                </div>
-                <div class="feature-item">
-                    <h3>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
-                            <rect x="3" y="3" width="7" height="7" rx="1"/>
-                            <rect x="14" y="3" width="7" height="7" rx="1"/>
-                            <rect x="14" y="14" width="7" height="7" rx="1"/>
-                            <rect x="3" y="14" width="7" height="7" rx="1"/>
-                        </svg>
-                        Architecture Design
-                    </h3>
-                    <p>Build scalable, maintainable AI systems from the ground up.</p>
-                </div>
-                <div class="feature-item">
-                    <h3>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                        </svg>
-                        Roadmap Development
-                    </h3>
-                    <p>Create a phased implementation plan aligned with business goals.</p>
-                </div>
-                <div class="feature-item">
-                    <h3>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
-                            <circle cx="11" cy="11" r="8"/>
-                            <path d="m21 21-4.35-4.35"/>
-                        </svg>
-                        Technology Selection
-                    </h3>
-                    <p>Choose the right tools and platforms for your specific needs.</p>
-                </div>
-            </div>
-
-            <div class="cta-section">
-                <button class="cta-button primary" onclick="showSection('contact')">Design My AI System</button>
-            </div>
-        </div>
-    </section>
 
     <!-- Section 5: Contact Form -->
     <section id="contact" class="section">
         <div class="container">
-            <div class="contact-container">
+            <div class="contact-container" style="position: relative;">
+                <button onclick="showSection('homepage')" aria-label="Close"
+                    style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.5); font-size: 1.5rem; line-height: 1; padding: 0.5rem; transition: color 0.2s;"
+                    onmouseover="this.style.color='rgba(255,255,255,1)'"
+                    onmouseout="this.style.color='rgba(255,255,255,0.5)'">
+                    ✕
+                </button>
                 <h1>Contact Our Team for Full Consultation</h1>
                 <p class="lead">Let's discuss how Aivory can help transform your organization.</p>
-                
+
                 <form id="contact-form" class="contact-form">
                     <div class="form-group">
                         <label for="contact-name">Name *</label>
@@ -691,20 +1006,81 @@
     </div>
 
     <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-container">
-            <div class="footer-left">
-                <div class="footer-tagline">
-                    <div class="tagline-line">More Clarity</div>
-                    <div class="tagline-line">More Intelligence</div>
+    <footer class="w-full bg-[#050505] text-white pt-24 pb-12 font-sans">
+        <div class="max-w-7xl mx-auto px-6 md:px-12">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-12 md:gap-8 mb-32">
+                <!-- Product -->
+                <div class="col-span-1">
+                    <h4 class="text-gray-500 text-sm font-medium mb-4">Product</h4>
+                    <ul class="space-y-3 text-sm text-white/90">
+                        <li><a href="#"
+                                class="!text-white/90 hover:!text-aivory-accent !no-underline transition-colors">Deep
+                                Diagnostic</a></li>
+                        <li><a href="#"
+                                class="!text-white/90 hover:!text-aivory-accent !no-underline transition-colors">AI
+                                Blueprint</a></li>
+                        <li><a href="#"
+                                class="!text-white/90 hover:!text-aivory-accent !no-underline transition-colors">AI
+                                Roadmap</a></li>
+                        <li><a href="#"
+                                class="!text-white/90 hover:!text-aivory-accent !no-underline transition-colors">Workflow
+                                Builder</a></li>
+                        <li><a href="#"
+                                class="!text-white/90 hover:!text-aivory-accent !no-underline transition-colors">AI
+                                Agents</a></li>
+                        <li><a href="#"
+                                class="!text-white/90 hover:!text-aivory-accent !no-underline transition-colors">Template
+                                Library</a></li>
+                    </ul>
                 </div>
-                <div class="footer-copyright">
-                    © 2025 Aivory . All rights reserved.
+                <!-- Company -->
+                <div class="col-span-1">
+                    <h4 class="text-gray-500 text-sm font-medium mb-4">Company</h4>
+                    <ul class="space-y-3 text-sm text-white/90">
+                        <li><a href="#"
+                                class="!text-white/90 hover:!text-aivory-accent !no-underline transition-colors">About</a>
+                        </li>
+                        <li><a href="#"
+                                class="!text-white/90 hover:!text-aivory-accent !no-underline transition-colors">Blog</a>
+                        </li>
+                        <li><a href="#"
+                                class="!text-white/90 hover:!text-aivory-accent !no-underline transition-colors">Careers</a>
+                        </li>
+                        <li><a href="#"
+                                class="!text-white/90 hover:!text-aivory-accent !no-underline transition-colors">Contact</a>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Legal -->
+                <div class="col-span-1">
+                    <h4 class="text-gray-500 text-sm font-medium mb-4">Legal</h4>
+                    <ul class="space-y-3 text-sm text-white/90">
+                        <li><a href="#"
+                                class="!text-white/90 hover:!text-aivory-accent !no-underline transition-colors">Privacy
+                                Policy</a></li>
+                        <li><a href="#"
+                                class="!text-white/90 hover:!text-aivory-accent !no-underline transition-colors">Terms
+                                of Service</a></li>
+                        <li><a href="#"
+                                class="!text-white/90 hover:!text-aivory-accent !no-underline transition-colors">Cookie
+                                Policy</a></li>
+                    </ul>
+                </div>
+                <!-- Empty Column for Spacing -->
+                <div class="col-span-1 hidden md:block"></div>
+                <!-- Logo & Slogan -->
+                <div class="col-span-2 md:col-span-1 flex md:justify-end mt-8 md:mt-0">
+                    <div class="flex flex-col items-start">
+                        <img src="Aivory%20logo%202026.svg" alt="Aivory Logo" class="h-[48px] md:h-[72px] w-auto mb-4 opacity-90">
+                        <p class="text-white/90 text-sm">Make AI make sense.</p>
+                    </div>
                 </div>
             </div>
-            <div class="footer-right">
-                <img src="Aivory_footer_logo.png" alt="Aivory" class="footer-logo">
+
+            <div class="pb-6 text-sm text-white/80">
+                &copy; 2026 Aivory. All rights reserved.
             </div>
+            <div class="border-b border-white/20 w-full mb-8"></div>
         </div>
     </footer>
 
@@ -715,25 +1091,25 @@
     <script src="auth-modals.js?v=23"></script>
     <script src="diagnostic-questions-paid.js?v=18"></script>
     <script src="diagnostic-questions-snapshot.js?v=18"></script>
-    
+
     <script>
         // ============================================================================
         // HELPER FUNCTIONS - No recursion, just simple placeholders
         // ============================================================================
-        
+
         // Additional helper functions for pricing
-        window.selectPlan = function(plan) {
+        window.selectPlan = function (plan) {
             console.log('Selected plan:', plan);
             alert('Plan selection: ' + plan + '. Payment integration coming soon!');
         };
-        
-        window.addCredits = function(amount) {
+
+        window.addCredits = function (amount) {
             console.log('Add credits:', amount);
             alert('Add ' + amount + ' credits. Payment integration coming soon!');
         };
-        
+
         // Log when page is ready
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             console.log('✅ Page loaded');
             console.log('✅ startFreeDiagnostic:', typeof startFreeDiagnostic);
             console.log('✅ startSnapshot:', typeof startSnapshot);
@@ -744,4 +1120,5 @@
         });
     </script>
 </body>
+
 </html>
