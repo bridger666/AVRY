@@ -1,0 +1,90 @@
+services:
+  zeroclaw:
+    image: ghcr.io/zeroclaw-labs/zeroclaw:latest
+    container_name: zeroclaw
+    restart: unless-stopped
+    ports:
+      - "3010:42617"
+    env_file:
+      - .env
+    environment:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      ZEROCLAW_GATEWAY_PORT: 42617
+      ZEROCLAW_WORKSPACE: /zeroclaw-data/workspace
+      HOME: /zeroclaw-data
+    volumes:
+      - ./zeroclaw-data/.zeroclaw:/zeroclaw-data/.zeroclaw
+      - ./zeroclaw-data/workspace:/zeroclaw-data/workspace
+    networks:
+      - aivory-net
+    links:
+      - n8n-mcp
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    env_file:
+      - .env
+    environment:
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD}
+      N8N_HOST: ${VPS_IP}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://${VPS_IP}:5678
+      N8N_SECURE_COOKIE: "false"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - aivory-net
+
+  n8n-mcp:
+    image: ghcr.io/czlonkowski/n8n-mcp:latest
+    container_name: n8n-mcp
+    hostname: n8n-mcp
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3020:3020"
+    env_file:
+      - .env
+    environment:
+      MCP_MODE: http
+      PORT: 3020
+      LOG_LEVEL: error
+      DISABLE_CONSOLE_OUTPUT: "true"
+      N8N_API_URL: http://n8n:5678
+      N8N_API_KEY: ${N8N_API_KEY}
+      AUTH_TOKEN: ${AUTH_TOKEN}
+      WEBHOOK_SECURITY_MODE: moderate
+      N8N_MCP_TELEMETRY_DISABLED: "true"
+    depends_on:
+      - n8n
+    networks:
+      - aivory-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    ports:
+      - "127.0.0.1:6379:6379"
+    env_file:
+      - .env
+    volumes:
+      - redis_data:/data
+    networks:
+      - aivory-net
+
+networks:
+  aivory-net:
+    driver: bridge
+
+volumes:
+  n8n_data:
+    external: true
+  redis_data:

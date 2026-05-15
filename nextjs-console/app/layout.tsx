@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   title: "Aivory Console",
   description: "AI-powered workflow automation console",
   icons: {
-    icon: '/favicon.svg',
+    icon: '/Favicon_Aivory.svg',
   },
 }
 

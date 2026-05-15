@@ -11,7 +11,7 @@
  */
 
 const MCP_URL = process.env.N8N_MCP_URL || '';
-const MCP_AUTH = process.env.N8N_MCP_AUTH_TOKEN || '';
+const MCP_AUTH = process.env.AUTH_TOKEN || process.env.N8N_MCP_AUTH_TOKEN || '';
 const CACHE_TTL_MS = Number(process.env.N8N_MCP_CACHE_TTL_MS || 10 * 60 * 1000);
 const MCP_TIMEOUT_MS = Number(process.env.N8N_MCP_TIMEOUT_MS || 15000);
 
