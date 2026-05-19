@@ -220,11 +220,180 @@ const BLUEPRINT_INSIGHTS = {
 }
 
 
+// ── Defensive coercion helpers ───────────────────────────────────────────────
+// The LLM-generated blueprint sometimes returns objects where the UI expects
+// strings (e.g. { description, risk, title }). These helpers normalise any
+// shape into a plain display string so we never render "[object Object]".
+// Detect if a value is the corrupted literal string "[object Object]" produced
+// by older versions of the API route that did String(someObject).
+function isCorruptedString(s: any): boolean {
+  if (typeof s !== 'string') return false
+  return s === '[object Object]' || s.trim() === '[object Object]'
+}
+
+function coerceToString(value: any, fallback = ''): string {
+  if (value === null || value === undefined) return fallback
+  if (typeof value === 'string') {
+    // Discard corrupted "[object Object]" strings
+    return isCorruptedString(value) ? fallback : value
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  if (Array.isArray(value)) {
+    return value.map(v => coerceToString(v)).filter(Boolean).join(', ')
+  }
+  if (typeof value === 'object') {
+    // Common LLM shapes for risks / highlights / constraints
+    const extracted = (
+      value.description ||
+      value.text ||
+      value.summary ||
+      value.title ||
+      value.name ||
+      value.risk ||
+      value.label ||
+      value.message ||
+      value.content ||
+      value.value ||
+      value.detail ||
+      value.primary_goal ||
+      value.goal ||
+      ''
+    )
+    if (extracted && !isCorruptedString(extracted)) {
+      return typeof extracted === 'string' ? extracted : String(extracted)
+    }
+    // Last resort: try to stringify meaningfully
+    try {
+      const json = JSON.stringify(value)
+      if (json && json !== '{}' && json !== '[]') {
+        return json.length > 200 ? json.slice(0, 200) + '…' : json
+      }
+    } catch {}
+    return fallback
+  }
+  return fallback
+}
+
+function coerceList(value: any): string[] {
+  if (!value) return []
+  if (Array.isArray(value)) {
+    return value.map(v => coerceToString(v)).filter(s => s && !isCorruptedString(s))
+  }
+  const single = coerceToString(value)
+  return (single && !isCorruptedString(single)) ? [single] : []
+}
+
+// Pull a numeric readiness score out of whatever shape the backend returns.
+// Handles: number, numeric string ("80"), "80/100", or text containing "Score: 80".
+function coerceScore(value: any, fallback = 0): number {
+  if (typeof value === 'number' && !isNaN(value)) return Math.max(0, Math.min(100, value))
+  if (typeof value === 'string') {
+    const match = value.match(/(\d{1,3})/)
+    if (match) {
+      const n = parseInt(match[1], 10)
+      if (!isNaN(n)) return Math.max(0, Math.min(100, n))
+    }
+  }
+  return fallback
+}
+
+// Sanitize a stored blueprint object in-place so that fields that should be
+// strings/numbers are never objects. This fixes corrupted localStorage data
+// produced by older versions of the API route.
+function sanitizeBlueprint(bp: any): any {
+  if (!bp || typeof bp !== 'object') return bp
+
+  // Fix score
+  if (bp.diagnostic_summary) {
+    const ds = bp.diagnostic_summary
+    if (typeof ds.ai_readiness_score !== 'number' || ds.ai_readiness_score === 0) {
+      // Try to extract from strategic_objective text if it contains "Score: 80/100"
+      const goalText = typeof bp.strategic_objective === 'string'
+        ? bp.strategic_objective
+        : bp.strategic_objective?.primary_goal || ''
+      const scoreMatch = goalText.match(/(?:Score|Readiness)[^\d]{0,20}(\d{1,3})\s*\/\s*100/i)
+        || goalText.match(/(\d{1,3})\s*\/\s*100/)
+      if (scoreMatch) {
+        ds.ai_readiness_score = Math.max(0, Math.min(100, parseInt(scoreMatch[1], 10)))
+      }
+    }
+    // Fix primary_constraints — ensure array of strings, discard corrupted
+    if (Array.isArray(ds.primary_constraints)) {
+      ds.primary_constraints = ds.primary_constraints
+        .map((c: any) => typeof c === 'string' ? c : (c?.description || c?.title || c?.name || c?.text || ''))
+        .filter((s: string) => s && !isCorruptedString(s))
+      // If all were corrupted, use static fallback
+      if (ds.primary_constraints.length === 0) {
+        ds.primary_constraints = BLUEPRINT_INSIGHTS.currentState.highlights.slice(0, 3)
+      }
+    }
+  }
+
+  // Fix strategic_objective.primary_goal — truncate if it's a markdown blob
+  if (bp.strategic_objective && typeof bp.strategic_objective === 'object') {
+    const goal = bp.strategic_objective.primary_goal
+    if (typeof goal === 'string' && goal.length > 500) {
+      // It's the full markdown blob — extract just the strategic objectives section
+      const match = goal.match(/Strategic Objectives?\*?\*?[:\s]*([\s\S]*?)(?=\n#{2,}|\*\*Current State|$)/i)
+      if (match) {
+        bp.strategic_objective.primary_goal = match[1]
+          .replace(/\*\*/g, '').replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300)
+      } else {
+        // Just take first 300 chars stripped of markdown
+        bp.strategic_objective.primary_goal = goal
+          .replace(/```[\s\S]*?```/g, '').replace(/^#{1,6}\s+.*$/gm, '')
+          .replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\n+/g, ' ').replace(/\s+/g, ' ')
+          .trim().slice(0, 300)
+      }
+    }
+  }
+
+  // Fix risk_assessment — ensure arrays of strings, discard corrupted
+  if (bp.risk_assessment) {
+    const ra = bp.risk_assessment
+    for (const key of ['data_risks', 'operational_risks', 'mitigation_strategies']) {
+      if (Array.isArray(ra[key])) {
+        ra[key] = ra[key]
+          .map((item: any) => typeof item === 'string' ? item : (item?.description || item?.title || item?.name || item?.text || item?.risk || ''))
+          .filter((s: string) => s && !isCorruptedString(s))
+      }
+    }
+    // If data_risks is empty after filtering, use static fallback risks
+    if (!ra.data_risks || ra.data_risks.length === 0) {
+      ra.data_risks = BLUEPRINT_INSIGHTS.risks.map(r => r.description)
+    }
+    if (!ra.mitigation_strategies || ra.mitigation_strategies.length === 0) {
+      ra.mitigation_strategies = BLUEPRINT_INSIGHTS.risks[0].actions
+    }
+  }
+
+  return bp
+}
+
+// Strip markdown formatting from text — used when an LLM dumps a full markdown
+// blueprint into a field that should be a single short paragraph.
+function stripMarkdown(text: string, maxLength = 280): string {
+  if (!text || typeof text !== 'string') return ''
+  let cleaned = text
+    .replace(/```[\s\S]*?```/g, '')        // code blocks
+    .replace(/^#{1,6}\s+.*$/gm, '')         // headers
+    .replace(/\*\*([^*]+)\*\*/g, '$1')      // bold
+    .replace(/\*([^*]+)\*/g, '$1')          // italics
+    .replace(/^[-*+]\s+/gm, '')             // list markers
+    .replace(/\n{2,}/g, ' ')                // paragraph breaks
+    .replace(/\s+/g, ' ')                   // collapse whitespace
+    .trim()
+  if (cleaned.length > maxLength) {
+    cleaned = cleaned.slice(0, maxLength).replace(/\s+\S*$/, '') + '…'
+  }
+  return cleaned
+}
+
 // ── Map VPS Bridge response → BLUEPRINT_INSIGHTS structure ───────────────────
 function mapBlueprintToInsights(bp: any) {
   if (!bp) return BLUEPRINT_INSIGHTS
-  const score = bp.diagnostic_summary?.ai_readiness_score ?? BLUEPRINT_INSIGHTS.score
-  const maturity = bp.diagnostic_summary?.maturity_level ?? BLUEPRINT_INSIGHTS.maturity
+  const score = coerceScore(bp.diagnostic_summary?.ai_readiness_score, BLUEPRINT_INSIGHTS.score)
+  const maturity = coerceToString(bp.diagnostic_summary?.maturity_level, BLUEPRINT_INSIGHTS.maturity)
   const strategic = bp.strategic_objective ?? {}
   const risk = bp.risk_assessment ?? {}
   const arch = bp.system_architecture ?? {}
@@ -232,60 +401,63 @@ function mapBlueprintToInsights(bp: any) {
   return {
     score,
     maturity,
-    heroDescription: `Your organization scores ${score}/100 at ${maturity} maturity. ${strategic.primary_goal ?? ''}`,
+    heroDescription: stripMarkdown(
+      `Your organization scores ${score}/100 at ${maturity} maturity. ${coerceToString(strategic.primary_goal) || coerceToString(strategic)}`,
+      400
+    ),
     levers: [
-      { label: 'Data Sources', text: (arch.data_sources ?? []).join(', ') || BLUEPRINT_INSIGHTS.levers[0].text },
-      { label: 'Processing', text: (arch.processing_layers ?? []).join(', ') || BLUEPRINT_INSIGHTS.levers[1].text },
-      { label: 'Decision Engine', text: arch.decision_engine ?? BLUEPRINT_INSIGHTS.levers[2].text },
-      { label: 'Execution', text: (arch.execution_layer ?? []).join(', ') || BLUEPRINT_INSIGHTS.levers[3].text },
+      { label: 'Data Sources', text: coerceList(arch.data_sources).join(', ') || BLUEPRINT_INSIGHTS.levers[0].text },
+      { label: 'Processing', text: coerceList(arch.processing_layers).join(', ') || BLUEPRINT_INSIGHTS.levers[1].text },
+      { label: 'Decision Engine', text: coerceToString(arch.decision_engine) || BLUEPRINT_INSIGHTS.levers[2].text },
+      { label: 'Execution', text: coerceList(arch.execution_layer).join(', ') || BLUEPRINT_INSIGHTS.levers[3].text },
     ],
     strategicObjective: {
-      goal: strategic.primary_goal ?? BLUEPRINT_INSIGHTS.strategicObjective.goal,
+      goal: stripMarkdown(coerceToString(strategic.primary_goal) || coerceToString(strategic), 240) || BLUEPRINT_INSIGHTS.strategicObjective.goal,
       rationale: `Based on your ${maturity} maturity level with a score of ${score}/100, this goal is achievable within the proposed timeline.`,
     },
-    metrics: (strategic.kpi_targets ?? []).map((k: any) => ({
-      metric: k.metric,
-      current: 'Baseline',
-      target: k.target,
-      impact: k.target,
-    })).concat(BLUEPRINT_INSIGHTS.metrics.slice((strategic.kpi_targets ?? []).length)),
+    metrics: (Array.isArray(strategic.kpi_targets) ? strategic.kpi_targets : []).map((k: any) => ({
+      metric: coerceToString(k?.metric, 'Metric'),
+      current: coerceToString(k?.current, 'Baseline'),
+      target: coerceToString(k?.target, '—'),
+      impact: coerceToString(k?.impact ?? k?.target, '—'),
+    })).concat(BLUEPRINT_INSIGHTS.metrics.slice((Array.isArray(strategic.kpi_targets) ? strategic.kpi_targets : []).length)),
     currentState: {
-      summary: `${bp.organization?.name ?? 'Your organization'} is at ${maturity} maturity with an AI readiness score of ${score}/100.`,
+      summary: `${coerceToString(bp.organization?.name, 'Your organization')} is at ${maturity} maturity with an AI readiness score of ${score}/100.`,
       highlights: [
-        ...(bp.diagnostic_summary?.primary_constraints ?? []).map((c: string) => c),
-        ...(risk.data_risks ?? []).slice(0, 2),
-      ],
+        ...coerceList(bp.diagnostic_summary?.primary_constraints),
+        ...coerceList(risk.data_risks).slice(0, 2),
+      ].filter(Boolean),
     },
     architecture: {
       reference: '',
       stages: [
-        { label: 'Data Sources', icon: 'database', items: arch.data_sources ?? [] },
-        { label: 'Processing', icon: 'settings', items: arch.processing_layers ?? [] },
-        { label: 'Decision Engine', icon: 'cpu', items: [arch.decision_engine ?? ''] },
-        { label: 'Execution', icon: 'zap', items: arch.execution_layer ?? [] },
+        { label: 'Data Sources', icon: 'database', items: coerceList(arch.data_sources) },
+        { label: 'Processing', icon: 'settings', items: coerceList(arch.processing_layers) },
+        { label: 'Decision Engine', icon: 'cpu', items: [coerceToString(arch.decision_engine)].filter(Boolean) },
+        { label: 'Execution', icon: 'zap', items: coerceList(arch.execution_layer) },
       ].filter(s => s.items.length > 0 && s.items[0] !== ''),
     },
     workflowModules: BLUEPRINT_INSIGHTS.workflowModules,
-    roadmap: (bp.deployment_plan?.waves ?? []).map((w: any, i: number) => ({
-      name: w.name,
+    roadmap: (Array.isArray(bp.deployment_plan?.waves) ? bp.deployment_plan.waves : []).map((w: any, i: number) => ({
+      name: coerceToString(w?.name, `Wave ${i + 1}`),
       timeline: i === 0 ? '0–3 months' : '3–12 months',
-      impact: w.notes ?? '',
-      deliverables: w.included_workflows ?? [],
+      impact: coerceToString(w?.notes, ''),
+      deliverables: coerceList(w?.included_workflows),
       owner: 'Led by AI Champion team',
-    })).concat(BLUEPRINT_INSIGHTS.roadmap.slice((bp.deployment_plan?.waves ?? []).length)),
+    })).concat(BLUEPRINT_INSIGHTS.roadmap.slice((Array.isArray(bp.deployment_plan?.waves) ? bp.deployment_plan.waves : []).length)),
     risks: [
-      ...(risk.data_risks ?? []).map((r: string) => ({
+      ...coerceList(risk.data_risks).map((r: string) => ({
         theme: 'Data Risk',
         description: r,
-        actions: (risk.mitigation_strategies ?? []).slice(0, 2),
+        actions: coerceList(risk.mitigation_strategies).slice(0, 2),
       })),
-      ...(risk.operational_risks ?? []).map((r: string) => ({
+      ...coerceList(risk.operational_risks).map((r: string) => ({
         theme: 'Operational Risk',
         description: r,
-        actions: (risk.mitigation_strategies ?? []).slice(0, 2),
+        actions: coerceList(risk.mitigation_strategies).slice(0, 2),
       })),
     ].slice(0, 3).concat(BLUEPRINT_INSIGHTS.risks.slice(
-      Math.min(3, (risk.data_risks ?? []).length + (risk.operational_risks ?? []).length)
+      Math.min(3, coerceList(risk.data_risks).length + coerceList(risk.operational_risks).length)
     )),
     actions: BLUEPRINT_INSIGHTS.actions,
   }
@@ -412,7 +584,7 @@ function BlueprintInsightsSection({
             {s.currentState.highlights.map((h, i) => (
               <li key={i} style={{ fontSize: '0.875rem', color: '#888', paddingLeft: 14, position: 'relative', lineHeight: 1.5 }}>
                 <span style={{ position: 'absolute', left: 0, color: '#00e59e' }}>•</span>
-                {h}
+                {typeof h === 'string' ? h : coerceToString(h, 'Highlight')}
               </li>
             ))}
           </ul>
@@ -636,10 +808,10 @@ function BlueprintInsightsSection({
                   <span className={styles.riskThemePriority}>{i + 1}</span>
                   <h4 className={styles.riskThemeName}>{risk.theme}</h4>
                 </div>
-                <p className={styles.riskThemeDesc}>{risk.description}</p>
+                <p className={styles.riskThemeDesc}>{typeof risk.description === 'string' ? risk.description : coerceToString(risk.description, 'Risk identified')}</p>
                 <ul className={styles.riskThemeActions}>
                   {risk.actions.map((action, j) => (
-                    <li key={j} className={styles.riskThemeAction}>{action}</li>
+                    <li key={j} className={styles.riskThemeAction}>{typeof action === 'string' ? action : coerceToString(action, 'Action required')}</li>
                   ))}
                 </ul>
               </div>
@@ -789,14 +961,14 @@ export default function BlueprintPage() {
         const { loadBlueprint: _loadBlueprint } = await import('@/lib/supabaseStorage')
         const result = await _loadBlueprint('demo_org')
         if (result) {
-          setBlueprint(result)
+          setBlueprint(sanitizeBlueprint(result))
         } else {
           // Supabase returned nothing — try localStorage directly
           try {
             const raw = localStorage.getItem('aivory_blueprint')
             if (!raw) { setEmpty(true); return }
             const parsed = JSON.parse(raw) as BlueprintV1
-            setBlueprint(parsed)
+            setBlueprint(sanitizeBlueprint(parsed))
           } catch {
             setParseError(true)
           }
@@ -807,7 +979,7 @@ export default function BlueprintPage() {
           const raw = localStorage.getItem('aivory_blueprint')
           if (!raw) { setEmpty(true); return }
           const parsed = JSON.parse(raw) as BlueprintV1
-          setBlueprint(parsed)
+          setBlueprint(sanitizeBlueprint(parsed))
         } catch {
           setParseError(true)
         }

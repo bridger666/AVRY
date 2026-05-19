@@ -42,7 +42,9 @@ class AuthService:
             
             if not super_admin_exists:
                 # Get password from environment
-                password = os.getenv("SUPERADMIN_PASSWORD", "REDACTED_PASSWORD")
+                password = os.getenv("SUPERADMIN_PASSWORD")
+                if not password:
+                    raise ValueError("SUPERADMIN_PASSWORD environment variable is required")
                 
                 # Create super admin account
                 user_id = "GrandMasterRCH"

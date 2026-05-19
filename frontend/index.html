@@ -2248,137 +2248,155 @@ select.profile-input option {
     font-weight: 300;
 }
 
-/* Contact Form */
+/* Contact Form — Light Mode Popup Style matching Image 2 */
 .contact-container {
     max-width: 600px;
-    margin: 0 auto;
-    background: white;
+    margin: 4rem auto;
+    background: #ffffff;
     padding: 3rem;
     border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
+    border: 1px solid #eaeaea;
+    color: #111111;
 }
 
 .contact-container h1 {
-    color: #2c3e50;
-    margin-bottom: 1rem;
-    text-align: center;
+    font-size: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #111111;
+    margin-bottom: 0.5rem;
+    line-height: 1.1;
+    text-align: left;
+}
+
+.contact-container .lead {
+    color: #555555;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    text-align: left;
+    border-bottom: 2px solid #000000;
+    padding-bottom: 1.5rem;
 }
 
 .contact-form {
     margin-top: 2rem;
 }
 
-.form-group {
+.contact-container .form-group {
     margin-bottom: 1.5rem;
 }
 
-.form-group label {
+.contact-container .form-group label {
     display: block;
-    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    color: #2c3e50;
+    color: #111111;
+    margin-bottom: 0.5rem;
+    text-align: left;
 }
 
-.form-group input,
-.form-group textarea {
+.contact-container .form-group input,
+.contact-container .form-group textarea {
     width: 100%;
-    padding: 0.75rem;
-    border: 2px solid #e0e0e0;
-    border-radius: 6px;
+    padding: 0.875rem 1rem;
+    background: #ffffff;
+    border: 1px solid #eaeaea;
+    border-radius: 8px;
+    color: #111111;
     font-size: 1rem;
     font-family: inherit;
-    transition: border-color 0.3s;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
+.contact-container .form-group input:focus,
+.contact-container .form-group textarea:focus {
     outline: none;
-    border-color: #3498db;
+    border-color: #000000;
+    box-shadow: 0 0 0 1px #000000;
 }
 
-.success-message {
+.contact-container .form-group input::placeholder,
+.contact-container .form-group textarea::placeholder {
+    color: #888888;
+}
+
+/* Submit button in image 2 style: 0px border-radius, black/white, diagonal arrow */
+.contact-container button[type="submit"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem 2.5rem;
+    background: #ffffff;
+    color: #000000;
+    border: 2px solid #000000;
+    border-radius: 0px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-top: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.contact-container button[type="submit"]:hover {
+    background: #000000;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.contact-container button[type="submit"]:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.contact-container .success-message {
     text-align: center;
     padding: 2rem;
 }
 
-.success-message h3 {
-    color: #27ae60;
+.contact-container .success-message h3 {
+    color: #111111;
     margin-bottom: 1rem;
     font-size: 1.75rem;
+    font-weight: 700;
 }
 
-.success-message p {
-    color: #7f8c8d;
+.contact-container .success-message p {
+    color: #555555;
     margin-bottom: 2rem;
 }
 
-/* Contact Form */
-.contact-container {
-    max-width: 600px;
-    margin: 0 auto;
-    background: #0a0a0a;
-    padding: 3rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.contact-container h1 {
-    color: white;
-    margin-bottom: 1rem;
-    text-align: center;
-    font-weight: 400;
-}
-
-.contact-form {
-    margin-top: 2rem;
-}
-
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: white;
-}
-
-.form-group input,
-.form-group textarea {
-    width: 100%;
-    padding: 0.75rem;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    background: #111111;
-    color: white;
-    border-radius: 6px;
+.contact-container .success-message button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem 2.5rem;
+    background: #ffffff;
+    color: #000000;
+    border: 2px solid #000000;
+    border-radius: 0px;
     font-size: 1rem;
+    font-weight: 600;
     font-family: inherit;
-    transition: border-color 0.3s;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
-    outline: none;
-    border-color: #1a1a1a;
+.contact-container .success-message button:hover {
+    background: #000000;
+    color: #ffffff;
 }
 
-.success-message {
-    text-align: center;
-    padding: 2rem;
-}
-
-.success-message h3 {
-    color: #1a1a1a;
-    margin-bottom: 1rem;
-    font-size: 1.75rem;
-}
-
-.success-message p {
-    color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 2rem;
-}
 
 .cta-section {
     text-align: center;
@@ -2697,7 +2715,7 @@ select.profile-input option {
 
 .subscription-section {
     background: rgba(74, 35, 158, 0.1);
-    border-radius: 12px;
+    border-radius: 0;
 }
 
 /* CTA Strip */
@@ -5929,16 +5947,16 @@ if (document.readyState === 'loading') {
                 <h1 class="text-[33.6px] md:text-[50.4px] font-light mb-4 tracking-tight text-white/90">
                     Make AI make sense<span class="text-aivory-accent">.</span>
                 </h1>
-                <h2 class="text-[21px] md:text-[33.6px] font-light text-[#05e5ba] text-left w-full mb-12 leading-tight">
+                <h2 class="text-[21px] md:text-[33.6px] font-light text-[#57ffdf] text-left w-full mb-12 leading-tight">
                     Start with clarity.<br>
                     End with a system that runs.
                 </h2>
 
                 <a href="free-diagnostic.html"
-                    class="group flex items-center gap-3 transition-opacity text-lg"
+                    class="group flex items-center gap-3 transition-opacity text-[21.6px]"
                     style="color: white; text-decoration: none; opacity: 0.75;"
                     onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24"
+                    <svg class="w-6 h-6" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="1.5" style="color: white;">
                         <path d="M17 7v10H7" />
                         <path d="M7 7l10 10" />
@@ -6623,7 +6641,7 @@ if (document.readyState === 'loading') {
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-12">
-                    <button onclick="showSection('contact')"
+                    <button onclick="openContactForm('consultation')"
                         class="group flex items-center gap-3 text-white font-bold text-xl hover:text-gray-300 transition-colors">
                         <svg class="w-5 h-5 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -6632,7 +6650,7 @@ if (document.readyState === 'loading') {
                         </svg>
                         Book a Session
                     </button>
-                    <button onclick="showSection('contact')"
+                    <button onclick="openContactForm('training')"
                         class="group flex items-center gap-3 text-white font-bold text-xl hover:text-gray-300 transition-colors">
                         <svg class="w-5 h-5 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -6810,9 +6828,9 @@ if (document.readyState === 'loading') {
         <div class="container">
             <div class="contact-container" style="position: relative;">
                 <button onclick="showSection('homepage')" aria-label="Close"
-                    style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.5); font-size: 1.5rem; line-height: 1; padding: 0.5rem; transition: color 0.2s;"
-                    onmouseover="this.style.color='rgba(255,255,255,1)'"
-                    onmouseout="this.style.color='rgba(255,255,255,0.5)'">
+                    style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; cursor: pointer; color: #888888; font-size: 1.5rem; line-height: 1; padding: 0.5rem; transition: all 0.2s ease;"
+                    onmouseover="this.style.color='#111111'; this.style.transform='scale(1.1)'"
+                    onmouseout="this.style.color='#888888'; this.style.transform='scale(1)'">
                     ✕
                 </button>
                 <h1>Contact Our Team for Full Consultation</h1>
@@ -6821,31 +6839,37 @@ if (document.readyState === 'loading') {
                 <form id="contact-form" class="contact-form">
                     <div class="form-group">
                         <label for="contact-name">Name *</label>
-                        <input type="text" id="contact-name" name="name" required>
+                        <input type="text" id="contact-name" name="name" placeholder="e.g. John Doe" required>
                     </div>
 
                     <div class="form-group">
                         <label for="contact-company">Company *</label>
-                        <input type="text" id="contact-company" name="company" required>
+                        <input type="text" id="contact-company" name="company" placeholder="e.g. Acme Corporation" required>
                     </div>
 
                     <div class="form-group">
                         <label for="contact-email">Email *</label>
-                        <input type="email" id="contact-email" name="email" required>
+                        <input type="email" id="contact-email" name="email" placeholder="e.g. john@company.com" required>
                     </div>
 
                     <div class="form-group">
                         <label for="contact-message">What do you want to build? *</label>
-                        <textarea id="contact-message" name="message" rows="5" required></textarea>
+                        <textarea id="contact-message" name="message" rows="5" placeholder="e.g. An AI-powered workflow automation system for our sales team..." required></textarea>
                     </div>
 
-                    <button type="submit" class="cta-button primary">Send Message</button>
+                    <button type="submit" class="cta-button primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 6px; transform: translateY(-1px);"><path d="M7 7l10 10M17 7v10H7"/></svg>
+                        Send Message
+                    </button>
                 </form>
 
                 <div id="contact-success" class="success-message" style="display:none;">
                     <h3>✓ Thank you for your interest!</h3>
                     <p>We'll be in touch soon to discuss your needs.</p>
-                    <button class="secondary-button" onclick="showSection('homepage')">Return to Homepage</button>
+                    <button class="secondary-button" onclick="showSection('homepage')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 6px; transform: translateY(-1px);"><path d="M7 7l10 10M17 7v10H7"/></svg>
+                        Return to Homepage
+                    </button>
                 </div>
             </div>
         </div>
@@ -7242,6 +7266,27 @@ function showSection(sectionId) {
     if (sectionId === 'free-diagnostic') {
         initializeFreeDiagnostic();
     }
+}
+
+function openContactForm(context) {
+    const titleEl = document.querySelector('#contact .contact-container h1');
+    const leadEl = document.querySelector('#contact .contact-container .lead');
+    const labelEl = document.querySelector('#contact .contact-container label[for="contact-message"]');
+    const textareaEl = document.getElementById('contact-message');
+
+    if (context === 'training') {
+        if (titleEl) titleEl.textContent = 'Book Corporate AI Training';
+        if (leadEl) leadEl.textContent = "Upskill your organization on generative AI, automation pipelines, and agentic workflows.";
+        if (labelEl) labelEl.textContent = 'What are your training objectives and team size? *';
+        if (textareaEl) textareaEl.placeholder = 'e.g. A 2-day hands-on workshop on generative AI and agentic systems for our 15 engineering team members...';
+    } else {
+        if (titleEl) titleEl.textContent = 'Contact Our Team for Full Consultation';
+        if (leadEl) leadEl.textContent = "Let's discuss how Aivory can help transform your organization.";
+        if (labelEl) labelEl.textContent = 'What do you want to build? *';
+        if (textareaEl) textareaEl.placeholder = 'e.g. An AI-powered workflow automation system for our sales team...';
+    }
+
+    showSection('contact');
 }
 
 // ============================================================================

@@ -55,6 +55,33 @@ function buildBlueprintFromText(content: string, diagnostic: any): BlueprintV1 {
   const opportunities = Array.isArray(diagnostic?.opportunities) ? diagnostic.opportunities : []
   const risks = Array.isArray(diagnostic?.risks) ? diagnostic.risks : []
 
+  // ── Try to extract structured fields from the markdown LLM output ──────────
+  // The LLM tends to write headers like "**Maturity Level:** Optimizing (Score: 80/100)"
+  // and "**Strategic Objectives** Transform operational efficiency through ...".
+  const text = typeof content === 'string' ? content : ''
+  const scoreMatch = text.match(/(?:Score|Readiness Score|AI Readiness)[^\d]{0,20}(\d{1,3})\s*\/\s*100/i)
+    || text.match(/(\d{1,3})\s*\/\s*100/)
+  const maturityMatch = text.match(/Maturity\s+Level[:\s*]+\s*(?:\*\*)?([A-Za-z][A-Za-z\s]{2,30}?)(?:\*\*|\(|\n|$)/i)
+
+  // Extract the strategic objectives paragraph: between "Strategic Objectives" and the next "##" header
+  const objectiveMatch = text.match(/Strategic Objectives?\*?\*?[:\s]*([\s\S]*?)(?=\n#{2,}|\*\*Current State|$)/i)
+  const cleanedObjective = objectiveMatch
+    ? objectiveMatch[1]
+        .replace(/^[\s*#]+/, '')
+        .replace(/\*\*/g, '')
+        .replace(/\n+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 300)
+    : ''
+
+  const fallbackScore = scores.overall ?? scores.ai_readiness_score ?? 0
+  const extractedScore = scoreMatch ? Math.max(0, Math.min(100, parseInt(scoreMatch[1], 10))) : fallbackScore
+  const fallbackMaturity = scores.maturityLevel || 'Emerging'
+  const extractedMaturity = maturityMatch ? maturityMatch[1].trim() : fallbackMaturity
+  const fallbackObjective = qualitative.primaryObjective || 'Generate an AI implementation blueprint from the diagnostic.'
+  const primaryGoal = cleanedObjective || fallbackObjective
+
   return {
     blueprint_id: `BP_${Date.now()}`,
     version: '1',
@@ -65,12 +92,14 @@ function buildBlueprintFromText(content: string, diagnostic: any): BlueprintV1 {
       size: qualitative.companySize || 'sme'
     },
     diagnostic_summary: {
-      ai_readiness_score: scores.overall ?? scores.ai_readiness_score ?? 0,
-      maturity_level: scores.maturityLevel || 'Emerging',
-      primary_constraints: risks.slice(0, 3).map((risk: any) => risk.title || risk.name || String(risk))
+      ai_readiness_score: extractedScore,
+      maturity_level: extractedMaturity,
+      primary_constraints: risks.slice(0, 3).map((risk: any) =>
+        typeof risk === 'string' ? risk : (risk?.title || risk?.name || risk?.description || 'Risk identified')
+      )
     },
     strategic_objective: {
-      primary_goal: content || qualitative.primaryObjective || 'Generate an AI implementation blueprint from the diagnostic.',
+      primary_goal: primaryGoal,
       kpi_targets: [
         { metric: 'AI readiness', target: 'Improve readiness through prioritized automation initiatives' }
       ]
@@ -84,17 +113,19 @@ function buildBlueprintFromText(content: string, diagnostic: any): BlueprintV1 {
     },
     workflow_modules: opportunities.slice(0, 3).map((opportunity: any, index: number) => ({
       workflow_id: `WF_${index + 1}`,
-      name: opportunity.title || opportunity.name || `Workflow ${index + 1}`,
+      name: typeof opportunity === 'string' ? opportunity : (opportunity?.title || opportunity?.name || `Workflow ${index + 1}`),
       trigger: 'Diagnostic opportunity selected',
       steps: [
         { type: 'ingestion', action: 'Collect relevant business context' },
         { type: 'ai_processing', action: 'Generate workflow recommendation' },
         { type: 'human_review', action: 'Review and approve implementation plan' }
       ],
-      integrations_required: opportunity.integrations || []
+      integrations_required: Array.isArray(opportunity?.integrations) ? opportunity.integrations : []
     })),
     risk_assessment: {
-      data_risks: risks.slice(0, 3).map((risk: any) => risk.title || risk.name || String(risk)),
+      data_risks: risks.slice(0, 3).map((risk: any) =>
+        typeof risk === 'string' ? risk : (risk?.title || risk?.name || risk?.description || 'Risk identified')
+      ),
       operational_risks: [],
       mitigation_strategies: ['Review generated blueprint before implementation']
     },
