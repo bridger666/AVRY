@@ -8,6 +8,7 @@ No external dependencies required - uses only Python standard library
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 import json
 import os
+import socket
 from pathlib import Path
 
 # Scoring configuration
@@ -216,15 +217,27 @@ class RequestHandler(SimpleHTTPRequestHandler):
         print(f"[{self.log_date_time_string()}] {format % args}")
 
 if __name__ == '__main__':
-    PORT = 9000
+    DEFAULT_PORT = 9000
+    PORT = int(os.environ.get('PORT', DEFAULT_PORT))
     
     # Change to project root directory
     os.chdir(Path(__file__).parent)
     
+    def port_is_free(port):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            return sock.connect_ex(('127.0.0.1', port)) != 0
+
+    requested_port = PORT
+    while not port_is_free(PORT):
+        PORT += 1
+
     server = HTTPServer(('0.0.0.0', PORT), RequestHandler)
     print("=" * 60)
     print("🚀 Aivory Development Server")
     print("=" * 60)
+    if PORT != requested_port:
+        print(f"\n⚠️  Port {requested_port} is already in use; using {PORT} instead.")
     print(f"\n✓ Server running on http://localhost:{PORT}")
     print(f"✓ Frontend: http://localhost:{PORT}/index.html")
     print(f"✓ Dashboard: http://localhost:{PORT}/dashboard.html")

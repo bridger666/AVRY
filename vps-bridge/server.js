@@ -164,12 +164,35 @@ function proxyStream(req, res) {
 /**
  * Handle streaming requests from Next.js
  * Forwards to Zeroclaw /webhook, parses SSE response, and emits proper SSE format
+ *
+ * FIXED: When the body contains copilot routing fields (mode, channel, entrypoint,
+ * context, history), preserve them so Zeroclaw knows to return structured JSON
+ * workflow output instead of natural language prose.
  */
 function buildZeroclawWebhookBody(body) {
   if (!body || typeof body !== 'object') {
     return body;
   }
 
+  // Copilot workflow requests include routing context (mode, channel, entrypoint).
+  // Preserve the full body so Zeroclaw gets proper routing and returns JSON.
+  const hasCopilotContext = body.mode || body.channel || body.entrypoint || body.context;
+
+  if (hasCopilotContext && typeof body.message === 'string' && body.message.trim()) {
+    // Preserve all fields — Zeroclaw needs mode/channel/entrypoint/context/history
+    // to route to the correct skill and return structured output.
+    const outbound = { message: body.message };
+    if (body.mode) outbound.mode = body.mode;
+    if (body.channel) outbound.channel = body.channel;
+    if (body.entrypoint) outbound.entrypoint = body.entrypoint;
+    if (body.context) outbound.context = body.context;
+    if (body.history) outbound.history = body.history;
+    if (body.session_id) outbound.session_id = body.session_id;
+    if (body.organization_id) outbound.organization_id = body.organization_id;
+    return outbound;
+  }
+
+  // Regular console chat — just extract the message
   if (typeof body.message === 'string' && body.message.trim()) {
     return { message: body.message };
   }

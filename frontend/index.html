@@ -685,20 +685,20 @@ a:hover {
 /* Homepage Hero */
 .hero {
     text-align: left;
-    padding: 10rem 2rem 8rem 2rem;
-    background: #0a0a0a;
+    padding: 0;
+    background: #030408;
     color: white;
     border-radius: 0;
     margin-bottom: 3rem;
-    max-width: 1200px;
+    max-width: 100%;
     margin-left: auto;
     margin-right: auto;
     position: relative;
     overflow: hidden;
 }
 
-/* LED Hero Background Canvas */
-#led-hero-bg {
+/* Hero Background Video */
+#hero-video-bg {
     position: absolute;
     top: 0;
     left: 0;
@@ -706,7 +706,9 @@ a:hover {
     height: 100%;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.2;
+    opacity: 1;
+    object-fit: cover;
+    object-position: center right;
 }
 
 /* Hero Tagline - Elevated */
@@ -1441,6 +1443,535 @@ a:hover {
 }
 
 /* ============================================================================
+   COMPANY PROFILE STEP
+   ============================================================================ */
+
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.profile-field label {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 400;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.8);
+    letter-spacing: 0.01em;
+}
+
+.profile-input {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    background: #111111;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0;
+    color: white;
+    font-size: 1rem;
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    transition: all 0.2s ease;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.profile-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.profile-input:focus {
+    outline: none;
+    border-color: #00e59e;
+    background: rgba(0, 229, 158, 0.03);
+}
+
+select.profile-input {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='rgba(255,255,255,0.5)' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+select.profile-input option {
+    background: #111111;
+    color: white;
+}
+
+/* ============================================================================
+   UPGRADED RESULTS PAGE
+   ============================================================================ */
+
+.report-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.report-header h2 {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    font-size: 1.75rem;
+    color: white;
+    margin-bottom: 0.75rem;
+}
+
+.report-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+}
+
+.report-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Score Ring */
+.score-ring-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 2rem 0;
+}
+
+.score-ring-wrapper {
+    position: relative;
+    width: 180px;
+    height: 180px;
+}
+
+.score-ring-wrapper svg {
+    transform: rotate(-90deg);
+}
+
+.score-ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 10;
+}
+
+.score-ring-fill {
+    fill: none;
+    stroke: #0ae8af;
+    stroke-width: 10;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1.5s ease-out;
+}
+
+.score-ring-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.score-ring-number {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    font-size: 3rem;
+    color: white;
+    line-height: 1;
+}
+
+.score-ring-label {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 0.25rem;
+}
+
+/* Maturity Level */
+.maturity-label {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 400;
+    font-size: 1.25rem;
+    color: #0ae8af;
+    margin-top: 1rem;
+    text-align: center;
+}
+
+/* 5-step progress bar */
+.maturity-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 1.5rem auto;
+    max-width: 500px;
+    width: 100%;
+}
+
+.maturity-step {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    position: relative;
+}
+
+.maturity-step.active {
+    background: #0ae8af;
+}
+
+.maturity-step.current::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    right: -4px;
+    width: 16px;
+    height: 16px;
+    background: #0ae8af;
+    border-radius: 50%;
+    border: 3px solid #0a0a0a;
+}
+
+.maturity-step-labels {
+    display: flex;
+    justify-content: space-between;
+    max-width: 500px;
+    margin: 0.5rem auto 0;
+    width: 100%;
+}
+
+.maturity-step-labels span {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+}
+
+.maturity-step-labels span.active-label {
+    color: #0ae8af;
+}
+
+.framing-sentence {
+    text-align: center;
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.75);
+    margin-top: 1.5rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+}
+
+/* Dimension Breakdown */
+.dimension-breakdown {
+    margin: 2.5rem 0;
+}
+
+.dimension-breakdown h3 {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    font-size: 1.25rem;
+    color: white;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.dimension-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.dimension-card {
+    background: #111111;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.dimension-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dimension-name {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.dimension-score-badge {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 500;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+}
+
+.dimension-score-badge.green {
+    background: rgba(10, 232, 175, 0.15);
+    color: #0ae8af;
+}
+
+.dimension-score-badge.amber {
+    background: rgba(255, 176, 32, 0.15);
+    color: #ffb020;
+}
+
+.dimension-score-badge.red {
+    background: rgba(255, 87, 87, 0.15);
+    color: #ff5757;
+}
+
+.dimension-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.dimension-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.8s ease-out;
+}
+
+.dimension-bar-fill.green { background: #0ae8af; }
+.dimension-bar-fill.amber { background: #ffb020; }
+.dimension-bar-fill.red { background: #ff5757; }
+
+/* Strengths & Blockers */
+.strengths-blockers {
+    margin: 2.5rem 0;
+}
+
+.strengths-blockers h3 {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    font-size: 1.25rem;
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.sb-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.sb-column h4 {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 400;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+}
+
+.sb-column.strengths h4 { color: #0ae8af; }
+.sb-column.blockers h4 { color: #ff5757; }
+
+.sb-item {
+    padding: 0.75rem 1rem;
+    background: #111111;
+    border-left: 3px solid;
+    margin-bottom: 0.5rem;
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.5;
+}
+
+.sb-item.strength { border-left-color: #0ae8af; }
+.sb-item.blocker { border-left-color: #ff5757; }
+
+/* Narrative */
+.narrative-section {
+    margin: 2.5rem 0;
+    padding: 2rem;
+    background: #111111;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0;
+}
+
+.narrative-section p {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.8;
+}
+
+/* Blurred Locked Section */
+.blurred-locked-section {
+    position: relative;
+    margin: 2.5rem 0;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0;
+    overflow: hidden;
+}
+
+.blurred-content {
+    filter: blur(5px);
+    pointer-events: none;
+    user-select: none;
+}
+
+.blurred-placeholder {
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 1rem;
+    border-radius: 0;
+}
+
+.blurred-placeholder h4 {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    font-size: 1rem;
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.blurred-placeholder p {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.lock-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 10, 10, 0.4);
+    z-index: 2;
+}
+
+.lock-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+}
+
+.lock-overlay p {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Conversion CTA */
+.conversion-cta {
+    margin: 2.5rem 0;
+    padding: 2.5rem;
+    border: 2px solid var(--brand-purple);
+    border-radius: 0;
+    background: rgba(91, 60, 196, 0.05);
+    text-align: center;
+}
+
+.conversion-cta h3 {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    font-size: 1.5rem;
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.conversion-cta .cta-subtitle {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 1.5rem;
+}
+
+.cta-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 auto 2rem;
+    max-width: 400px;
+    text-align: left;
+}
+
+.cta-features li {
+    padding: 0.5rem 0;
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 300;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.85);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cta-features li::before {
+    content: '✓';
+    color: #0ae8af;
+    font-weight: 600;
+}
+
+.cta-main-button {
+    height: 52px;
+    padding: 0 36px;
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 400;
+    font-size: 1rem;
+    background: var(--brand-purple);
+    color: white;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cta-main-button:hover {
+    background: var(--brand-purple-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(91, 60, 196, 0.4);
+}
+
+/* Responsive for results */
+@media (max-width: 768px) {
+    .dimension-grid {
+        grid-template-columns: 1fr;
+    }
+    .sb-grid {
+        grid-template-columns: 1fr;
+    }
+    .report-meta {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+/* ============================================================================
    SNAPSHOT DIAGNOSTIC - RESPONSIVE DESIGN
    ============================================================================ */
 
@@ -1717,137 +2248,155 @@ a:hover {
     font-weight: 300;
 }
 
-/* Contact Form */
+/* Contact Form — Light Mode Popup Style matching Image 2 */
 .contact-container {
     max-width: 600px;
-    margin: 0 auto;
-    background: white;
+    margin: 4rem auto;
+    background: #ffffff;
     padding: 3rem;
     border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
+    border: 1px solid #eaeaea;
+    color: #111111;
 }
 
 .contact-container h1 {
-    color: #2c3e50;
-    margin-bottom: 1rem;
-    text-align: center;
+    font-size: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #111111;
+    margin-bottom: 0.5rem;
+    line-height: 1.1;
+    text-align: left;
+}
+
+.contact-container .lead {
+    color: #555555;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    text-align: left;
+    border-bottom: 2px solid #000000;
+    padding-bottom: 1.5rem;
 }
 
 .contact-form {
     margin-top: 2rem;
 }
 
-.form-group {
+.contact-container .form-group {
     margin-bottom: 1.5rem;
 }
 
-.form-group label {
+.contact-container .form-group label {
     display: block;
-    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    color: #2c3e50;
+    color: #111111;
+    margin-bottom: 0.5rem;
+    text-align: left;
 }
 
-.form-group input,
-.form-group textarea {
+.contact-container .form-group input,
+.contact-container .form-group textarea {
     width: 100%;
-    padding: 0.75rem;
-    border: 2px solid #e0e0e0;
-    border-radius: 6px;
+    padding: 0.875rem 1rem;
+    background: #ffffff;
+    border: 1px solid #eaeaea;
+    border-radius: 8px;
+    color: #111111;
     font-size: 1rem;
     font-family: inherit;
-    transition: border-color 0.3s;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
+.contact-container .form-group input:focus,
+.contact-container .form-group textarea:focus {
     outline: none;
-    border-color: #3498db;
+    border-color: #000000;
+    box-shadow: 0 0 0 1px #000000;
 }
 
-.success-message {
+.contact-container .form-group input::placeholder,
+.contact-container .form-group textarea::placeholder {
+    color: #888888;
+}
+
+/* Submit button in image 2 style: 0px border-radius, black/white, diagonal arrow */
+.contact-container button[type="submit"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem 2.5rem;
+    background: #ffffff;
+    color: #000000;
+    border: 2px solid #000000;
+    border-radius: 0px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-top: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.contact-container button[type="submit"]:hover {
+    background: #000000;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.contact-container button[type="submit"]:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.contact-container .success-message {
     text-align: center;
     padding: 2rem;
 }
 
-.success-message h3 {
-    color: #27ae60;
+.contact-container .success-message h3 {
+    color: #111111;
     margin-bottom: 1rem;
     font-size: 1.75rem;
+    font-weight: 700;
 }
 
-.success-message p {
-    color: #7f8c8d;
+.contact-container .success-message p {
+    color: #555555;
     margin-bottom: 2rem;
 }
 
-/* Contact Form */
-.contact-container {
-    max-width: 600px;
-    margin: 0 auto;
-    background: #0a0a0a;
-    padding: 3rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.contact-container h1 {
-    color: white;
-    margin-bottom: 1rem;
-    text-align: center;
-    font-weight: 400;
-}
-
-.contact-form {
-    margin-top: 2rem;
-}
-
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: white;
-}
-
-.form-group input,
-.form-group textarea {
-    width: 100%;
-    padding: 0.75rem;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    background: #111111;
-    color: white;
-    border-radius: 6px;
+.contact-container .success-message button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem 2.5rem;
+    background: #ffffff;
+    color: #000000;
+    border: 2px solid #000000;
+    border-radius: 0px;
     font-size: 1rem;
+    font-weight: 600;
     font-family: inherit;
-    transition: border-color 0.3s;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
-    outline: none;
-    border-color: #1a1a1a;
+.contact-container .success-message button:hover {
+    background: #000000;
+    color: #ffffff;
 }
 
-.success-message {
-    text-align: center;
-    padding: 2rem;
-}
-
-.success-message h3 {
-    color: #1a1a1a;
-    margin-bottom: 1rem;
-    font-size: 1.75rem;
-}
-
-.success-message p {
-    color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 2rem;
-}
 
 .cta-section {
     text-align: center;
@@ -2166,7 +2715,7 @@ a:hover {
 
 .subscription-section {
     background: rgba(74, 35, 158, 0.1);
-    border-radius: 12px;
+    border-radius: 0;
 }
 
 /* CTA Strip */
@@ -2310,8 +2859,8 @@ a:hover {
     }
 
     .hero {
-        text-align: center;
-        padding: 6rem 1.5rem 4rem 1.5rem;
+        text-align: left;
+        padding: 0;
     }
 
     .hero-tagline {
@@ -4833,23 +5382,19 @@ hr,
 
 .navbar-logout-btn {
     background: transparent;
-    color: #666;
-    border: 1px solid #E0E0E0;
+    color: rgba(255,255,255,0.6);
+    border: none;
+    padding: 8px 0;
 }
 
 .navbar-logout-btn:hover {
-    background: #F0F0F0;
-    border-color: #CCC;
+    background: transparent;
+    color: rgba(255,255,255,0.9);
+    border: none;
 }
 
 .super-admin-badge {
-    background: #FFD700;
-    color: #000000;
-    padding: 6px 12px;
-    border-radius: 0;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
+    display: none !important;
 }
 
 /* Responsive */
@@ -4876,207 +5421,299 @@ hr,
 </style>
     <script>
 /**
- * Holographic Wave Mesh Animation (Composio Style)
- * Always looping, continuous wave animation.
+ * Neural Core Animation — 4-Phase Cinematic Particle Burst
+ * Phase 01: Void (0–1.5s) — tiny core appears
+ * Phase 02: Signal Detection (1.5–3s) — core grows, energy organizes
+ * Phase 03: Expansion (3–5s) — dramatic radial burst
+ * Phase 04: Stabilization Loop (5s+) — living, breathing intelligence
  */
-class LEDHeroBackground {
+class NeuralCoreAnimation {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
-        if (!this.canvas) {
-            console.error('Canvas element not found:', canvasId);
-            return;
-        }
-
+        if (!this.canvas) { console.error('Canvas not found:', canvasId); return; }
         this.ctx = this.canvas.getContext('2d');
-        this.time = 0;
-        this.points = [];
         this.animationFrame = null;
-
-        // Configuration
-        this.config = {
-            cols: 50,
-            rows: 30,
-            spacingX: 80,
-            spacingZ: 80,
-            centerFadeRadius: 0.28,
-            centerFadeStrength: 0.12,
-            waveSpeed: 0.015,
-            waveHeight: 120,
-            fov: 600,
-            baseY: 250, // Move grid down
-            colors: {
-                cyan: [0, 229, 158],   // Aivory Accent #00e59e
-                purple: [123, 123, 255], // Soft purple/blue
-                dark: [5, 5, 5]
-            }
-        };
-
+        this.startTime = null;
+        this.particles = [];
+        this.numArms = 14;
+        this.armAngles = [];
+        this.maxRadius = 260;
+        for (let i = 0; i < this.numArms; i++) {
+            this.armAngles.push((i / this.numArms) * Math.PI * 2 + 0.3);
+        }
         this.init();
     }
 
     init() {
-        if (!this.setupCanvas()) {
-            setTimeout(() => this.init(), 100);
-            return;
-        }
-
-        this.createGrid();
+        if (!this.setupCanvas()) { setTimeout(() => this.init(), 100); return; }
+        this.createParticles();
+        this.ctx.fillStyle = '#030408';
+        this.ctx.fillRect(0, 0, this.width, this.height);
         this.startAnimation();
-
         window.addEventListener('resize', () => {
             if (this.setupCanvas()) {
-                this.createGrid();
+                this.ctx.fillStyle = '#030408';
+                this.ctx.fillRect(0, 0, this.width, this.height);
             }
         });
-
-        console.log('Holographic Wave Mesh initialized');
     }
 
     setupCanvas() {
         const hero = this.canvas.parentElement;
         if (!hero) return false;
-
         const rect = hero.getBoundingClientRect();
-        this.canvas.width = rect.width;
-        this.canvas.height = rect.height;
-
-        if (this.canvas.width === 0 || this.canvas.height === 0) return false;
-        return true;
+        this.dpr = window.devicePixelRatio || 1;
+        this.canvas.width = rect.width * this.dpr;
+        this.canvas.height = rect.height * this.dpr;
+        this.canvas.style.width = `${rect.width}px`;
+        this.canvas.style.height = `${rect.height}px`;
+        this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+        this.width = rect.width;
+        this.height = rect.height;
+        this.cx = this.width * 0.62;
+        this.cy = this.height * 0.48;
+        this.maxRadius = Math.min(this.width * 0.28, this.height * 0.38);
+        return this.width > 0 && this.height > 0;
     }
 
-    createGrid() {
-        this.points = [];
-        const { cols, rows, spacingX, spacingZ, baseY } = this.config;
-
-        for (let z = 0; z < rows; z++) {
-            for (let x = 0; x < cols; x++) {
-                this.points.push({
-                    x: (x - cols / 2) * spacingX,
-                    z: z * spacingZ + 200, // Start slightly away from camera
-                    baseY: baseY,
-                    col: x,
-                    row: z
-                });
-            }
+    createParticles() {
+        this.particles = [];
+        const MR = this.maxRadius;
+        // Core particles — warm center mass
+        for (let i = 0; i < 180; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const r = Math.pow(Math.random(), 0.5) * MR * 0.28;
+            this.particles.push({
+                type: 'core', angle: a, radius: r, targetRadius: r,
+                size: 0.5 + Math.random() * 1.8,
+                alpha: 0.4 + Math.random() * 0.5,
+                rotSpeed: (Math.random() - 0.5) * 0.003,
+                radialOsc: Math.random() * Math.PI * 2,
+                radialAmp: 2 + Math.random() * 6,
+                radialFreq: 0.3 + Math.random() * 0.5
+            });
+        }
+        // Ray particles — radial energy streaks along arms
+        for (let i = 0; i < 500; i++) {
+            const armIdx = Math.floor(Math.random() * this.numArms);
+            const armAngle = this.armAngles[armIdx];
+            const spread = 0.14 + Math.random() * 0.06;
+            const a = armAngle + (Math.random() - 0.5) * spread;
+            const r = MR * (0.08 + Math.pow(Math.random(), 0.7) * 0.92);
+            const normR = r / MR;
+            this.particles.push({
+                type: 'ray', angle: a, radius: r, targetRadius: r,
+                size: 0.4 + Math.random() * 1.2,
+                trailLen: 4 + normR * 18 + Math.random() * 8,
+                alpha: 0.15 + Math.random() * 0.55,
+                rotSpeed: (Math.random() - 0.5) * 0.002,
+                radialOsc: Math.random() * Math.PI * 2,
+                radialAmp: 3 + Math.random() * 10,
+                radialFreq: 0.2 + Math.random() * 0.4,
+                normR: normR
+            });
+        }
+        // Inter-arm fill particles — softer fill between arms
+        for (let i = 0; i < 200; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const r = MR * (0.15 + Math.pow(Math.random(), 0.6) * 0.75);
+            this.particles.push({
+                type: 'ray', angle: a, radius: r, targetRadius: r,
+                size: 0.3 + Math.random() * 0.7,
+                trailLen: 2 + Math.random() * 6,
+                alpha: 0.05 + Math.random() * 0.2,
+                rotSpeed: (Math.random() - 0.5) * 0.0015,
+                radialOsc: Math.random() * Math.PI * 2,
+                radialAmp: 2 + Math.random() * 5,
+                radialFreq: 0.3 + Math.random() * 0.3,
+                normR: r / MR
+            });
+        }
+        // Dust particles — scattered background
+        for (let i = 0; i < 120; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const r = MR * (0.4 + Math.random() * 1.2);
+            this.particles.push({
+                type: 'dust', angle: a, radius: r, targetRadius: r,
+                size: 0.3 + Math.random() * 1.0,
+                alpha: 0.04 + Math.random() * 0.15,
+                rotSpeed: (Math.random() - 0.5) * 0.001,
+                radialOsc: Math.random() * Math.PI * 2,
+                radialAmp: 1 + Math.random() * 3,
+                radialFreq: 0.15 + Math.random() * 0.2
+            });
         }
     }
 
-    interpolateColor(color1, color2, factor) {
-        return [
-            Math.round(color1[0] + (color2[0] - color1[0]) * factor),
-            Math.round(color1[1] + (color2[1] - color1[1]) * factor),
-            Math.round(color1[2] + (color2[2] - color1[2]) * factor)
-        ];
+    getPhase(t) {
+        if (t < 1.5) return { name: 'void', progress: t / 1.5 };
+        if (t < 3.0) return { name: 'signal', progress: (t - 1.5) / 1.5 };
+        if (t < 5.0) return { name: 'expansion', progress: (t - 3.0) / 2.0 };
+        return { name: 'stable', progress: ((t - 5.0) % 10.0) / 10.0 };
     }
 
-    render() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    getScale(phase) {
+        switch (phase.name) {
+            case 'void': return 0.02 + this._ease(phase.progress) * 0.08;
+            case 'signal': return 0.10 + this._ease(phase.progress) * 0.30;
+            case 'expansion': return 0.40 + this._ease(phase.progress) * 0.60;
+            case 'stable': return 1.0;
+        }
+    }
 
-        const { fov, waveHeight, colors } = this.config;
-        const w = this.canvas.width / 2;
-        const h = this.canvas.height / 2 - 100; // Shift up slightly
+    getAlphaMul(phase) {
+        switch (phase.name) {
+            case 'void': return 0.3 + phase.progress * 0.3;
+            case 'signal': return 0.6 + phase.progress * 0.3;
+            case 'expansion': return 0.9 + phase.progress * 0.1;
+            case 'stable': return 1.0;
+        }
+    }
 
-        // We draw back to front (highest Z first)
-        for (let i = this.points.length - 1; i >= 0; i--) {
-            const p = this.points[i];
+    _ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
 
-            // Complex wave math combining multiple sine waves for a fluid look
-            const wave1 = Math.sin(p.x * 0.005 + this.time);
-            const wave2 = Math.cos(p.z * 0.008 + this.time * 1.2);
-            const wave3 = Math.sin((p.x + p.z) * 0.004 - this.time * 0.7);
+    getColor(normR, type) {
+        if (type === 'core') {
+            const t = Math.min(1, normR / 0.28);
+            return {
+                r: Math.round(220 + (1 - t) * 35),
+                g: Math.round(140 + (1 - t) * 80),
+                b: Math.round(60 + (1 - t) * 40)
+            };
+        }
+        if (normR < 0.3) {
+            const t = normR / 0.3;
+            return {
+                r: Math.round(210 - t * 170),
+                g: Math.round(155 - t * 55),
+                b: Math.round(80 + t * 120)
+            };
+        }
+        if (normR < 0.7) {
+            const t = (normR - 0.3) / 0.4;
+            return {
+                r: Math.round(40 - t * 25),
+                g: Math.round(100 + t * 40),
+                b: Math.round(200 + t * 30)
+            };
+        }
+        const t = Math.min(1, (normR - 0.7) / 0.5);
+        return {
+            r: Math.round(15 + t * 5),
+            g: Math.round(140 - t * 80),
+            b: Math.round(230 - t * 100)
+        };
+    }
 
-            // Normalize combined wave to roughly -1 to 1
-            const waveValue = (wave1 + wave2 + wave3) / 3;
+    render(timestamp) {
+        if (!this.startTime) this.startTime = timestamp;
+        const elapsed = (timestamp - this.startTime) / 1000;
+        const phase = this.getPhase(elapsed);
+        const scale = this.getScale(phase);
+        const alphaMul = this.getAlphaMul(phase);
+        const breathe = phase.name === 'stable'
+            ? Math.sin(elapsed * 0.4) * 0.05
+            : (phase.name === 'expansion' ? Math.sin(elapsed * 0.8) * 0.02 * phase.progress : 0);
+        const rot = elapsed * 0.025;
 
-            const heightVariation = waveValue * waveHeight;
-            const topY = p.baseY - 80 - Math.max(0, heightVariation);
+        // Clear
+        this.ctx.fillStyle = '#030408';
+        this.ctx.fillRect(0, 0, this.width, this.height);
 
-            const scale = fov / p.z;
-            const screenX = w + p.x * scale;
-            const screenTopY = h + topY * scale;
-            const screenBottomY = h + p.baseY * scale;
+        const cx = this.cx;
+        const cy = this.cy;
 
-            // Frustum culling (skip drawing if off screen)
-            if (screenX < -100 || screenX > this.canvas.width + 100) continue;
+        // Draw bloom glow
+        this.drawBloom(cx, cy, scale, alphaMul, elapsed);
 
-            // Calculate depth fade
-            const maxZ = this.config.rows * this.config.spacingZ;
-            const depthAlpha = Math.max(0, 1 - (p.z / maxZ));
+        // Draw particles with additive blending
+        this.ctx.globalCompositeOperation = 'lighter';
 
-            // Color mapping based on wave height
-            // waveValue is -1 to 1. Map to 0 to 1
-            const t = (waveValue + 1) / 2;
-            const color = this.interpolateColor(colors.purple, colors.cyan, t);
+        for (let i = 0; i < this.particles.length; i++) {
+            const p = this.particles[i];
+            const angle = p.angle + rot + Math.sin(elapsed * p.radialFreq + p.radialOsc) * 0.02;
+            const osc = Math.sin(elapsed * p.radialFreq + p.radialOsc) * p.radialAmp;
+            const r = (p.targetRadius + osc) * scale * (1 + breathe);
+            const px = cx + Math.cos(angle) * r;
+            const py = cy + Math.sin(angle) * r;
+            if (px < -30 || px > this.width + 30 || py < -30 || py > this.height + 30) continue;
 
-            // Draw vertical glowing bar
-            this.ctx.beginPath();
-            this.ctx.moveTo(screenX, screenBottomY);
-            this.ctx.lineTo(screenX, screenTopY);
+            const normR = p.targetRadius / this.maxRadius;
+            const c = this.getColor(normR, p.type);
+            const a = Math.min(0.95, p.alpha * alphaMul);
 
-            // Perspective thickness
-            const thickness = Math.max(0.5, scale * 3);
-            this.ctx.lineWidth = thickness;
-            this.ctx.lineCap = 'round';
-
-            // Highlight peaks with higher opacity
-            const highlightAlpha = Math.max(0.1, t * 0.8);
-            const finalAlpha = depthAlpha * highlightAlpha;
-
-            const { centerFadeRadius, centerFadeStrength } = this.config;
-            const distFromCenter = Math.abs(screenX - this.canvas.width / 2) / (this.canvas.width / 2);
-            let centerMask = 1;
-            if (distFromCenter < centerFadeRadius) {
-                const t = distFromCenter / centerFadeRadius;
-                centerMask = centerFadeStrength + (1 - centerFadeStrength) * (0.5 - 0.5 * Math.cos(t * Math.PI));
-            }
-            const maskedAlpha = finalAlpha * centerMask;
-
-            this.ctx.strokeStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${maskedAlpha})`;
-            this.ctx.stroke();
-
-            // Draw a tiny bright dot at the top of the bar to simulate LED node
-            if (t > 0.5) {
+            if (p.type === 'ray' && p.trailLen) {
+                const tLen = p.trailLen * scale;
+                const tx = px - Math.cos(angle) * tLen;
+                const ty = py - Math.sin(angle) * tLen;
                 this.ctx.beginPath();
-                this.ctx.arc(screenX, screenTopY, thickness * 0.8, 0, Math.PI * 2);
-                this.ctx.fillStyle = `rgba(255, 255, 255, ${maskedAlpha * 1.5})`;
-                this.ctx.fill();
+                this.ctx.moveTo(tx, ty);
+                this.ctx.lineTo(px, py);
+                this.ctx.strokeStyle = `rgba(${c.r},${c.g},${c.b},${(a * 0.7).toFixed(3)})`;
+                this.ctx.lineWidth = Math.max(0.3, p.size * scale * 0.8);
+                this.ctx.lineCap = 'round';
+                this.ctx.stroke();
             }
+
+            const sz = Math.max(0.2, p.size * (p.type === 'core' ? Math.max(0.3, scale * 1.5) : scale));
+            this.ctx.beginPath();
+            this.ctx.arc(px, py, sz, 0, 6.2832);
+            this.ctx.fillStyle = `rgba(${c.r},${c.g},${c.b},${a.toFixed(3)})`;
+            this.ctx.fill();
         }
+
+        this.ctx.globalCompositeOperation = 'source-over';
     }
 
-    animate() {
-        this.time += this.config.waveSpeed;
-        this.render();
-        this.animationFrame = requestAnimationFrame(() => this.animate());
+    drawBloom(cx, cy, scale, alphaMul, elapsed) {
+        const pulse = 1 + Math.sin(elapsed * 0.5) * 0.08;
+        const bloomR = this.maxRadius * scale * 1.6 * pulse;
+        if (bloomR < 2) return;
+
+        // Warm core glow
+        const g1 = this.ctx.createRadialGradient(cx, cy, 0, cx, cy, bloomR * 0.4);
+        g1.addColorStop(0, `rgba(220,150,60,${(0.18 * alphaMul).toFixed(3)})`);
+        g1.addColorStop(0.5, `rgba(180,100,40,${(0.06 * alphaMul).toFixed(3)})`);
+        g1.addColorStop(1, 'rgba(0,0,0,0)');
+        this.ctx.fillStyle = g1;
+        this.ctx.fillRect(cx - bloomR, cy - bloomR, bloomR * 2, bloomR * 2);
+
+        // Blue outer glow
+        const g2 = this.ctx.createRadialGradient(cx, cy, bloomR * 0.2, cx, cy, bloomR);
+        g2.addColorStop(0, `rgba(30,100,210,${(0.10 * alphaMul).toFixed(3)})`);
+        g2.addColorStop(0.5, `rgba(15,60,180,${(0.06 * alphaMul).toFixed(3)})`);
+        g2.addColorStop(1, 'rgba(0,0,0,0)');
+        this.ctx.fillStyle = g2;
+        this.ctx.fillRect(cx - bloomR, cy - bloomR, bloomR * 2, bloomR * 2);
+    }
+
+    animate(ts) {
+        this.render(ts || performance.now());
+        this.animationFrame = requestAnimationFrame((t) => this.animate(t));
     }
 
     startAnimation() {
-        if (this.animationFrame) {
-            cancelAnimationFrame(this.animationFrame);
-        }
+        if (this.animationFrame) cancelAnimationFrame(this.animationFrame);
         this.animate();
     }
 
     stop() {
-        if (this.animationFrame) {
-            cancelAnimationFrame(this.animationFrame);
-            this.animationFrame = null;
-        }
+        if (this.animationFrame) { cancelAnimationFrame(this.animationFrame); this.animationFrame = null; }
     }
 }
 
-// Auto-initialize
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-            window.ledHeroBackground = new LEDHeroBackground('led-hero-bg');
-        }, 50);
-    });
-} else {
-    requestAnimationFrame(() => {
-        window.ledHeroBackground = new LEDHeroBackground('led-hero-bg');
-    });
-}
+// Neural Core canvas animation disabled — replaced by hero video background
+// if (document.readyState === 'loading') {
+//     document.addEventListener('DOMContentLoaded', () => {
+//         setTimeout(() => {
+//             window.ledHeroBackground = new NeuralCoreAnimation('led-hero-bg');
+//         }, 50);
+//     });
+// } else {
+//     requestAnimationFrame(() => {
+//         window.ledHeroBackground = new NeuralCoreAnimation('led-hero-bg');
+//     });
+// }
 
 </script>
     <script>
@@ -5299,29 +5936,35 @@ if (document.readyState === 'loading') {
     <!-- Old login modal removed - using auth-modals.js instead -->
 
     <!-- Section 1: Homepage -->
-    <section id="homepage" class="section active">
+    <section id="homepage" class="section active" style="padding: 0;">
         <div
-            class="hero relative w-full min-h-screen flex flex-col justify-center items-center bg-aivory-darker text-aivory-text pt-24 pb-16">
-            <canvas id="led-hero-bg"></canvas>
-            <div class="relative z-10 text-center max-w-4xl px-4 flex flex-col items-center">
+            class="hero relative w-full min-h-screen flex flex-row items-center"
+            style="background: #030408;">
+            <video id="hero-video-bg" autoplay muted loop playsinline>
+                <source src="Hero section video/Animate1.mp4" type="video/mp4">
+            </video>
+            <div class="relative z-10 flex flex-col items-start justify-center" style="width: 45%; padding: 6rem 2rem 6rem 5rem;">
                 <h1 class="text-[33.6px] md:text-[50.4px] font-light mb-4 tracking-tight text-white/90">
                     Make AI make sense<span class="text-aivory-accent">.</span>
                 </h1>
-                <h2 class="text-[21px] md:text-[33.6px] font-light text-[#05e5ba] text-left w-full mb-12 leading-tight">
+                <h2 class="text-[21px] md:text-[33.6px] font-light text-[#57ffdf] text-left w-full mb-12 leading-tight">
                     Start with clarity.<br>
                     End with a system that runs.
                 </h2>
 
-                <button onclick="startFreeDiagnostic()"
-                    class="group flex items-center gap-3 text-white/60 hover:text-white transition-colors text-lg border-b border-transparent hover:border-white/50 pb-1">
-                    <svg class="w-5 h-5 text-white/40 group-hover:text-white transition-colors" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="1.5">
+                <a href="free-diagnostic.html"
+                    class="group flex items-center gap-3 transition-opacity text-[21.6px]"
+                    style="color: white; text-decoration: none; opacity: 0.75;"
+                    onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="1.5" style="color: white;">
                         <path d="M17 7v10H7" />
                         <path d="M7 7l10 10" />
                     </svg>
                     Start with free diagnostic
-                </button>
+                </a>
             </div>
+            <div class="relative z-10" style="width: 55%;"></div>
         </div>
 
         <!-- Features Grid Section -->
@@ -5998,7 +6641,7 @@ if (document.readyState === 'loading') {
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-12">
-                    <button onclick="showSection('contact')"
+                    <button onclick="openContactForm('consultation')"
                         class="group flex items-center gap-3 text-white font-bold text-xl hover:text-gray-300 transition-colors">
                         <svg class="w-5 h-5 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -6007,7 +6650,7 @@ if (document.readyState === 'loading') {
                         </svg>
                         Book a Session
                     </button>
-                    <button onclick="showSection('contact')"
+                    <button onclick="openContactForm('training')"
                         class="group flex items-center gap-3 text-white font-bold text-xl hover:text-gray-300 transition-colors">
                         <svg class="w-5 h-5 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -6024,7 +6667,53 @@ if (document.readyState === 'loading') {
     <!-- Section 2: FREE AI Readiness Diagnostic (12 questions) -->
     <section id="free-diagnostic" class="section">
         <div class="container">
-            <div id="free-diagnostic-questions" class="diagnostic-container relative">
+            <!-- Step 0: Company Profile -->
+            <div id="free-diagnostic-profile" class="diagnostic-container relative">
+                <button class="close-diagnostic" onclick="showSection('homepage')" aria-label="Close diagnostic">&times;</button>
+                <h2>Free AI Readiness Diagnostic</h2>
+                <p class="lead">Tell us about your company so we can personalize your report.</p>
+
+                <div class="profile-form">
+                    <div class="profile-field">
+                        <label for="profile-company-name">Company name</label>
+                        <input type="text" id="profile-company-name" class="profile-input" placeholder="e.g. Acme Corp" oninput="validateCompanyProfile()" />
+                    </div>
+                    <div class="profile-field">
+                        <label for="profile-company-size">Company size</label>
+                        <select id="profile-company-size" class="profile-input" onchange="validateCompanyProfile()">
+                            <option value="">Select company size</option>
+                            <option value="micro">1–10 (Micro)</option>
+                            <option value="small">11–50 (Small)</option>
+                            <option value="medium">51–200 (Medium)</option>
+                            <option value="large">201–1000 (Large)</option>
+                            <option value="enterprise">1000+ (Enterprise)</option>
+                        </select>
+                    </div>
+                    <div class="profile-field">
+                        <label for="profile-industry">Industry</label>
+                        <select id="profile-industry" class="profile-input" onchange="validateCompanyProfile()">
+                            <option value="">Select industry</option>
+                            <option value="manufacturing">Manufacturing</option>
+                            <option value="retail">Retail & e-commerce</option>
+                            <option value="financial">Financial services</option>
+                            <option value="healthcare">Healthcare</option>
+                            <option value="logistics">Logistics & supply chain</option>
+                            <option value="professional">Professional services</option>
+                            <option value="property">Property & construction</option>
+                            <option value="technology">Technology</option>
+                            <option value="education">Education</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="navigation-buttons" style="justify-content: flex-end;">
+                    <button id="profile-continue-button" class="nav-button primary" onclick="completeCompanyProfile()" disabled>Continue</button>
+                </div>
+            </div>
+
+            <!-- Step 1: Questions -->
+            <div id="free-diagnostic-questions" class="diagnostic-container relative" style="display:none;">
                 <button class="close-diagnostic" onclick="showSection('homepage')" aria-label="Close diagnostic">&times;</button>
                 <h2>Free AI Readiness Diagnostic</h2>
                 <div class="progress-bar">
@@ -6052,54 +6741,7 @@ if (document.readyState === 'loading') {
 
             <!-- Results -->
             <div id="free-diagnostic-results" class="results-container" style="display:none;">
-                <div class="score-section">
-                    <h2>Your AI Readiness Score</h2>
-                    <div class="score-display">
-                        <span id="free-score-number" class="score-number">--</span>
-                        <span id="free-score-category" class="score-category">--</span>
-                    </div>
-                    <p id="free-category-explanation" class="category-explanation"></p>
-                </div>
-
-                <div class="section-box">
-                    <h3>Key Insights</h3>
-                    <ul id="free-insights-list" class="insights-list"></ul>
-                </div>
-
-                <div class="section-box">
-                    <h3>Recommendation</h3>
-                    <p id="free-recommendation-text" class="recommendation-text"></p>
-                </div>
-
-                <div class="section-box">
-                    <h3>Your AI Readiness Badge</h3>
-                    <div id="free-badge-container" class="badge-container"></div>
-                    <button class="secondary-button" onclick="downloadFreeBadge()">Download Badge</button>
-                    <p class="hint-text">Share your readiness score with your team</p>
-                </div>
-
-                <!-- Email Capture CTA -->
-                <div class="cta-section">
-                    <h3>Save Your Results</h3>
-                    <p class="hint-text">Enter your email to receive your complete AI readiness report</p>
-                    <div class="email-capture-form">
-                        <input type="email" id="free-result-email" placeholder="your.email@company.com"
-                            class="email-input" />
-                        <button id="save-results-button" class="cta-button primary" onclick="saveAndEmailResults()">
-                            Save & Email Results
-                        </button>
-                    </div>
-                    <p id="email-save-status" class="status-message"></p>
-                </div>
-
-                <!-- Upgrade Options (Unlocked after free diagnostic) -->
-                <div id="free-upgrade-options" class="section-box upgrade-box">
-                    <!-- Will be populated by JavaScript after free diagnostic completes -->
-                </div>
-
-                <div class="cta-section">
-                    <button class="cta-button secondary" onclick="showSection('homepage')">Start New Diagnostic</button>
-                </div>
+                <!-- Will be populated by JavaScript -->
             </div>
         </div>
     </section>
@@ -6186,9 +6828,9 @@ if (document.readyState === 'loading') {
         <div class="container">
             <div class="contact-container" style="position: relative;">
                 <button onclick="showSection('homepage')" aria-label="Close"
-                    style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.5); font-size: 1.5rem; line-height: 1; padding: 0.5rem; transition: color 0.2s;"
-                    onmouseover="this.style.color='rgba(255,255,255,1)'"
-                    onmouseout="this.style.color='rgba(255,255,255,0.5)'">
+                    style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; cursor: pointer; color: #888888; font-size: 1.5rem; line-height: 1; padding: 0.5rem; transition: all 0.2s ease;"
+                    onmouseover="this.style.color='#111111'; this.style.transform='scale(1.1)'"
+                    onmouseout="this.style.color='#888888'; this.style.transform='scale(1)'">
                     ✕
                 </button>
                 <h1>Contact Our Team for Full Consultation</h1>
@@ -6197,31 +6839,37 @@ if (document.readyState === 'loading') {
                 <form id="contact-form" class="contact-form">
                     <div class="form-group">
                         <label for="contact-name">Name *</label>
-                        <input type="text" id="contact-name" name="name" required>
+                        <input type="text" id="contact-name" name="name" placeholder="e.g. John Doe" required>
                     </div>
 
                     <div class="form-group">
                         <label for="contact-company">Company *</label>
-                        <input type="text" id="contact-company" name="company" required>
+                        <input type="text" id="contact-company" name="company" placeholder="e.g. Acme Corporation" required>
                     </div>
 
                     <div class="form-group">
                         <label for="contact-email">Email *</label>
-                        <input type="email" id="contact-email" name="email" required>
+                        <input type="email" id="contact-email" name="email" placeholder="e.g. john@company.com" required>
                     </div>
 
                     <div class="form-group">
                         <label for="contact-message">What do you want to build? *</label>
-                        <textarea id="contact-message" name="message" rows="5" required></textarea>
+                        <textarea id="contact-message" name="message" rows="5" placeholder="e.g. An AI-powered workflow automation system for our sales team..." required></textarea>
                     </div>
 
-                    <button type="submit" class="cta-button primary">Send Message</button>
+                    <button type="submit" class="cta-button primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 6px; transform: translateY(-1px);"><path d="M7 7l10 10M17 7v10H7"/></svg>
+                        Send Message
+                    </button>
                 </form>
 
                 <div id="contact-success" class="success-message" style="display:none;">
                     <h3>✓ Thank you for your interest!</h3>
                     <p>We'll be in touch soon to discuss your needs.</p>
-                    <button class="secondary-button" onclick="showSection('homepage')">Return to Homepage</button>
+                    <button class="secondary-button" onclick="showSection('homepage')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 6px; transform: translateY(-1px);"><path d="M7 7l10 10M17 7v10H7"/></svg>
+                        Return to Homepage
+                    </button>
                 </div>
             </div>
         </div>
@@ -6364,130 +7012,242 @@ let snapshotDiagnosticCompleted = false;
 let currentQuestionIndex = 0;
 
 // ============================================================================
-// FREE DIAGNOSTIC QUESTIONS (12 questions)
+// FREE DIAGNOSTIC QUESTIONS (12 questions) - UPDATED TEXT
 // ============================================================================
 const FREE_DIAGNOSTIC_QUESTIONS = [
     {
         id: "business_objective",
         question: "What is your primary business objective for AI?",
         options: [
-            "No clear objective",
-            "Vague goals (e.g., 'be innovative')",
-            "Specific goal (e.g., 'reduce costs')",
-            "Quantified goal (e.g., 'reduce costs by 20%')"
+            "No clear goal yet",
+            "Vague / directional goals",
+            "Specific goal defined",
+            "Quantified goal with KPIs"
         ]
     },
     {
         id: "current_ai_usage",
-        question: "What is your current AI usage?",
+        question: "Where is your organization on AI today?",
         options: [
-            "No AI usage",
-            "Exploring/researching",
-            "Running pilots",
-            "Production deployment"
+            "No AI usage at all",
+            "Exploring / reading about it",
+            "Running pilots or experiments",
+            "AI deployed in production"
         ]
     },
     {
         id: "data_availability",
-        question: "How is your data availability & quality?",
+        question: "How is your business data organized and accessible?",
         options: [
             "No centralized data",
-            "Siloed data across departments",
+            "Siloed across systems",
             "Partially centralized",
-            "Fully centralized and accessible"
+            "Fully centralized and clean"
         ]
     },
     {
         id: "process_documentation",
-        question: "What is your level of process documentation?",
+        question: "How well are your business processes documented?",
         options: [
-            "No documentation",
-            "Informal/tribal knowledge",
-            "Some processes documented",
-            "Comprehensive documentation"
+            "Nothing documented",
+            "Informal / in people\u2019s heads",
+            "Some SOPs exist",
+            "Comprehensive SOPs and runbooks"
         ]
     },
     {
         id: "workflow_standardization",
-        question: "How standardized are your workflows?",
+        question: "How standardized are your day-to-day workflows?",
         options: [
-            "Ad-hoc workflows",
-            "Some standardization",
+            "Ad-hoc, varies per person",
+            "Some consistency",
             "Mostly standardized",
-            "Fully standardized"
+            "Fully standardized across teams"
         ]
     },
     {
         id: "erp_integration",
-        question: "What is your ERP / system integration level?",
+        question: "How integrated are your core business systems (ERP, CRM, etc.)?",
         options: [
-            "No systems",
-            "Disconnected systems",
-            "Some integration",
-            "Fully integrated"
+            "No systems in place",
+            "Disconnected / manual sync",
+            "Partially integrated",
+            "Fully integrated with APIs"
         ]
     },
     {
         id: "automation_level",
-        question: "What is your current automation level?",
+        question: "What percentage of repetitive tasks are currently automated?",
         options: [
             "Fully manual",
-            "Minimal automation (<10%)",
-            "Moderate automation (10-50%)",
-            "High automation (>50%)"
+            "Less than 10%",
+            "10\u201350% automated",
+            "Over 50% automated"
         ]
     },
     {
         id: "decision_speed",
-        question: "How fast is your decision-making?",
+        question: "How quickly does your team make key business decisions?",
         options: [
-            "Months",
-            "Weeks",
-            "Days",
-            "Hours"
+            "Takes months",
+            "Takes weeks",
+            "Takes days",
+            "Same day or within hours"
         ]
     },
     {
         id: "leadership_alignment",
-        question: "What is your leadership alignment on AI?",
+        question: "How aligned is your leadership team on AI adoption?",
         options: [
-            "No alignment",
-            "Some interest",
-            "Supportive",
-            "Championing AI"
+            "No alignment or interest",
+            "Some interest, not committed",
+            "Supportive and budgeting",
+            "Actively championing AI"
         ]
     },
     {
         id: "budget_ownership",
-        question: "What is your budget situation for AI?",
+        question: "What is your current budget situation for AI investment?",
         options: [
-            "No budget",
-            "Exploring budget",
+            "No budget discussed",
+            "Exploring options",
             "Budget allocated",
-            "Dedicated AI budget"
+            "Dedicated AI budget with an owner"
         ]
     },
     {
         id: "change_readiness",
-        question: "How ready is your organization for change?",
+        question: "How open is your organization to changing how work gets done?",
         options: [
             "Resistant to change",
             "Cautious",
-            "Open to change",
-            "Embracing change"
+            "Open to it",
+            "Actively embracing change"
         ]
     },
     {
         id: "internal_capability",
-        question: "What is your internal AI capability?",
+        question: "How strong is your internal team\u2019s AI or technical capability?",
         options: [
             "No technical team",
-            "Limited technical skills",
-            "Some AI knowledge",
-            "Strong AI team"
+            "Limited digital skills",
+            "Some AI exposure",
+            "Dedicated AI / data team"
         ]
     }
 ];
+
+// ============================================================================
+// SCORING ENGINE (UNCHANGED)
+// ============================================================================
+const WEIGHTS = {
+    business_objective: 1.5, current_ai_usage: 1.0, data_availability: 1.5,
+    process_documentation: 1.0, workflow_standardization: 1.0, erp_integration: 0.8,
+    automation_level: 1.2, decision_speed: 0.8, leadership_alignment: 1.5,
+    budget_ownership: 1.2, change_readiness: 1.0, internal_capability: 1.2
+};
+const MAX_RAW = 43.5;
+
+const DIMENSION_LABELS = {
+    business_objective: 'Business Objective', current_ai_usage: 'Current AI Usage',
+    data_availability: 'Data Availability', process_documentation: 'Process Documentation',
+    workflow_standardization: 'Workflow Standardization', erp_integration: 'System Integration',
+    automation_level: 'Automation Level', decision_speed: 'Decision Speed',
+    leadership_alignment: 'Leadership Alignment', budget_ownership: 'Budget Ownership',
+    change_readiness: 'Change Readiness', internal_capability: 'Internal Capability'
+};
+
+const STRENGTH_LABELS = {
+    business_objective: 'AI business objective is clearly defined',
+    current_ai_usage: 'Organization has real, hands-on AI experience',
+    data_availability: 'Data foundation is available and centralized',
+    process_documentation: 'Business processes are documented and ready to automate',
+    workflow_standardization: 'Standardized workflows — easy to scale with AI',
+    erp_integration: 'ERP and business systems are integrated',
+    automation_level: 'Automation is already running — AI can accelerate further',
+    decision_speed: 'Data-driven decision making is already fast',
+    leadership_alignment: 'Leadership is actively championing AI initiatives',
+    budget_ownership: 'AI budget is available and ready to allocate',
+    change_readiness: 'Team is open to change and new technology adoption',
+    internal_capability: 'Internal capability exists to own AI implementation'
+};
+
+const BLOCKER_LABELS = {
+    business_objective: 'Business objective is unclear — AI will lack direction',
+    current_ai_usage: 'No prior AI experience — high learning curve ahead',
+    data_availability: 'Data is scattered or not centralized — AI cannot learn from it',
+    process_documentation: 'Processes are undocumented — hard to identify automation targets',
+    workflow_standardization: 'Workflows are still ad-hoc — AI will add complexity, not reduce it',
+    erp_integration: 'Systems are not integrated — data silos will block implementation',
+    automation_level: 'Everything is still manual — automation baseline is very low',
+    decision_speed: 'Decision-making is slow — AI will struggle to show fast impact',
+    leadership_alignment: 'Leadership is not aligned — risk of project being cancelled mid-way',
+    budget_ownership: 'No AI budget — implementation cannot begin',
+    change_readiness: 'High internal resistance — AI adoption will face significant friction',
+    internal_capability: 'No internal AI team — full dependency on external vendors'
+};
+
+function generateDiagnosticId() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let r = '';
+    for (let i = 0; i < 8; i++) r += chars.charAt(Math.floor(Math.random() * chars.length));
+    return 'DIAG_' + r;
+}
+
+function getMaturityLevel(score) {
+    if (score <= 39) return 'Initial';
+    if (score <= 59) return 'Developing';
+    if (score <= 74) return 'Defined';
+    if (score <= 89) return 'Managed';
+    return 'Optimizing';
+}
+
+function computeLocalDiagnostic(answers, companyName) {
+    let rawScore = 0;
+    for (const [dim, ans] of Object.entries(answers)) {
+        rawScore += ans * (WEIGHTS[dim] || 1.0);
+    }
+    const score = Math.round((rawScore / MAX_RAW) * 100);
+    const maturity = getMaturityLevel(score);
+    const strengthEntries = Object.entries(answers).filter(([_, a]) => a >= 2).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    const strengths = strengthEntries.map(([d]) => STRENGTH_LABELS[d] || d);
+    const blockerEntries = Object.entries(answers).filter(([_, a]) => a <= 1)
+        .sort((a, b) => { if (a[1] !== b[1]) return a[1] - b[1]; return (WEIGHTS[b[0]] || 1) - (WEIGHTS[a[0]] || 1); }).slice(0, 3);
+    const blockers = blockerEntries.map(([d]) => BLOCKER_LABELS[d] || d);
+    const topBlocker = blockers[0] || 'multiple foundational gaps';
+    const narrativeTemplates = {
+        Initial: `For ${companyName}, the organization is at an early stage of AI readiness with a score of ${score}/100. The biggest challenge right now is: ${topBlocker}. Start with one small, well-scoped pilot, measure results, then scale gradually.`,
+        Developing: `For ${companyName}, with a score of ${score}/100, the foundation is beginning to take shape, but there are critical gaps to address. The area requiring the most attention is: ${topBlocker}. Focus on quick wins — choose an AI use case where ROI can be demonstrated within 30–90 days.`,
+        Defined: `For ${companyName}, a score of ${score}/100 indicates solid readiness — processes are defined and foundations are in place. ${topBlocker !== 'multiple foundational gaps' ? 'One area still worth strengthening: ' + topBlocker + '.' : ''} Move from experimentation to structured implementation.`,
+        Managed: `For ${companyName}, the organization (score ${score}/100) is at an advanced level — AI is delivering real value. ${topBlocker !== 'multiple foundational gaps' ? 'One remaining area: ' + topBlocker + '.' : ''} Expand into more complex use cases and tighter ROI monitoring.`,
+        Optimizing: `For ${companyName}, a score of ${score}/100 places you among elite organizations. AI is part of your operational DNA. Explore generative AI, agentic workflows, and AI-driven competitive differentiation.`
+    };
+    return { diagnostic_id: generateDiagnosticId(), score, maturity_level: maturity, strengths, blockers, narrative: narrativeTemplates[maturity], timestamp: new Date().toISOString() };
+}
+
+// ============================================================================
+// COMPANY PROFILE STATE
+// ============================================================================
+let companyProfile = null;
+
+function validateCompanyProfile() {
+    const name = (document.getElementById('profile-company-name')?.value || '').trim();
+    const size = document.getElementById('profile-company-size')?.value || '';
+    const industry = document.getElementById('profile-industry')?.value || '';
+    const btn = document.getElementById('profile-continue-button');
+    if (btn) btn.disabled = !(name.length >= 2 && size && industry);
+}
+
+function completeCompanyProfile() {
+    const name = (document.getElementById('profile-company-name')?.value || '').trim();
+    const size = document.getElementById('profile-company-size')?.value || '';
+    const industry = document.getElementById('profile-industry')?.value || '';
+    if (name.length < 2 || !size || !industry) return;
+    companyProfile = { companyName: name, companySize: size, industryCategory: industry };
+    document.getElementById('free-diagnostic-profile').style.display = 'none';
+    document.getElementById('free-diagnostic-questions').style.display = 'block';
+    renderFreeQuestion();
+}
 
 // ============================================================================
 // NAVIGATION
@@ -6506,6 +7266,27 @@ function showSection(sectionId) {
     if (sectionId === 'free-diagnostic') {
         initializeFreeDiagnostic();
     }
+}
+
+function openContactForm(context) {
+    const titleEl = document.querySelector('#contact .contact-container h1');
+    const leadEl = document.querySelector('#contact .contact-container .lead');
+    const labelEl = document.querySelector('#contact .contact-container label[for="contact-message"]');
+    const textareaEl = document.getElementById('contact-message');
+
+    if (context === 'training') {
+        if (titleEl) titleEl.textContent = 'Book Corporate AI Training';
+        if (leadEl) leadEl.textContent = "Upskill your organization on generative AI, automation pipelines, and agentic workflows.";
+        if (labelEl) labelEl.textContent = 'What are your training objectives and team size? *';
+        if (textareaEl) textareaEl.placeholder = 'e.g. A 2-day hands-on workshop on generative AI and agentic systems for our 15 engineering team members...';
+    } else {
+        if (titleEl) titleEl.textContent = 'Contact Our Team for Full Consultation';
+        if (leadEl) leadEl.textContent = "Let's discuss how Aivory can help transform your organization.";
+        if (labelEl) labelEl.textContent = 'What do you want to build? *';
+        if (textareaEl) textareaEl.placeholder = 'e.g. An AI-powered workflow automation system for our sales team...';
+    }
+
+    showSection('contact');
 }
 
 // ============================================================================
@@ -6528,16 +7309,22 @@ function initializeFreeDiagnostic() {
     currentQuestionIndex = 0;
     freeDiagnosticAnswers = {};
     
-    // Show questions, hide loading and results
+    const profileEl = document.getElementById('free-diagnostic-profile');
     const questionsEl = document.getElementById('free-diagnostic-questions');
     const loadingEl = document.getElementById('free-diagnostic-loading');
     const resultsEl = document.getElementById('free-diagnostic-results');
     
-    if (questionsEl) questionsEl.style.display = 'block';
+    // Cannot bypass Step 0 — if no profile, always show Step 0
+    if (!companyProfile) {
+        if (profileEl) profileEl.style.display = 'block';
+        if (questionsEl) questionsEl.style.display = 'none';
+    } else {
+        if (profileEl) profileEl.style.display = 'none';
+        if (questionsEl) questionsEl.style.display = 'block';
+        renderFreeQuestion();
+    }
     if (loadingEl) loadingEl.style.display = 'none';
     if (resultsEl) resultsEl.style.display = 'none';
-    
-    renderFreeQuestion();
 }
 
 /**
@@ -6620,7 +7407,7 @@ function nextFreeQuestion() {
 }
 
 /**
- * Submit free diagnostic
+ * Submit free diagnostic - compute locally + fire-and-forget to Supabase
  */
 async function submitFreeDiagnostic() {
     // Validate all questions answered
@@ -6636,201 +7423,175 @@ async function submitFreeDiagnostic() {
     if (questionsEl) questionsEl.style.display = 'none';
     if (loadingEl) loadingEl.style.display = 'block';
     
-    try {
-        // Format answers for API
-        const formattedAnswers = Object.entries(freeDiagnosticAnswers).map(([question_id, selected_option]) => ({
-            question_id,
-            selected_option
-        }));
-        
-        // Get user context from form if available
-        const userEmail = document.getElementById('free-result-email')?.value?.trim();
-        const companyName = document.getElementById('company-name-input')?.value?.trim();
-        const industry = document.getElementById('industry-input')?.value?.trim();
-        
-        // Build request body
-        const requestBody = { answers: formattedAnswers };
-        if (userEmail) requestBody.user_email = userEmail;
-        if (companyName) requestBody.company_name = companyName;
-        if (industry) requestBody.industry = industry;
-        
-        // Call backend API
-        const response = await fetch(`${API_BASE_URL}/api/v1/diagnostic/run`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody)
-        });
-        
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-        }
-        
-        freeDiagnosticResult = await response.json();
-        freeDiagnosticCompleted = true;
-        
-        // ✅ STORE DIAGNOSTIC ID AND USER CONTEXT
-        if (freeDiagnosticResult.diagnostic_id && typeof IDChainManager !== 'undefined') {
-            IDChainManager.storeDiagnosticData(
-                freeDiagnosticResult.diagnostic_id,
-                {
-                    user_email: userEmail,
-                    company_name: companyName,
-                    industry: industry
-                }
-            );
-            IDChainManager.logIdChain();
-        }
-        
-        // Display results
-        displayFreeDiagnosticResults(freeDiagnosticResult);
-        
-    } catch (error) {
-        console.error('Free diagnostic failed:', error);
-        alert('Failed to run diagnostic. Please ensure the backend is running on port 8081 and try again.');
-        if (loadingEl) loadingEl.style.display = 'none';
-        if (questionsEl) questionsEl.style.display = 'block';
-    }
+    // Compute result locally using the scoring engine
+    const result = computeLocalDiagnostic(freeDiagnosticAnswers, companyProfile.companyName);
+    freeDiagnosticResult = result;
+    freeDiagnosticCompleted = true;
+
+    // Store in localStorage as ONE object
+    const storedResult = { ...result, companyProfile, answers: freeDiagnosticAnswers };
+    localStorage.setItem('free_diagnostic_result', JSON.stringify(storedResult));
+
+    // Fire and forget - save lead to Supabase
+    const SUPABASE_URL = 'https://zdrjyoduvcqnuvucygyg.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpkcmp5b2R1dmNxbnV2dWN5Z3lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNDIzNTQsImV4cCI6MjA5MzgxODM1NH0.4zIYgg3td1V6n8YsJpGCM_dayqjvx2nK9nM1JwfVuNQ';
+
+    fetch(`${SUPABASE_URL}/rest/v1/free_diagnostics`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+            diagnostic_id: result.diagnostic_id,
+            company_name: companyProfile.companyName,
+            company_size: companyProfile.companySize,
+            industry: companyProfile.industryCategory,
+            score: result.score,
+            maturity_level: result.maturity_level
+        })
+    }).catch(() => {}); // Silent failure
+
+    // Small delay for UX
+    await new Promise(resolve => setTimeout(resolve, 1200));
+
+    // Display results
+    displayFreeDiagnosticResults(storedResult);
 }
 
 /**
- * Display free diagnostic results
- * This is a STANDALONE PUBLIC PAGE - no login required, no dashboard redirect
+ * Display free diagnostic results - upgraded report page
  */
 function displayFreeDiagnosticResults(result) {
-    // Hide loading, show results
     const loadingEl = document.getElementById('free-diagnostic-loading');
     const resultsEl = document.getElementById('free-diagnostic-results');
     
     if (loadingEl) loadingEl.style.display = 'none';
     if (resultsEl) resultsEl.style.display = 'block';
-    
-    // Populate score
-    const scoreNumber = document.getElementById('free-score-number');
-    const scoreCategory = document.getElementById('free-score-category');
-    const categoryExplanation = document.getElementById('free-category-explanation');
-    
-    if (scoreNumber) scoreNumber.textContent = Math.round(result.score);
-    if (scoreCategory) scoreCategory.textContent = result.category;
-    if (categoryExplanation) categoryExplanation.textContent = result.category_explanation;
-    
-    // Populate insights
-    const insightsList = document.getElementById('free-insights-list');
-    if (insightsList && result.insights) {
-        insightsList.innerHTML = result.insights.map(insight => `<li>${insight}</li>`).join('');
-    }
-    
-    // Populate recommendation
-    const recommendationText = document.getElementById('free-recommendation-text');
-    if (recommendationText) recommendationText.textContent = result.recommendation;
-    
-    // Display badge
-    const badgeContainer = document.getElementById('free-badge-container');
-    if (badgeContainer && result.badge_svg) {
-        badgeContainer.innerHTML = result.badge_svg;
-    }
-    
-    // Store result in sessionStorage (for email sending later)
-    sessionStorage.setItem('free_diagnostic_result', JSON.stringify(result));
-    
-    // Display upgrade options
-    displayUpgradeOptions();
-    
-    // ✨ SHOW SOFT AUTH PROMPT (non-blocking)
-    if (typeof showSoftAuthPrompt === 'function') {
-        setTimeout(showSoftAuthPrompt, 1000);
-    }
-    
-    // Scroll to results
+
+    const score = result.score;
+    const maturity = result.maturity_level;
+    const profile = result.companyProfile;
+    const answers = result.answers || freeDiagnosticAnswers;
+    const companyName = profile ? profile.companyName : 'Your Company';
+
+    const sizeLabels = { micro: '1\u201310 (Micro)', small: '11\u201350 (Small)', medium: '51\u2013200 (Medium)', large: '201\u20131000 (Large)', enterprise: '1000+ (Enterprise)' };
+    const industryLabels = { manufacturing: 'Manufacturing', retail: 'Retail & e-commerce', financial: 'Financial services', healthcare: 'Healthcare', logistics: 'Logistics & supply chain', professional: 'Professional services', property: 'Property & construction', technology: 'Technology', education: 'Education', other: 'Other' };
+
+    const maturityOrder = ['Initial', 'Developing', 'Defined', 'Managed', 'Optimizing'];
+    const maturityIdx = maturityOrder.indexOf(maturity);
+
+    const framingSentences = {
+        Initial: 'Your organization is at the beginning of its AI journey. The foundations need to be built.',
+        Developing: 'The building blocks are forming. Focus on quick wins to build momentum.',
+        Defined: 'Solid readiness \u2014 you\u2019re ready to move from experimentation to structured implementation.',
+        Managed: 'Advanced level \u2014 AI is delivering value. Time to expand and optimize.',
+        Optimizing: 'Elite readiness \u2014 AI is part of your operational DNA.'
+    };
+
+    // Dimension breakdown
+    const dimensionScores = Object.entries(answers).map(([id, s]) => ({
+        id, label: DIMENSION_LABELS[id] || id, score: s,
+        weight: WEIGHTS[id] || 1.0, color: s >= 2 ? 'green' : s === 1 ? 'amber' : 'red'
+    }));
+    const sorted = [...dimensionScores].sort((a, b) => b.score !== a.score ? b.score - a.score : b.weight - a.weight);
+    const topDimensions = sorted.slice(0, 3);
+    const bottomDimensions = sorted.slice(-3).reverse();
+
+    // SVG ring
+    const radius = 75;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (score / 100) * circumference;
+
+    resultsEl.innerHTML = `
+        <div class="score-section">
+            <div class="report-header">
+                <h2>${companyName} \u2014 AI Readiness Report</h2>
+                <div class="report-meta">
+                    <span>ID: ${result.diagnostic_id}</span>
+                    <span>${new Date(result.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    ${profile ? '<span>' + (industryLabels[profile.industryCategory] || profile.industryCategory) + '</span>' : ''}
+                    ${profile ? '<span>' + (sizeLabels[profile.companySize] || profile.companySize) + '</span>' : ''}
+                </div>
+            </div>
+            <div class="score-ring-container">
+                <div class="score-ring-wrapper">
+                    <svg width="180" height="180" viewBox="0 0 180 180">
+                        <circle class="score-ring-bg" cx="90" cy="90" r="${radius}" />
+                        <circle class="score-ring-fill" cx="90" cy="90" r="${radius}" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" />
+                    </svg>
+                    <div class="score-ring-value">
+                        <div class="score-ring-number">${score}</div>
+                        <div class="score-ring-label">/ 100</div>
+                    </div>
+                </div>
+                <div class="maturity-label">${maturity}</div>
+            </div>
+            <div class="maturity-steps">
+                ${maturityOrder.map((l, i) => '<div class="maturity-step ' + (i <= maturityIdx ? 'active' : '') + ' ' + (i === maturityIdx ? 'current' : '') + '"></div>').join('')}
+            </div>
+            <div class="maturity-step-labels">
+                ${maturityOrder.map((l, i) => '<span class="' + (i === maturityIdx ? 'active-label' : '') + '">' + l + '</span>').join('')}
+            </div>
+            <p class="framing-sentence">${framingSentences[maturity]}</p>
+        </div>
+        <div class="dimension-breakdown">
+            <h3>Dimension Breakdown</h3>
+            <div class="dimension-grid">
+                ${[...topDimensions, ...bottomDimensions].map(dim => '<div class="dimension-card"><div class="dimension-card-header"><span class="dimension-name">' + dim.label + '</span><span class="dimension-score-badge ' + dim.color + '">' + dim.score + '/3</span></div><div class="dimension-bar"><div class="dimension-bar-fill ' + dim.color + '" style="width: ' + ((dim.score / 3) * 100) + '%"></div></div></div>').join('')}
+            </div>
+        </div>
+        <div class="strengths-blockers">
+            <h3>Strengths & Blockers</h3>
+            <div class="sb-grid">
+                <div class="sb-column strengths">
+                    <h4>Strengths</h4>
+                    ${result.strengths.length > 0 ? result.strengths.map(s => '<div class="sb-item strength">' + s + '</div>').join('') : '<div class="sb-item strength">Complete more questions to identify strengths</div>'}
+                </div>
+                <div class="sb-column blockers">
+                    <h4>Blockers</h4>
+                    ${result.blockers.length > 0 ? result.blockers.map(b => '<div class="sb-item blocker">' + b + '</div>').join('') : '<div class="sb-item blocker">No critical blockers identified</div>'}
+                </div>
+            </div>
+        </div>
+        <div class="narrative-section">
+            <p>${result.narrative}</p>
+        </div>
+        <div class="blurred-locked-section">
+            <div class="blurred-content">
+                <div class="blurred-placeholder"><h4>90-Day AI Roadmap</h4><p>Week-by-week implementation plan tailored to your maturity level and industry.</p></div>
+                <div class="blurred-placeholder"><h4>ROI Projection</h4><p>Estimated cost savings and revenue impact based on your current automation level and industry benchmarks.</p></div>
+                <div class="blurred-placeholder"><h4>Industry Benchmark</h4><p>How your score compares to other ${profile ? (industryLabels[profile.industryCategory] || '') : ''} companies of similar size.</p></div>
+            </div>
+            <div class="lock-overlay">
+                <div class="lock-icon">\uD83D\uDD12</div>
+                <p>Full report locked \u2014 included in the paid diagnostic</p>
+            </div>
+        </div>
+        <div class="conversion-cta">
+            <h3>Unlock Your Full AI Readiness Report</h3>
+            <p class="cta-subtitle">Get the complete picture with actionable recommendations tailored to ${companyName}.</p>
+            <ul class="cta-features">
+                <li>90-day AI implementation roadmap</li>
+                <li>ROI projection with payback analysis</li>
+                <li>Industry benchmark comparison</li>
+                <li>Prioritized use-case recommendations</li>
+                <li>1-on-1 debrief with an AI strategist</li>
+            </ul>
+            <button class="cta-main-button" onclick="window.open('https://calendly.com/aivory/debrief', '_blank')">Unlock full report \u2014 schedule a debrief</button>
+        </div>
+    `;
+
     resultsEl.scrollIntoView({ behavior: 'smooth' });
 }
 
 /**
- * Save and email free diagnostic results
+ * Save and email free diagnostic results (simplified - uses localStorage now)
  */
 async function saveAndEmailResults() {
-    const emailInput = document.getElementById('free-result-email');
-    const saveButton = document.getElementById('save-results-button');
-    const statusMessage = document.getElementById('email-save-status');
-    
-    if (!emailInput || !saveButton) return;
-    
-    const email = emailInput.value.trim();
-    
-    // Validate email
-    if (!email) {
-        if (statusMessage) {
-            statusMessage.textContent = 'Please enter your email address';
-            statusMessage.style.color = '#E74C3C';
-        }
-        return;
-    }
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        if (statusMessage) {
-            statusMessage.textContent = 'Please enter a valid email address';
-            statusMessage.style.color = '#E74C3C';
-        }
-        return;
-    }
-    
-    // Get stored result
-    const resultJson = sessionStorage.getItem('free_diagnostic_result');
-    if (!resultJson) {
-        if (statusMessage) {
-            statusMessage.textContent = 'Error: No results found. Please retake the diagnostic.';
-            statusMessage.style.color = '#E74C3C';
-        }
-        return;
-    }
-    
-    const result = JSON.parse(resultJson);
-    
-    // Show loading state
-    saveButton.disabled = true;
-    saveButton.textContent = 'Sending...';
-    if (statusMessage) {
-        statusMessage.textContent = '';
-    }
-    
-    try {
-        // Send email via contact endpoint (reuse existing endpoint)
-        const response = await fetch(`${API_BASE_URL}/api/v1/contact`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                name: 'Free Diagnostic User',
-                email: email,
-                company: '',
-                message: `Free Diagnostic Results Request\n\nScore: ${result.score}\nCategory: ${result.category}\n\nPlease send my complete results to this email.`
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to send email');
-        }
-        
-        // Success
-        if (statusMessage) {
-            statusMessage.textContent = '✓ Results saved! Check your email for the full report.';
-            statusMessage.style.color = '#27AE60';
-        }
-        saveButton.textContent = 'Sent!';
-        emailInput.disabled = true;
-        
-    } catch (error) {
-        console.error('Failed to save results:', error);
-        if (statusMessage) {
-            statusMessage.textContent = 'Failed to send. Please try again or contact support.';
-            statusMessage.style.color = '#E74C3C';
-        }
-        saveButton.disabled = false;
-        saveButton.textContent = 'Save & Email Results';
-    }
+    alert('Your results are saved locally. Schedule a debrief to receive the full report by email.');
 }
 
 /**
@@ -6853,149 +7614,18 @@ function accessDashboard(tier = 'free') {
 }
 
 /**
- * Display upgrade options with personalized context based on score
+ * Display upgrade options (now handled by conversion CTA in results)
  */
 function displayUpgradeOptions() {
-    const upgradeContainer = document.getElementById('free-upgrade-options');
-    if (!upgradeContainer) return;
-    
-    // Get score from stored result
-    const resultJson = sessionStorage.getItem('free_diagnostic_result');
-    if (!resultJson) return;
-    
-    const result = JSON.parse(resultJson);
-    const score = result.score;
-    
-    // Determine personalized context based on score
-    let snapshotContext = '';
-    let blueprintContext = '';
-    
-    if (score <= 40) {
-        // AI Curious
-        snapshotContext = "You're one step away from clarity.";
-        blueprintContext = "Build your foundation first with AI Snapshot, then scale with the full Blueprint.";
-    } else if (score <= 60) {
-        // AI Emerging
-        snapshotContext = "You're one step away from clarity.";
-        blueprintContext = "Ready to accelerate? AI System Blueprint will help you architect a scalable AI system across your organization.";
-    } else if (score <= 80) {
-        // AI Operational
-        snapshotContext = "You're one step away from clarity.";
-        blueprintContext = "You have strong foundations. AI System Blueprint will help you architect a scalable AI system across your organization.";
-    } else {
-        // AI Transformational
-        snapshotContext = "You're one step away from clarity.";
-        blueprintContext = "You're ahead of the curve. AI System Blueprint will help you optimize and scale what's already working.";
-    }
-    
-    upgradeContainer.innerHTML = `
-        <div class="upsell-section">
-            <h3 class="upsell-title">Unlock Deeper Insights</h3>
-            <p class="upsell-subtitle">You've completed the free diagnostic. Now unlock AI-powered analysis:</p>
-            
-            <div class="upsell-cards">
-                <div class="upsell-card">
-                    <div>
-                        <h4 class="upsell-product-name">AI Snapshot</h4>
-                        <div class="upsell-price">?v=235</div>
-                        <p class="upsell-context">${snapshotContext}</p>
-                        <p class="upsell-description">AI Snapshot pinpoints the exact gaps holding back your AI adoption — and gives you 3 quick wins you can act on this week.</p>
-                        <p class="upsell-features">Includes: readiness analysis, top use cases, and a prioritized action plan.</p>
-                    </div>
-                    <button class="upsell-button" onclick="startSnapshot()">
-                        Run AI Snapshot — ?v=235
-                    </button>
-                </div>
-                
-                <div class="upsell-card upsell-featured">
-                    <div class="upsell-badge">BEST VALUE</div>
-                    <div>
-                        <h4 class="upsell-product-name">AI System Blueprint</h4>
-                        <div class="upsell-price">$79</div>
-                        <p class="upsell-context">${blueprintContext}</p>
-                        <p class="upsell-description">Get complete AI system design with workflow architecture, agent structure, and deployment plan.</p>
-                    </div>
-                    <button class="upsell-button" onclick="startBlueprint()">
-                        Generate Blueprint — $79
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
+    // Upgrade options are now part of the results page rendering
 }
 
 /**
- * Download free diagnostic badge as PNG using html2canvas
+ * Download free diagnostic badge as PNG
  */
 async function downloadFreeBadge() {
     if (!freeDiagnosticResult) return;
-    
-    const badgeContainer = document.getElementById('free-badge-container');
-    if (!badgeContainer) return;
-    
-    // Check if html2canvas is loaded
-    if (typeof html2canvas === 'undefined') {
-        console.error('html2canvas library not loaded');
-        alert('Badge download feature is loading. Please try again in a moment.');
-        
-        // Dynamically load html2canvas
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-        script.onload = () => {
-            console.log('html2canvas loaded, please try downloading again');
-            alert('Badge download ready! Please click the button again.');
-        };
-        document.head.appendChild(script);
-        return;
-    }
-    
-    try {
-        // Create a temporary container with proper sizing
-        const tempContainer = document.createElement('div');
-        tempContainer.style.position = 'absolute';
-        tempContainer.style.left = '-9999px';
-        tempContainer.style.width = '800px';
-        tempContainer.style.height = '600px';
-        tempContainer.style.background = 'transparent';
-        tempContainer.innerHTML = badgeContainer.innerHTML;
-        document.body.appendChild(tempContainer);
-        
-        // Scale SVG to fit 800x600
-        const svg = tempContainer.querySelector('svg');
-        if (svg) {
-            svg.setAttribute('width', '800');
-            svg.setAttribute('height', '600');
-            svg.style.width = '800px';
-            svg.style.height = '600px';
-        }
-        
-        // Convert to canvas
-        const canvas = await html2canvas(tempContainer, {
-            width: 800,
-            height: 600,
-            backgroundColor: null,
-            scale: 2 // Higher quality
-        });
-        
-        // Remove temporary container
-        document.body.removeChild(tempContainer);
-        
-        // Convert canvas to PNG and download
-        canvas.toBlob((blob) => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `aivory-readiness-badge-${Math.round(freeDiagnosticResult.score)}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 'image/png');
-        
-    } catch (error) {
-        console.error('Failed to download badge:', error);
-        alert('Failed to download badge. Please try again or contact support.');
-    }
+    alert('Badge download is available in the full paid report.');
 }
 
 // ============================================================================
