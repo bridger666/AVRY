@@ -95,7 +95,26 @@
     "credentialName": "NAMA CREDENTIAL",
     "deleteConfirm": "Delete workflow \"{title}\"? This cannot be undone.",
     "generateFromNL": "Generate workflow from natural language",
-    "deployToN8n": "Deploy this workflow to n8n"
+    "deployToN8n": "Deploy this workflow to n8n",
+    "activationModal": {
+      "title": "Deploy to n8n",
+      "urlLabel": "n8n Instance URL",
+      "urlInvalid": "Please enter a valid HTTP or HTTPS URL",
+      "apiKeyLabel": "n8n API Key",
+      "storageLabel": "Where to store credentials",
+      "storageLocalTitle": "Browser only",
+      "storageLocalDesc": "Stored in this browser's localStorage. Fast, but lost if you clear browser data.",
+      "storageDatabaseTitle": "Database (synced)",
+      "storageDatabaseDesc": "Stored server-side and available across devices. Requires account.",
+      "cancel": "Cancel",
+      "submit": "Deploy to n8n",
+      "submitting": "Deploying…",
+      "errorMissingCreds": "n8n instance URL and API key are required.",
+      "errorInvalidCreds": "Invalid n8n credentials. Please check your API key.",
+      "errorUnreachable": "Could not reach your n8n instance. Verify the URL.",
+      "errorDeployFailed": "Deployment failed. Please try again.",
+      "errorNetwork": "Could not reach server. Check your connection."
+    }
   },
   "aira": {
     "name": "Aivory",
