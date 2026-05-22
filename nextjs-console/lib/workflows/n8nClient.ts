@@ -91,6 +91,13 @@ export interface N8nWorkflowResponse {
   [key: string]: unknown
 }
 
+// ── Explicit credentials interface (for user-provided creds) ──────────────────
+
+export interface N8nConnectionParams {
+  instanceUrl: string   // Base URL of the user's n8n instance
+  apiKey: string        // User's n8n API key
+}
+
 // ── URL helpers ───────────────────────────────────────────────────────────────
 
 /**
@@ -300,4 +307,201 @@ export async function deployAndActivate(
   await setN8nWorkflowActive(n8nId, true)
 
   return { n8nWorkflowId: n8nId, n8nWorkflowUrl, n8nWebhookPath }
+}
+
+
+// ── WithCreds variants (user-provided credentials) ────────────────────────────
+
+/**
+ * Derive apiBase and uiBase from a user-provided N8nConnectionParams.
+ */
+function getConnConfig(conn: N8nConnectionParams) {
+  const raw = conn.instanceUrl.replace(/\/+$/, '')
+  return {
+    apiBase: `${raw}/api/v1`,
+    uiBase: raw,
+    key: conn.apiKey,
+  }
+}
+
+/**
+ * Create a new workflow in n8n as a draft (active: false) using explicit credentials.
+ * Same as `createN8nWorkflow` but uses user-provided connection params.
+ */
+export async function createN8nWorkflowWithCreds(
+  spec: AivoryWorkflowSpec,
+  conn: N8nConnectionParams
+): Promise<N8nWorkflowResponse> {
+  const { apiBase, key } = getConnConfig(conn)
+  const payload = buildPayload(spec)
+
+  const result = await n8nFetch(
+    'create draft (creds)',
+    `${apiBase}/workflows`,
+    {
+      method: 'POST',
+      headers: authHeaders(key),
+      body: JSON.stringify(payload),
+    }
+  ) as N8nWorkflowResponse
+
+  if (!result?.id) {
+    throw new Error(`n8n create draft succeeded but returned no workflow id. Body: ${JSON.stringify(result)}`)
+  }
+
+  console.log(`[n8nClient] Draft created in n8n (creds): id=${result.id}`)
+  return result
+}
+
+/**
+ * Activate (or deactivate) an existing n8n workflow using explicit credentials.
+ * Same as `setN8nWorkflowActive` but uses user-provided connection params.
+ */
+export async function setN8nWorkflowActiveWithCreds(
+  n8nId: string,
+  active: boolean,
+  conn: N8nConnectionParams
+): Promise<void> {
+  const { apiBase, key } = getConnConfig(conn)
+  const action = active ? 'activate' : 'deactivate'
+
+  await n8nFetch(
+    `${action} (creds)`,
+    `${apiBase}/workflows/${n8nId}/${action}`,
+    {
+      method: 'POST',
+      headers: authHeaders(key),
+    }
+  )
+
+  console.log(`[n8nClient] Workflow ${action}d (creds): id=${n8nId}`)
+}
+
+/**
+ * Full deploy-and-activate sequence using explicit user credentials.
+ * Same logic as `deployAndActivate` but uses user-provided connection params
+ * instead of reading from process.env.
+ *
+ * 1. Create draft (or update if spec.n8n_workflow_id exists)
+ * 2. Call onDraftCreated if provided (must succeed before activation)
+ * 3. Activate the workflow
+ */
+export async function deployAndActivateWithCreds(
+  spec: AivoryWorkflowSpec,
+  conn: N8nConnectionParams,
+  onDraftCreated?: (n8nId: string, n8nUrl: string, n8nWebhookPath: string | null) => void
+): Promise<{ n8nWorkflowId: string; n8nWorkflowUrl: string; n8nWebhookPath: string | null }> {
+  const { apiBase, uiBase, key } = getConnConfig(conn)
+
+  // ── Step 0: validate workflow via n8n-MCP (non-blocking) ──────────────────
+  const payload = buildPayload(spec)
+  try {
+    const validation = await mcpValidateWorkflow(payload as unknown as Record<string, unknown>)
+    if (!validation.valid && validation.errors.length > 0) {
+      console.warn('[n8nClient] MCP validation found issues:', validation.errors)
+    }
+  } catch (e) {
+    console.warn('[n8nClient] MCP validation skipped (non-fatal):', e)
+  }
+
+  // ── Step 1: create or update draft ──────────────────────────────────────────
+  let n8nId: string
+  let n8nWebhookPath: string | null = null
+
+  if (spec.n8n_workflow_id) {
+    console.log(`[n8nClient] deployAndActivateWithCreds: updating existing n8n_workflow_id=${spec.n8n_workflow_id}`)
+    const result = await n8nFetch(
+      'update draft (creds)',
+      `${apiBase}/workflows/${spec.n8n_workflow_id}`,
+      {
+        method: 'PUT',
+        headers: authHeaders(key),
+        body: JSON.stringify(payload),
+      }
+    ) as N8nWorkflowResponse
+    n8nId = result.id
+    n8nWebhookPath = extractWebhookPath(result)
+  } else {
+    console.log(`[n8nClient] deployAndActivateWithCreds: creating new draft`)
+    const created = await createN8nWorkflowWithCreds(spec, conn)
+    n8nId = created.id
+    n8nWebhookPath = extractWebhookPath(created)
+  }
+
+  const n8nWorkflowUrl = `${uiBase}/workflow/${n8nId}`
+
+  if (n8nWebhookPath) {
+    console.log(`[n8nClient] deployAndActivateWithCreds: webhook path=${n8nWebhookPath}`)
+  }
+
+  // Persist the draft ID BEFORE activation.
+  // If onDraftCreated throws, we abort — prevents orphaned workflows.
+  if (onDraftCreated) {
+    onDraftCreated(n8nId, n8nWorkflowUrl, n8nWebhookPath)
+  }
+
+  // ── Step 2: activate ─────────────────────────────────────────────────────────
+  console.log(`[n8nClient] deployAndActivateWithCreds: activating n8n workflow id=${n8nId}`)
+  await setN8nWorkflowActiveWithCreds(n8nId, true, conn)
+
+  return { n8nWorkflowId: n8nId, n8nWorkflowUrl, n8nWebhookPath }
+}
+
+// ── Error classification helper ───────────────────────────────────────────────
+
+/**
+ * Classify an n8n API error into a structured response suitable for the activate route.
+ *
+ * - Network errors (TypeError, ECONNREFUSED, DNS failures) → INSTANCE_UNREACHABLE
+ * - HTTP 401/403 → INVALID_CREDENTIALS
+ * - All other errors → DEPLOYMENT_FAILED
+ */
+export function classifyN8nError(error: unknown, instanceUrl: string): {
+  status: number
+  code: string
+  message: string
+} {
+  // Network-level errors (fetch throws TypeError for network failures)
+  if (error instanceof TypeError) {
+    return {
+      status: 502,
+      code: 'INSTANCE_UNREACHABLE',
+      message: `Cannot reach n8n at ${instanceUrl} — verify the URL is correct`,
+    }
+  }
+
+  // Check for ECONNREFUSED or similar system errors
+  if (
+    error &&
+    typeof error === 'object' &&
+    'cause' in error &&
+    (error as { cause?: { code?: string } }).cause?.code === 'ECONNREFUSED'
+  ) {
+    return {
+      status: 502,
+      code: 'INSTANCE_UNREACHABLE',
+      message: `Cannot reach n8n at ${instanceUrl} — connection refused`,
+    }
+  }
+
+  // HTTP auth errors — n8nFetch throws Error with status code in the message
+  if (error instanceof Error) {
+    const msg = error.message
+    if (msg.includes('(401)') || msg.includes('(403)')) {
+      return {
+        status: 401,
+        code: 'INVALID_CREDENTIALS',
+        message: 'Authentication failed — check your n8n API key',
+      }
+    }
+  }
+
+  // Fallback: deployment failed
+  return {
+    status: 502,
+    code: 'DEPLOYMENT_FAILED',
+    message: error instanceof Error
+      ? `n8n rejected the workflow: ${error.message}`
+      : `n8n rejected the workflow: ${String(error)}`,
+  }
 }

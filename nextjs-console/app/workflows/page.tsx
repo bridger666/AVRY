@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import {
   loadWorkflows, updateWorkflow, deleteWorkflow, saveWorkflow, SavedWorkflow,
   useWorkflowList, createWorkflow, patchWorkflow, removeWorkflow,
-  activateWorkflow, deactivateWorkflow,
+  deactivateWorkflow,
 } from '@/hooks/useWorkflows'
 import { WorkflowCanvas as N8nWorkflowCanvas } from '@/components/workflow/WorkflowCanvas'
 import { CopilotTogglePanel } from '@/components/workflow/CopilotTogglePanel'
@@ -15,6 +15,8 @@ import { retrieveWorkflowSpec, clearWorkflowSpec, convertHandoffToNodes } from '
 import { StandardNodePalette } from '@/components/workflow/StandardNodePalette'
 import { DynamicNodePalette } from '@/components/workflow/DynamicNodePalette'
 import { clearCanvasState } from '@/hooks/useCanvasPersistence'
+import { ActivationModal } from '@/components/workflow/ActivationModal'
+import { saveCredentials, N8nCredentials } from '@/lib/workflows/credentialStore'
 import { detectNodeIntent } from '@/lib/workflows/nodeMapper'
 import { convertToN8nWorkflow } from '@/lib/workflowConverter'
 import type { AivoryWorkflowSpec } from '@/types/workflow'
@@ -640,6 +642,8 @@ function WorkflowsPageInner() {
   const [showMore, setShowMore] = useState(false)
   const [undoStack, setUndoStack] = useState<SavedWorkflow[]>([])
   const [activating, setActivating] = useState(false)
+  const [activationModalOpen, setActivationModalOpen] = useState(false)
+  const [activationLoading, setActivationLoading] = useState(false)
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
   const [showActivateDropdown, setShowActivateDropdown] = useState(false)
   const [isWorkflowListCollapsed, setIsWorkflowListCollapsed] = useState(false) // default expanded
@@ -938,23 +942,52 @@ function WorkflowsPageInner() {
 
   const handleActivate = async () => {
     if (!selected || activating) return
+    setActivationModalOpen(true)
+  }
+
+  const handleActivationSubmit = async (credentials: N8nCredentials) => {
+    if (!selected) return
+    setActivationLoading(true)
     setActivating(true)
     try {
-      // API-backed workflows use the new per-ID activate endpoint
+      // Persist credentials to chosen storage
+      saveCredentials(credentials)
+
+      // POST to activate route with user-provided n8n credentials
+      const res = await fetch('/api/workflows/activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workflow_id: selected.workflow_id,
+          workflow_data: selected,
+          n8n_instance_url: credentials.instanceUrl,
+          n8n_api_key: credentials.apiKey,
+        }),
+      })
+      const data = await res.json()
+
+      if (!res.ok || !data.success) {
+        // Map error codes to user-friendly toast messages
+        if (res.status === 400) {
+          showToast(t('activationModal.errorMissingCreds'), 'error')
+        } else if (res.status === 401) {
+          showToast(t('activationModal.errorInvalidCreds'), 'error')
+        } else if (res.status === 502) {
+          if (data.code === 'INSTANCE_UNREACHABLE') {
+            showToast(t('activationModal.errorUnreachable'), 'error')
+          } else {
+            showToast(t('activationModal.errorDeployFailed'), 'error')
+          }
+        } else {
+          showToast(data.error || t('activationModal.errorDeployFailed'), 'error')
+        }
+        return
+      }
+
+      // Success — update workflow state
       if (apiWorkflows.find(aw => aw.id === selected.workflow_id)) {
-        const spec = apiWorkflows.find(aw => aw.id === selected.workflow_id)
-        const updated = await activateWorkflow(selected.workflow_id, spec)
         await refreshWorkflows()
-        showToast('Workflow activated and deployed to n8n', 'success')
       } else {
-        // Legacy localStorage workflow — use old activate route
-        const res = await fetch('/api/workflows/activate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ workflow_id: selected.workflow_id, workflow_data: selected }),
-        })
-        const data = await res.json()
-        if (!res.ok || !data.success) throw new Error(data.error || 'Activation failed')
         updateWorkflow(selected.workflow_id, {
           status: 'active',
           n8n_workflow_id: data.n8n_workflow_id,
@@ -962,12 +995,20 @@ function WorkflowsPageInner() {
           n8nWebhookPath: data.n8nWebhookUrl || null,
         })
         setLocalWorkflows(loadWorkflows())
-        showToast('Workflow activated', 'success')
       }
+
+      // Open n8n workflow in new tab
+      if (data.n8n_url) {
+        window.open(data.n8n_url, '_blank')
+      }
+
+      setActivationModalOpen(false)
+      showToast('Workflow deployed to n8n', 'success')
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to activate workflow.', 'error')
+      showToast(t('activationModal.errorNetwork'), 'error')
       console.error('[activate]', err)
     } finally {
+      setActivationLoading(false)
       setActivating(false)
     }
   }
@@ -1657,6 +1698,14 @@ function WorkflowsPageInner() {
         onApply={handleGenerationApply}
         availableApps={apps}
         initialPrompt={generationPrompt || undefined}
+      />
+
+      {/* ── Activation Modal ── */}
+      <ActivationModal
+        open={activationModalOpen}
+        onClose={() => setActivationModalOpen(false)}
+        onSubmit={handleActivationSubmit}
+        loading={activationLoading}
       />
     </div>
   )

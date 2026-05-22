@@ -95,7 +95,26 @@
     "credentialName": "NAMA KREDENSIAL",
     "deleteConfirm": "Hapus alur kerja \"{title}\"? Tindakan ini tidak dapat dibatalkan.",
     "generateFromNL": "Buat alur kerja dari bahasa alami",
-    "deployToN8n": "Deploy alur kerja ini ke n8n"
+    "deployToN8n": "Deploy alur kerja ini ke n8n",
+    "activationModal": {
+      "title": "Deploy ke n8n",
+      "urlLabel": "URL Instance n8n",
+      "urlInvalid": "Masukkan URL HTTP atau HTTPS yang valid",
+      "apiKeyLabel": "API Key n8n",
+      "storageLabel": "Tempat menyimpan kredensial",
+      "storageLocalTitle": "Browser saja",
+      "storageLocalDesc": "Disimpan di localStorage browser ini. Cepat, tapi hilang jika data browser dihapus.",
+      "storageDatabaseTitle": "Database (tersinkron)",
+      "storageDatabaseDesc": "Disimpan di server dan tersedia di semua perangkat. Memerlukan akun.",
+      "cancel": "Batal",
+      "submit": "Deploy ke n8n",
+      "submitting": "Men-deploy…",
+      "errorMissingCreds": "URL instance n8n dan API key wajib diisi.",
+      "errorInvalidCreds": "Kredensial n8n tidak valid. Periksa API key Anda.",
+      "errorUnreachable": "Tidak dapat menjangkau instance n8n Anda. Periksa URL.",
+      "errorDeployFailed": "Deployment gagal. Silakan coba lagi.",
+      "errorNetwork": "Tidak dapat menjangkau server. Periksa koneksi Anda."
+    }
   },
   "aira": {
     "name": "Aivory",
