@@ -528,6 +528,7 @@ p {
 </style>
     <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600;700;800&family=Crimson+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400&display=swap');
 
 /* Landing page background only - not console or dashboard */
 body:not(.console-page):not([class*="dashboard"]) {
@@ -608,13 +609,14 @@ a:hover {
 
 /* Sign In Link - Subtle Text Style */
 .nav-signin-link {
-    font-family: 'Inter Tight', sans-serif;
+    font-family: 'Manrope', sans-serif;
     font-size: 1rem;
     font-weight: 400;
     color: #ffffff !important;
     text-decoration: none !important;
     transition: all 0.2s ease;
     cursor: pointer;
+    text-transform: uppercase;
 }
 
 .nav-signin-link:hover {
@@ -628,6 +630,8 @@ a:hover {
     padding: 0 28px;
     font-size: 15px;
     font-weight: 400;
+    font-family: 'Manrope', sans-serif;
+    text-transform: uppercase;
     border: none !important;
     background: transparent !important;
 }
@@ -689,7 +693,7 @@ a:hover {
     background: #030408;
     color: white;
     border-radius: 0;
-    margin-bottom: 3rem;
+    margin-bottom: 0;
     max-width: 100%;
     margin-left: auto;
     margin-right: auto;
@@ -5938,33 +5942,29 @@ if (document.readyState === 'loading') {
     <!-- Section 1: Homepage -->
     <section id="homepage" class="section active" style="padding: 0;">
         <div
-            class="hero relative w-full min-h-screen flex flex-row items-center"
+            class="hero relative w-full min-h-screen flex flex-col items-center justify-center"
             style="background: #030408;">
             <video id="hero-video-bg" autoplay muted loop playsinline>
-                <source src="Hero section video/Animate1.mp4" type="video/mp4">
+                <source src="Hero section video/Glowing_river_on_blacksand.mp4" type="video/mp4">
             </video>
-            <div class="relative z-10 flex flex-col items-start justify-center" style="width: 45%; padding: 6rem 2rem 6rem 5rem;">
-                <h1 class="text-[33.6px] md:text-[50.4px] font-light mb-4 tracking-tight text-white/90">
+            <div class="relative z-10 flex flex-col items-center justify-center text-center w-full max-w-4xl" style="padding: 6rem 2rem;">
+                <h1 class="text-[33.6px] md:text-[50.4px] font-normal mb-4 tracking-tight text-white/90 text-center" style="font-family: 'Manrope', sans-serif;">
                     Make AI make sense<span class="text-aivory-accent">.</span>
                 </h1>
-                <h2 class="text-[21px] md:text-[33.6px] font-light text-[#57ffdf] text-left w-full mb-12 leading-tight">
+                <h2 class="text-[21px] md:text-[33.6px] font-normal text-[#57ffdf] text-center w-full mb-12 leading-tight" style="font-family: 'Manrope', sans-serif;">
                     Start with clarity.<br>
                     End with a system that runs.
                 </h2>
 
                 <a href="free-diagnostic.html"
-                    class="group flex items-center gap-3 transition-opacity text-[21.6px]"
-                    style="color: white; text-decoration: none; opacity: 0.75;"
-                    onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">
-                    <svg class="w-6 h-6" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="1.5" style="color: white;">
-                        <path d="M17 7v10H7" />
-                        <path d="M7 7l10 10" />
-                    </svg>
-                    Start with free diagnostic
+                    class="hero-diagnostic-btn"
+                    style="display: inline-flex; align-items: center; gap: 0.75rem; padding: 0.625rem 1.25rem; border: 1px solid rgba(255,255,255,0.6); background: transparent; color: white; text-decoration: none; font-family: 'Inter Tight', sans-serif; font-weight: 300; font-size: 0.625rem; letter-spacing: 0.12em; text-transform: uppercase; transition: all 0.25s ease; cursor: pointer;"
+                    onmouseover="this.style.background='white'; this.style.color='black'; this.style.borderColor='white'; this.querySelector('.hero-btn-arrow').style.color='black';"
+                    onmouseout="this.style.background='transparent'; this.style.color='white'; this.style.borderColor='rgba(255,255,255,0.6)'; this.querySelector('.hero-btn-arrow').style.color='white';">
+                    START WITH FREE DIAGNOSTIC
+                    <span class="hero-btn-arrow" style="color: white; font-size: 0.75rem; transition: color 0.25s ease;">→</span>
                 </a>
             </div>
-            <div class="relative z-10" style="width: 55%;"></div>
         </div>
 
         <!-- Features Grid Section -->
