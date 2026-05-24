@@ -22,7 +22,7 @@ export const SERVICES = {
   VPS_BRIDGE_API_KEY: '',
 
   /** Zeroclaw Gateway — accessed via VPS Bridge, not directly */
-  ZEROCLAW: process.env.ZEROCLAW_URL || 'https://api.aivory.id',
+  ZEROCLAW: process.env.ZEROCLAW_URL || 'http://localhost:3010',
 
   /** n8n base URL — accessed via VPS Bridge tunnel */
   N8N: process.env.N8N_URL || 'https://n8n.aivory.id',
@@ -40,6 +40,6 @@ export const SERVICES = {
 export const PORTS = {
   NEXTJS: 3000,
   VPS_BRIDGE: 3003,
-  ZEROCLAW: 3100,
+  ZEROCLAW: 3010,
   N8N: 5678,
 } as const
