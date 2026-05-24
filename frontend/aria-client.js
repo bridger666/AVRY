@@ -13,7 +13,8 @@
 // ============================================================================
 
 // Universal skill handler endpoint (n8n webhook)
-const N8N_SKILL_HANDLER_URL = "http://43.156.108.96:5678/webhook/zeroclaw-skill-handler-V2";
+// Can be overridden via window.N8N_SKILL_HANDLER_URL or environment variable
+const N8N_SKILL_HANDLER_URL = window.N8N_SKILL_HANDLER_URL || process.env.N8N_SKILL_HANDLER_URL || 'http://43.156.108.96:5678/webhook/zeroclaw-skill-handler-V2';
 
 // ============================================================================
 // CORE API CALL

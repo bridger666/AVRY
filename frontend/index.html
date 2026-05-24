@@ -7610,7 +7610,8 @@ function accessDashboard(tier = 'free') {
     sessionStorage.setItem('user_tier', tier.toLowerCase());
     
     // Route to Next.js dashboard with tier parameter
-    window.location.href = `http://localhost:3000/dashboard?tier=${tier.toLowerCase()}`;
+    const DASHBOARD_URL = window.DASHBOARD_URL || process.env.DASHBOARD_URL || 'http://localhost:3000';
+    window.location.href = `${DASHBOARD_URL}/dashboard?tier=${tier.toLowerCase()}`;
 }
 
 /**
@@ -8146,13 +8147,19 @@ function handleSignInClick() {
 }
 
 /**
+ * Dashboard URL configuration
+ * Uses environment variable or defaults to localhost for development
+ */
+const DASHBOARD_URL = window.DASHBOARD_URL || process.env.DASHBOARD_URL || 'http://localhost:3000';
+
+/**
  * Handle Dashboard button click
  */
 function handleDashboardClick() {
     // Check if user is authenticated
     if (typeof AuthManager !== 'undefined' && AuthManager.isAuthenticated()) {
         // Redirect to Next.js dashboard
-        window.location.href = 'http://localhost:3000/dashboard';
+        window.location.href = `${DASHBOARD_URL}/dashboard`;
     } else {
         // Show login modal
         if (typeof showLoginModal === 'function') {
@@ -10537,6 +10544,16 @@ const SNAPSHOT_DIAGNOSTIC_QUESTIONS = [
             console.log('✅ showSection:', typeof showSection);
             console.log('✅ handleSignInClick:', typeof handleSignInClick);
             console.log('✅ handleDashboardClick:', typeof handleDashboardClick);
+            
+            // Update dashboard navigation URLs with environment variable
+            const DASHBOARD_URL = window.DASHBOARD_URL || process.env.DASHBOARD_URL || 'http://localhost:3000';
+            const dashboardNavItems = document.querySelectorAll('#dashboard-nav-item, #snapshots-nav-item, #blueprints-nav-item, #workflows-go-dashboard');
+            dashboardNavItems.forEach(item => {
+                if (item.href && item.href.includes('localhost:3000')) {
+                    const path = item.href.replace('http://localhost:3000', DASHBOARD_URL);
+                    item.href = path;
+                }
+            });
         });
     </script>
 </body>

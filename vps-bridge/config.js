@@ -367,7 +367,7 @@ const config = {
   },
 
   // Zeroclaw orchestrator (primary for floating AIRA)
-  zeroclawUrl: process.env.ZEROCLAW_URL || 'http://localhost:42617',
+  zeroclawUrl: process.env.ZEROCLAW_URL || 'http://localhost:3010',
   zeroclawToken: process.env.ZEROCLAW_TOKEN || '',
   zeroclawTimeout: 115000, // 115s — just under Next.js 120s hard limit
 

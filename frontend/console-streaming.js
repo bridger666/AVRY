@@ -13,9 +13,10 @@
 // CONSTANTS
 // ============================================================================
 
-// VPS Bridge URL — all calls go through the bridge, not directly to Zeroclaw.
+// VPS Bridge URL - all calls go through the bridge, not directly to Zeroclaw.
 // In production this is the deployed VPS; in dev it's localhost:3003.
-const VPS_BRIDGE_URL = window.VPS_BRIDGE_URL || 'http://43.156.108.96:3003';
+// Can be overridden via window.VPS_BRIDGE_URL or environment variable
+const VPS_BRIDGE_URL = window.VPS_BRIDGE_URL || process.env.VPS_BRIDGE_URL || 'http://localhost:3003';
 
 // Universal skill handler endpoint (n8n webhook)
 const SKILL_ROUTER_ENDPOINT = `${VPS_BRIDGE_URL}/webhook/zeroclaw-skill-handler-V2`;

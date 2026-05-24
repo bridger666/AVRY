@@ -266,7 +266,7 @@
                         </svg>
                         <span>Console</span>
                     </a>
-                    <a href="http://localhost:3000/dashboard" class="sidebar-nav-item">
+                    <a href="http://localhost:3000/dashboard" id="dashboard-nav-item" class="sidebar-nav-item">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <rect x="3" y="3" width="7" height="7"/>
                             <rect x="14" y="3" width="7" height="7"/>
@@ -573,6 +573,16 @@
             localStorage.setItem('workspace_description', description);
             
             alert('Workspace settings saved successfully!');
+            
+            // Update dashboard navigation URLs with environment variable
+            const DASHBOARD_URL = window.DASHBOARD_URL || process.env.DASHBOARD_URL || 'http://localhost:3000';
+            const dashboardNavItems = document.querySelectorAll('#dashboard-nav-item');
+            dashboardNavItems.forEach(item => {
+                if (item.href && item.href.includes('localhost:3000')) {
+                    const path = item.href.replace('http://localhost:3000', DASHBOARD_URL);
+                    item.href = path;
+                }
+            });
         }
     </script>
 </body>
