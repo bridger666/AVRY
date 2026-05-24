@@ -22,7 +22,21 @@ if (!window.API_BASE_URL) {
 }
 const API_BASE_URL = window.API_BASE_URL;
 
+// Dashboard URL Configuration
+if (!window.DASHBOARD_URL) {
+    // Development: localhost:3000
+    // Production: admin.aivory.id
+    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isDevelopment) {
+        window.DASHBOARD_URL = 'http://localhost:3000';
+    } else {
+        window.DASHBOARD_URL = 'https://admin.aivory.id';
+    }
+}
+const DASHBOARD_URL = window.DASHBOARD_URL;
+
 console.log('✅ app.js loaded - API_BASE_URL:', API_BASE_URL);
+console.log('✅ app.js loaded - DASHBOARD_URL:', DASHBOARD_URL);
 
 // ============================================================================
 // GLOBAL STATE
@@ -917,7 +931,7 @@ function displaySnapshotResults(result) {
     sessionStorage.setItem('dashboard_snapshot_data', JSON.stringify(result));
     
     // Redirect to Next.js dashboard in snapshot mode
-    window.location.href = 'http://localhost:3000/dashboard?mode=snapshot';
+    window.location.href = `${DASHBOARD_URL}/dashboard?mode=snapshot`;
 }
 
 // ============================================================================
@@ -1057,12 +1071,12 @@ async function displayBlueprintResults(result) {
         sessionStorage.setItem('dashboard_blueprint_data', JSON.stringify(blueprintData));
         
         // Redirect to Next.js dashboard in blueprint mode
-        window.location.href = 'http://localhost:3000/dashboard?mode=blueprint';
+        window.location.href = `${DASHBOARD_URL}/dashboard?mode=blueprint`;
         
     } catch (error) {
         console.error('Error loading blueprint data:', error);
         alert('Blueprint generated but failed to load data. Please try refreshing the dashboard.');
-        window.location.href = 'http://localhost:3000/dashboard?mode=blueprint';
+        window.location.href = `${DASHBOARD_URL}/dashboard?mode=blueprint`;
     }
 }
 
@@ -1200,7 +1214,7 @@ function handleDashboardClick() {
     // Check if user is authenticated
     if (typeof AuthManager !== 'undefined' && AuthManager.isAuthenticated()) {
         // Redirect to Next.js dashboard
-        window.location.href = 'http://localhost:3000/dashboard';
+        window.location.href = `${DASHBOARD_URL}/dashboard`;
     } else {
         // Show login modal
         if (typeof showLoginModal === 'function') {
