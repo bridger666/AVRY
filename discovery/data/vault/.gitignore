@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Markdown docs — never push to public repo
+*.md
+
+# ── Environment & Secrets ─────────────────────────────────
+# Unified root .env + all local overrides — never commit
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p8
+*.p12
+*.crt
+*.cert
+secrets.*
+credentials.*
+config/local.*
+
+# Per-service env files (migrated to root .env)
+nextjs-console/.env*
+!nextjs-console/.env.example
+vps-bridge/.env*
+!vps-bridge/.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+contacts.log
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# Node / Next.js
+node_modules/
+.next/
+coverage/
+fix_zeroclaw_auth.py
+fix_zeroclaw_auth_v2.sh
+*.n8n
+full_scan_output.txt

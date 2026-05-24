@@ -25,7 +25,7 @@ const USER_BUBBLE_CLASS = 'max-w-[80%] bg-[#282825] rounded-2xl px-5 py-3.5 text
 
 // ChatMessage.tsx — assistant bubble className (observed — no bubble, just text wrapper)
 const ASSISTANT_BUBBLE_CLASS =
-  'flex-1 px-1 py-1 text-base text-[#d6d6c9] leading-[1.6]'
+  'flex-1 px-1 py-1 text-base text-[#f7f7f7] leading-[1.6]'
 
 // Sidebar.tsx — active nav item classes (observed)
 const SIDEBAR_ACTIVE_CLASSES = 'text-zinc-100 bg-white/5'
@@ -103,7 +103,7 @@ describe('Property 2: Preservation — Chat Bubble Styling and Navigation Behavi
           fc.string({ minLength: 0, maxLength: 500 }),
           (_messageContent) => {
             expect(containsAllClasses(ASSISTANT_BUBBLE_CLASS, 'text-base')).toBe(true)
-            expect(containsAllClasses(ASSISTANT_BUBBLE_CLASS, 'text-[#d6d6c9]')).toBe(true)
+            expect(containsAllClasses(ASSISTANT_BUBBLE_CLASS, 'text-[#f7f7f7]')).toBe(true)
             expect(containsAllClasses(ASSISTANT_BUBBLE_CLASS, 'leading-[1.6]')).toBe(true)
           },
         ),
@@ -115,7 +115,7 @@ describe('Property 2: Preservation — Chat Bubble Styling and Navigation Behavi
       const source = readSourceFile('components/ChatMessage.tsx')
       // The assistant bubble renders an avatar with Aivory_Avatar.svg
       expect(source).toContain('Aivory_Avatar.svg')
-      expect(source).toContain('text-[#d6d6c9]')
+      expect(source).toContain('text-[#f7f7f7]')
     })
   })
 
@@ -163,8 +163,8 @@ describe('Property 2: Preservation — Chat Bubble Styling and Navigation Behavi
 
     it('Sidebar.tsx source contains the observed active/inactive class strings', () => {
       const source = readSourceFile('components/shared/Sidebar.tsx')
-      expect(source).toContain("'text-zinc-100 bg-white/5'")
-      expect(source).toContain("'text-zinc-400 hover:text-zinc-100 hover:bg-white/5'")
+      expect(source).toContain('"text-zinc-100 bg-white/5"')
+      expect(source).toContain('"text-zinc-400 hover:text-zinc-100 hover:bg-white/5"')
     })
   })
 
@@ -212,10 +212,10 @@ describe('Property 2: Preservation — Chat Bubble Styling and Navigation Behavi
    * **Validates: Requirements 3.5**
    */
   describe('.app-main-content CSS class preservation', () => {
-    it('globals.css contains .app-main-content with margin-left: 240px', () => {
+    it('globals.css contains .app-main-content with margin-left: 220px', () => {
       const source = readSourceFile('styles/globals.css')
       expect(source).toContain('.app-main-content')
-      expect(source).toContain('margin-left: 240px')
+      expect(source).toContain('margin-left: 220px')
     })
 
     it('globals.css .app-main-content block contains flex: 1 and overflow-y: auto', () => {
@@ -225,7 +225,7 @@ describe('Property 2: Preservation — Chat Bubble Styling and Navigation Behavi
       expect(match).not.toBeNull()
       const block = match![1]
       expect(block).toContain('flex: 1')
-      expect(block).toContain('margin-left: 240px')
+      expect(block).toContain('margin-left: 220px')
       expect(block).toContain('min-width: 0')
       expect(block).toContain('overflow-y: auto')
       expect(block).toContain('height: 100vh')
@@ -239,7 +239,7 @@ describe('Property 2: Preservation — Chat Bubble Styling and Navigation Behavi
             const source = readSourceFile('styles/globals.css')
             const match = source.match(/\.app-main-content\s*\{([^}]+)\}/)
             expect(match).not.toBeNull()
-            expect(match![1]).toContain('margin-left: 240px')
+            expect(match![1]).toContain('margin-left: 220px')
           },
         ),
         { numRuns: 20 },

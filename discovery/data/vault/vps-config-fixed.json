@@ -1,0 +1,36 @@
+{
+  "agents": [
+    {
+      "id": "aivory",
+      "name": "Aivory",
+      "description": "Aivory AI Runtime Agent - autonomous workflow orchestrator for Aivory OS",
+      "personality": "professional, concise, action-oriented",
+      "enabled": true
+    }
+  ],
+  "sub_agents": [],
+  "agent": {
+    "name": "Aivory",
+    "description": "Aivory AI Runtime Agent - autonomous workflow orchestrator for Aivory OS",
+    "personality": "professional, concise, action-oriented"
+  },
+  "gateway": {
+    "host": "0.0.0.0",
+    "port": 42617
+  },
+  "auth": {
+    "bearer_token": "zc_ef04dffb809cf90408dd8fa1ff0f6c98e68d6fb83c26fd6c0e45f4c9ef245881"
+  },
+  "scheduler": {
+    "enabled": true,
+    "heartbeat_interval_secs": 30
+  },
+  "n8n": {
+    "base_url": "http://localhost:5678/webhook",
+    "universal_skill_webhook": "http://localhost:5678/webhook/aivory-universal-skill"
+  },
+  "logging": {
+    "level": "info",
+    "format": "json"
+  }
+}

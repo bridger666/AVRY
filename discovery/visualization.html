@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualization | AVRY Discovery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root { --bg: #0a0b10; --panel: #14161e; --accent: #00f2ff; --text: #e0e0e0; --border: rgba(255, 255, 255, 0.1); }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        .sidebar { width: 260px; background: var(--panel); border-right: 1px solid var(--border); padding: 40px 20px; display: flex; flex-direction: column; flex-shrink: 0; }
+        .nav-item { padding: 12px; color: #888; text-decoration: none; display: flex; align-items: center; gap: 12px; font-size: 13px; border-radius: 8px; margin-bottom: 4px; }
+        .nav-item.active { background: rgba(0, 242, 255, 0.1); color: var(--accent); font-weight: 600; }
+        
+        .main { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .header { padding: 30px 40px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .breadcrumb { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #666; }
+        
+        .tabs { display: flex; gap: 30px; margin-top: 15px; }
+        .tab { font-size: 13px; color: #555; cursor: pointer; padding-bottom: 8px; position: relative; transition: 0.3s; }
+        .tab.active { color: var(--accent); }
+        .tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: var(--accent); }
+        
+        .content-area { flex: 1; position: relative; overflow: hidden; }
+        .view-pane { position: absolute; inset: 0; display: none; }
+        .view-pane.active { display: block; }
+        
+        #graph-container { width: 100%; height: 100%; }
+        .node circle { stroke: #fff; stroke-width: 1.5px; cursor: pointer; }
+        .link { stroke: rgba(255,255,255,0.05); stroke-opacity: 0.6; }
+        
+        .details-panel { position: absolute; top: 20px; right: 20px; width: 320px; background: rgba(20, 22, 30, 0.95); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 12px; padding: 25px; max-height: calc(100% - 40px); overflow-y: auto; z-index: 100; display: none; }
+        .details-panel.active { display: block; }
+        
+        .tree-node { margin-left: 20px; padding: 4px 0; font-size: 13px; }
+        .tree-folder { color: #888; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .tree-file { color: var(--accent); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        
+        .search-bar { width: 100%; max-width: 400px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; padding: 10px 15px; color: #fff; font-family: inherit; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 40px; }
+        .stat-card { background: var(--panel); border: 1px solid var(--border); padding: 30px; border-radius: 12px; text-align: center; }
+        .stat-value { font-size: 48px; color: var(--accent); font-weight: 300; }
+        .stat-label { font-size: 12px; color: #666; text-transform: uppercase; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2 style="color: var(--accent); font-weight: 300; letter-spacing: 3px; font-size: 20px; margin-bottom: 40px;">AVRY</h2>
+        <nav>
+            <a href="index.html" class="nav-item"><i data-feather="grid"></i> Dashboard</a>
+            <div style="margin: 20px 0 10px 12px; font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 2px;">Modules</div>
+            <a href="visualization.html" class="nav-item active"><i data-feather="map"></i> Visualization</a>
+            <a href="reports.html" class="nav-item"><i data-feather="file-text"></i> Reports</a>
+            <a href="analysis.html" class="nav-item"><i data-feather="zap"></i> Analysis</a>
+            <a href="tests.html" class="nav-item"><i data-feather="check-circle"></i> Tests</a>
+            <a href="vps.html" class="nav-item"><i data-feather="server"></i> VPS</a>
+            <a href="documentation.html" class="nav-item"><i data-feather="book-open"></i> Documentation</a>
+        </nav>
+    </div>
+    
+    <div class="main">
+        <div class="header">
+            <div>
+                <div class="breadcrumb"><a href="index.html" style="color:inherit; text-decoration:none;">AVRY</a> / VISUALIZATION</div>
+                <div class="tabs">
+                    <div class="tab active" data-view="graph">Graph Explorer</div>
+                    <div class="tab" data-view="tree">Tree Structure</div>
+                    <div class="tab" data-view="search">Search Index</div>
+                    <div class="tab" data-view="stats">Architectural Stats</div>
+                    <div class="tab" data-view="details">Logical Details</div>
+                </div>
+            </div>
+            <input type="text" class="search-bar" placeholder="Search modules, pages, functions..." id="global-search">
+        </div>
+        
+        <div class="content-area">
+            <!-- Graph Pane -->
+            <div class="view-pane active" id="pane-graph">
+                <div id="graph-container"></div>
+            </div>
+            
+            <!-- Tree Pane -->
+            <div class="view-pane" id="pane-tree" style="padding: 40px; overflow-y: auto;">
+                <div id="tree-root"></div>
+            </div>
+            
+            <!-- Search Pane -->
+            <div class="view-pane" id="pane-search" style="padding: 40px; overflow-y: auto;">
+                <div id="search-results" style="display: grid; grid-template-columns: 1fr; gap: 10px;"></div>
+            </div>
+            
+            <!-- Stats Pane -->
+            <div class="view-pane" id="pane-stats">
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-value" id="stat-nodes">0</div><div class="stat-label">Total Components</div></div>
+                    <div class="stat-card"><div class="stat-value" id="stat-pages">0</div><div class="stat-label">Page Modules</div></div>
+                    <div class="stat-card"><div class="stat-value" id="stat-clusters">0</div><div class="stat-label">Functional Clusters</div></div>
+                    <div class="stat-card"><div class="stat-value" id="stat-logic">0</div><div class="stat-label">Logic Rationales</div></div>
+                </div>
+            </div>
+            
+            <!-- Details Pane (Also as overlay) -->
+            <div class="details-panel" id="details-overlay">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <span id="detail-category" style="font-size: 10px; color: var(--accent); text-transform: uppercase; border: 1px solid var(--accent); padding: 2px 6px; border-radius: 4px;">MODULE</span>
+                    <i data-feather="x" style="width:16px; cursor:pointer;" onclick="closeDetails()"></i>
+                </div>
+                <h3 id="detail-label" style="margin: 0; font-weight: 400; color: #fff; font-size: 18px;">Select a Node</h3>
+                <p id="detail-file" style="font-size: 12px; color: #444; margin-top: 8px; word-break: break-all;"></p>
+                
+                <div style="margin-top: 30px;">
+                    <label style="font-size: 10px; color: #666; text-transform: uppercase;">Functional Cluster</label>
+                    <div id="detail-cluster" style="font-size: 14px; color: #ccc; margin-top: 5px;">-</div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <label style="font-size: 10px; color: #666; text-transform: uppercase;">Purpose & Logic</label>
+                    <div id="detail-desc" style="font-size: 13px; color: #888; margin-top: 10px; line-height: 1.6;">-</div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <label style="font-size: 10px; color: #666; text-transform: uppercase;">Implementation Details</label>
+                    <pre id="detail-logic" style="font-size: 12px; color: #555; margin-top: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; white-space: pre-wrap;"></pre>
+                </div>
+                
+                <button id="view-file-btn" style="width: 100%; margin-top: 30px; background: transparent; border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <i data-feather="code"></i> View Source
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let graphData;
+        
+        async function init() {
+            const resp = await fetch('data/graph.json');
+            graphData = await resp.json();
+            
+            renderGraph();
+            renderTree(graphData.tree, document.getElementById('tree-root'));
+            updateStats();
+            feather.replace();
+            
+            // Tab Switching
+            document.querySelectorAll('.tab').forEach(t => {
+                t.onclick = () => {
+                    document.querySelectorAll('.tab, .view-pane').forEach(el => el.classList.remove('active'));
+                    t.classList.add('active');
+                    document.getElementById(`pane-${t.dataset.view}`).classList.add('active');
+                };
+            });
+            
+            // Search
+            document.getElementById('global-search').oninput = (e) => {
+                const q = e.target.value.toLowerCase();
+                if (!q) return;
+                const results = graphData.nodes.filter(n => 
+                    n.label.toLowerCase().includes(q) || 
+                    (n.source_file || "").toLowerCase().includes(q)
+                ).slice(0, 20);
+                
+                const resDiv = document.getElementById('search-results');
+                resDiv.innerHTML = results.map(r => `
+                    <div style="background: var(--panel); border: 1px solid var(--border); padding: 15px; border-radius: 8px; cursor: pointer;" onclick="showNodeDetails(${JSON.stringify(r).replace(/"/g, '&quot;')})">
+                        <div style="font-size: 14px; color: var(--accent);">${r.label}</div>
+                        <div style="font-size: 11px; color: #444; margin-top: 5px;">${r.source_file || 'Internal Module'}</div>
+                    </div>
+                `).join('');
+            };
+        }
+
+        function renderGraph() {
+            const width = document.getElementById('graph-container').clientWidth;
+            const height = document.getElementById('graph-container').clientHeight;
+            
+            const svg = d3.select("#graph-container")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            const simulation = d3.forceSimulation(graphData.nodes)
+                .force("link", d3.forceLink(graphData.links).id(d => d.id).distance(100))
+                .force("charge", d3.forceManyBody().strength(-200))
+                .force("center", d3.forceCenter(width / 2, height / 2));
+
+            const link = svg.append("g")
+                .attr("class", "links")
+                .selectAll("line")
+                .data(graphData.links)
+                .enter().append("line")
+                .attr("class", "link");
+
+            const node = svg.append("g")
+                .attr("class", "nodes")
+                .selectAll("circle")
+                .data(graphData.nodes)
+                .enter().append("circle")
+                .attr("r", d => d.category === 'Feature' ? 8 : 5)
+                .attr("fill", d => d.category === 'Feature' ? varColor('--accent') : "#333")
+                .on("click", (e, d) => showNodeDetails(d))
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended));
+
+            node.append("title").text(d => d.label);
+
+            simulation.on("tick", () => {
+                link.attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+                node.attr("cx", d => d.x)
+                    .attr("cy", d => d.y);
+            });
+
+            function dragstarted(event) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                event.subject.fx = event.subject.x;
+                event.subject.fy = event.subject.y;
+            }
+            function dragged(event) {
+                event.subject.fx = event.x;
+                event.subject.fy = event.y;
+            }
+            function dragended(event) {
+                if (!event.active) simulation.alphaTarget(0);
+                event.subject.fx = null;
+                event.subject.fy = null;
+            }
+        }
+
+        function renderTree(node, container) {
+            const item = document.createElement('div');
+            item.className = 'tree-node';
+            
+            if (node.children && node.children.length > 0) {
+                item.innerHTML = `<div class="tree-folder"><i data-feather="folder" style="width:14px;"></i> ${node.name}</div>`;
+                const childContainer = document.createElement('div');
+                childContainer.style.display = 'block';
+                node.children.forEach(c => renderTree(c, childContainer));
+                item.appendChild(childContainer);
+            } else {
+                item.innerHTML = `<div class="tree-file" onclick="openVaultFile('${node.name}')"><i data-feather="file-text" style="width:14px;"></i> ${node.name}</div>`;
+            }
+            container.appendChild(item);
+        }
+
+        function showNodeDetails(d) {
+            document.getElementById('details-overlay').classList.add('active');
+            document.getElementById('detail-label').innerText = d.label;
+            document.getElementById('detail-file').innerText = d.source_file || 'Built-in Module';
+            document.getElementById('detail-category').innerText = d.category || 'COMPONENT';
+            document.getElementById('detail-cluster').innerText = d.clusterName || 'General Core';
+            document.getElementById('detail-desc').innerText = d.functionDesc || 'Standard functional module of the AVRY architecture.';
+            document.getElementById('detail-logic').innerText = d.detailedLogic || 'Logic is implicitly defined by the module boundaries.';
+            
+            document.getElementById('view-file-btn').onclick = () => {
+                if (d.source_file) {
+                    const filename = d.source_file.split('/').pop().split('\\').pop();
+                    window.open(`data/vault/${filename}`, '_blank');
+                }
+            };
+        }
+
+        function closeDetails() {
+            document.getElementById('details-overlay').classList.remove('active');
+        }
+
+        function updateStats() {
+            document.getElementById('stat-nodes').innerText = graphData.nodes.length;
+            document.getElementById('stat-pages').innerText = graphData.nodes.filter(n => n.category === 'Feature').length;
+            document.getElementById('stat-clusters').innerText = [...new Set(graphData.nodes.map(n => n.clusterName))].length;
+            document.getElementById('stat-logic').innerText = graphData.nodes.filter(n => n.detailedLogic).length;
+        }
+
+        function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name); }
+        function openVaultFile(name) { window.open(`data/vault/${name}`, '_blank'); }
+
+        init();
+    </script>
+</body>
+</html>

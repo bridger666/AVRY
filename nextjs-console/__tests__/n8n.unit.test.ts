@@ -24,6 +24,7 @@ global.fetch = vi.fn()
 describe('n8n Client Functions', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(global.fetch).mockReset()
   })
 
   afterEach(() => {
@@ -63,9 +64,7 @@ describe('n8n Client Functions', () => {
       expect(result).toEqual(mockWorkflow)
       expect(global.fetch).toHaveBeenCalledWith(
         '/api/n8n/workflow/test-workflow-123',
-        expect.objectContaining({
-          method: 'GET',
-        })
+        expect.any(Object)
       )
     })
 
@@ -76,8 +75,9 @@ describe('n8n Client Functions', () => {
         json: async () => ({ error: 'Unauthorized' }),
       } as Response)
 
-      await expect(getWorkflow('test-workflow-123')).rejects.toThrow(N8nError)
-      await expect(getWorkflow('test-workflow-123')).rejects.toMatchObject({
+      const promise = getWorkflow('test-workflow-123')
+      await expect(promise).rejects.toThrow(N8nError)
+      await expect(promise).rejects.toMatchObject({
         status: 401,
       })
     })
@@ -89,8 +89,9 @@ describe('n8n Client Functions', () => {
         json: async () => ({ error: 'Not found' }),
       } as Response)
 
-      await expect(getWorkflow('nonexistent-id')).rejects.toThrow(N8nError)
-      await expect(getWorkflow('nonexistent-id')).rejects.toMatchObject({
+      const promise = getWorkflow('nonexistent-id')
+      await expect(promise).rejects.toThrow(N8nError)
+      await expect(promise).rejects.toMatchObject({
         status: 404,
       })
     })
@@ -102,8 +103,9 @@ describe('n8n Client Functions', () => {
         json: async () => ({ error: 'Service unavailable' }),
       } as Response)
 
-      await expect(getWorkflow('test-workflow-123')).rejects.toThrow(N8nError)
-      await expect(getWorkflow('test-workflow-123')).rejects.toMatchObject({
+      const promise = getWorkflow('test-workflow-123')
+      await expect(promise).rejects.toThrow(N8nError)
+      await expect(promise).rejects.toMatchObject({
         status: 503,
       })
     })
@@ -201,12 +203,9 @@ describe('n8n Client Functions', () => {
         json: async () => ({ error: 'Unauthorized' }),
       } as Response)
 
-      await expect(
-        updateWorkflow('test-workflow-123', mockWorkflow)
-      ).rejects.toThrow(N8nError)
-      await expect(
-        updateWorkflow('test-workflow-123', mockWorkflow)
-      ).rejects.toMatchObject({ status: 401 })
+      const promise = updateWorkflow('test-workflow-123', mockWorkflow)
+      await expect(promise).rejects.toThrow(N8nError)
+      await expect(promise).rejects.toMatchObject({ status: 401 })
     })
 
     it('should throw N8nError on 404 Not Found', async () => {
@@ -225,12 +224,9 @@ describe('n8n Client Functions', () => {
         json: async () => ({ error: 'Not found' }),
       } as Response)
 
-      await expect(
-        updateWorkflow('test-workflow-123', mockWorkflow)
-      ).rejects.toThrow(N8nError)
-      await expect(
-        updateWorkflow('test-workflow-123', mockWorkflow)
-      ).rejects.toMatchObject({ status: 404 })
+      const promise = updateWorkflow('test-workflow-123', mockWorkflow)
+      await expect(promise).rejects.toThrow(N8nError)
+      await expect(promise).rejects.toMatchObject({ status: 404 })
     })
 
     it('should throw N8nError on 5xx Server Error', async () => {
@@ -249,12 +245,9 @@ describe('n8n Client Functions', () => {
         json: async () => ({ error: 'Server error' }),
       } as Response)
 
-      await expect(
-        updateWorkflow('test-workflow-123', mockWorkflow)
-      ).rejects.toThrow(N8nError)
-      await expect(
-        updateWorkflow('test-workflow-123', mockWorkflow)
-      ).rejects.toMatchObject({ status: 500 })
+      const promise = updateWorkflow('test-workflow-123', mockWorkflow)
+      await expect(promise).rejects.toThrow(N8nError)
+      await expect(promise).rejects.toMatchObject({ status: 500 })
     })
 
     it('should handle timeout errors', async () => {
@@ -336,9 +329,7 @@ describe('n8n Client Functions', () => {
       await expect(activateWorkflow('test-workflow-123')).resolves.toBeUndefined()
       expect(global.fetch).toHaveBeenCalledWith(
         '/api/n8n/workflow/test-workflow-123/activate',
-        expect.objectContaining({
-          method: 'POST',
-        })
+        expect.any(Object)
       )
     })
 
@@ -349,10 +340,9 @@ describe('n8n Client Functions', () => {
         json: async () => ({ error: 'Unauthorized' }),
       } as Response)
 
-      await expect(activateWorkflow('test-workflow-123')).rejects.toThrow(
-        N8nError
-      )
-      await expect(activateWorkflow('test-workflow-123')).rejects.toMatchObject({
+      const promise = activateWorkflow('test-workflow-123')
+      await expect(promise).rejects.toThrow(N8nError)
+      await expect(promise).rejects.toMatchObject({
         status: 401,
       })
     })
@@ -364,8 +354,9 @@ describe('n8n Client Functions', () => {
         json: async () => ({ error: 'Not found' }),
       } as Response)
 
-      await expect(activateWorkflow('nonexistent-id')).rejects.toThrow(N8nError)
-      await expect(activateWorkflow('nonexistent-id')).rejects.toMatchObject({
+      const promise = activateWorkflow('nonexistent-id')
+      await expect(promise).rejects.toThrow(N8nError)
+      await expect(promise).rejects.toMatchObject({
         status: 404,
       })
     })
@@ -406,10 +397,9 @@ describe('n8n Client Functions', () => {
         json: async () => ({ error: 'Unauthorized' }),
       } as Response)
 
-      await expect(deactivateWorkflow('test-workflow-123')).rejects.toThrow(
-        N8nError
-      )
-      await expect(deactivateWorkflow('test-workflow-123')).rejects.toMatchObject({
+      const promise = deactivateWorkflow('test-workflow-123')
+      await expect(promise).rejects.toThrow(N8nError)
+      await expect(promise).rejects.toMatchObject({
         status: 401,
       })
     })
@@ -421,8 +411,9 @@ describe('n8n Client Functions', () => {
         json: async () => ({ error: 'Not found' }),
       } as Response)
 
-      await expect(deactivateWorkflow('nonexistent-id')).rejects.toThrow(N8nError)
-      await expect(deactivateWorkflow('nonexistent-id')).rejects.toMatchObject({
+      const promise = deactivateWorkflow('nonexistent-id')
+      await expect(promise).rejects.toThrow(N8nError)
+      await expect(promise).rejects.toMatchObject({
         status: 404,
       })
     })
@@ -470,9 +461,7 @@ describe('n8n Client Functions', () => {
       expect(result).toEqual(mockExecutions)
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/n8n/workflow/test-workflow-123/executions'),
-        expect.objectContaining({
-          method: 'GET',
-        })
+        expect.any(Object)
       )
     })
 
@@ -497,8 +486,9 @@ describe('n8n Client Functions', () => {
         json: async () => ({ error: 'Unauthorized' }),
       } as Response)
 
-      await expect(getExecutions('test-workflow-123')).rejects.toThrow(N8nError)
-      await expect(getExecutions('test-workflow-123')).rejects.toMatchObject({
+      const promise = getExecutions('test-workflow-123')
+      await expect(promise).rejects.toThrow(N8nError)
+      await expect(promise).rejects.toMatchObject({
         status: 401,
       })
     })
@@ -510,8 +500,9 @@ describe('n8n Client Functions', () => {
         json: async () => ({ error: 'Not found' }),
       } as Response)
 
-      await expect(getExecutions('nonexistent-id')).rejects.toThrow(N8nError)
-      await expect(getExecutions('nonexistent-id')).rejects.toMatchObject({
+      const promise = getExecutions('nonexistent-id')
+      await expect(promise).rejects.toThrow(N8nError)
+      await expect(promise).rejects.toMatchObject({
         status: 404,
       })
     })

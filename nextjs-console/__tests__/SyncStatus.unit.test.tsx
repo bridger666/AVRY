@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { SyncStatus, type SyncState } from '@/components/workflow/SyncStatus'
 
 // Mock user event for testing
@@ -330,7 +330,7 @@ describe('SyncStatus Component', () => {
       render(<SyncStatus state="save-error" onRetry={onRetry} />)
 
       const retryButton = screen.getByRole('button')
-      await userEvent.click(retryButton)
+      fireEvent.click(retryButton)
 
       expect(onRetry).toHaveBeenCalled()
     })

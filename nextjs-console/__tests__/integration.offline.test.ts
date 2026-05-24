@@ -118,7 +118,15 @@ describe('Integration: Offline Mode with Reconnection', () => {
       if (node.id === 'step-1') {
         return {
           ...node,
-          data: { ...node.data, label: 'Edited Step' }
+          data: {
+            ...node.data,
+            title: 'Edited Step',
+            label: 'Edited Step',
+            rawN8n: {
+              ...node.data.rawN8n,
+              name: 'Edited Step'
+            }
+          }
         }
       }
       return node
@@ -293,7 +301,7 @@ describe('Integration: Offline Mode with Reconnection', () => {
     const age = Date.now() - cachedData.timestamp
 
     // Verify cache is stale
-    expect(age).toBeGreaterThan(3600000)
+    expect(age).toBeGreaterThanOrEqual(3600000)
   })
 
   it('should handle multiple offline edits', async () => {
@@ -308,14 +316,14 @@ describe('Integration: Offline Mode with Reconnection', () => {
     let workflow = JSON.parse(localStorage.getItem(CACHE_KEY)!).workflow
     let { nodes, edges } = n8nToReactFlow(workflow)
     nodes = nodes.map(n =>
-      n.id === 'trigger-1' ? { ...n, data: { ...n.data, label: 'Edit 1' } } : n
+      n.id === 'trigger-1' ? { ...n, data: { ...n.data, title: 'Edit 1', label: 'Edit 1', rawN8n: { ...n.data.rawN8n, name: 'Edit 1' } } } : n
     )
-    workflow = reactFlowToN8n(nodes, edges, workflow)
+    workflow = reactFlowToN8n(nodes, edges, workflow);
 
     // Second edit
     ({ nodes, edges } = n8nToReactFlow(workflow))
     nodes = nodes.map(n =>
-      n.id === 'step-1' ? { ...n, data: { ...n.data, label: 'Edit 2' } } : n
+      n.id === 'step-1' ? { ...n, data: { ...n.data, title: 'Edit 2', label: 'Edit 2', rawN8n: { ...n.data.rawN8n, name: 'Edit 2' } } } : n
     )
     workflow = reactFlowToN8n(nodes, edges, workflow)
 

@@ -242,11 +242,26 @@ async function register(email, password, companyName = null) {
         });
         
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Registration failed');
+            let errorMsg = 'Registration failed';
+            try {
+                const error = await response.json();
+                errorMsg = error.detail || errorMsg;
+            } catch (e) {
+                try {
+                    const text = await response.text();
+                    if (text) errorMsg = text;
+                } catch (e2) {}
+            }
+            throw new Error(errorMsg);
         }
         
-        const data = await response.json();
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            console.error('Failed to parse registration response:', e);
+            throw new Error('Server returned an invalid response. Please check if the backend is running.');
+        }
         
         // Store tokens and user
         storeTokens(data.tokens.access_token, data.tokens.refresh_token);
@@ -281,11 +296,26 @@ async function login(email, password) {
         });
         
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Login failed');
+            let errorMsg = 'Login failed';
+            try {
+                const error = await response.json();
+                errorMsg = error.detail || errorMsg;
+            } catch (e) {
+                try {
+                    const text = await response.text();
+                    if (text) errorMsg = text;
+                } catch (e2) {}
+            }
+            throw new Error(errorMsg);
         }
         
-        const data = await response.json();
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            console.error('Failed to parse login response:', e);
+            throw new Error('Server returned an invalid response. Please check if the backend is running.');
+        }
         
         // Store tokens and user
         storeTokens(data.tokens.access_token, data.tokens.refresh_token);
@@ -376,6 +406,27 @@ function getUserId() {
  */
 function isSuperAdmin() {
     return currentUser && currentUser.account_type === 'superadmin';
+}
+
+/**
+ * Check if user is an admin (superadmin OR admin account_type OR role)
+ */
+function isAdmin() {
+    if (!currentUser) return false;
+    const adminTypes = ['superadmin', 'admin', 'employee'];
+    return adminTypes.includes(currentUser.account_type) ||
+           adminTypes.includes(currentUser.role);
+}
+
+/**
+ * Get the correct post-login redirect URL based on the user's role.
+ * Admins/employees → Admin Panel; regular users → User Dashboard.
+ */
+function getRedirectUrl() {
+    if (isAdmin()) {
+        return 'https://admin.aivory.id';
+    }
+    return 'https://dashboard.aivory.id';
 }
 
 // ============================================================================
@@ -486,6 +537,8 @@ const AuthManager = {
     getUser,
     getUserId,
     isSuperAdmin,
+    isAdmin,
+    getRedirectUrl,
     onAuthStateChange,
     
     // Token management

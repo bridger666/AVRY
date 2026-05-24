@@ -1,0 +1,782 @@
+--- PAGE 1 ---
+Aivory  VPS  Runtime  Documentation  
+Overview  
+Aivory  runs  on  a  VPS  where  the  frontend  sends  requests  into  the  ZeroClaw  Gateway,  
+which
+ 
+loads
+ 
+the
+ 
+active
+ 
+identity
+ 
+layer
+ 
+and
+ 
+routes
+ 
+workflow-related
+ 
+requests
+ 
+through
+ 
+the
+ 
+workflow
+ 
+skill
+ 
+path.
+ 
+ 
+Workflow
+ 
+execution
+ 
+is
+ 
+system-controlled:
+ 
+ZeroClaw
+ 
+handles
+ 
+reasoning
+ 
+and
+ 
+routing,
+ 
+MCP
+ 
+Bridge
+ 
+handles
+ 
+orchestration,
+ 
+and
+ 
+n8n-as-code-service
+ 
+handles
+ 
+draft
+ 
+build,
+ 
+sandbox
+ 
+validation,
+ 
+setup
+ 
+report
+ 
+generation,
+ 
+and
+ 
+cleanup.
+ 
+ 
+Active  Paths  
+The  active  ZeroClaw  root  is  /home/ubuntu/.zeroclaw ,  and  the  active  workspace  is  
+/home/ubuntu/.zeroclaw/workspace
+.
+ 
+ 
+The
+ 
+shell
+ 
+aliases
+ 
+configured
+ 
+in
+ 
+.bashrc
+ 
+are
+ 
+ZC_ROOT=/home/ubuntu/.zeroclaw
+,
+ 
+ZC_WS=/home/ubuntu/.zeroclaw/workspace
+,
+ 
+and
+ 
+ZC_SKILLS=/home/ubuntu/.zeroclaw/workspace/skills
+.
+ 
+ text  
+/home/ubuntu/.zeroclaw/                              #  ZC_ROOT  ├──  config.toml                                     #  active  
+zeroclaw
+ 
+config
+ ├──  config.toml.backup*                             #  backups  ├──  otp-secret  ├──  .secret_key  ├──  daemon_state.json  └──  workspace/                                      #  ZC_WS      ├──  AGENTS.md                                   #  active  
+operating
+ 
+rules
+     ├──  IDENTITY.md                                 #  active  
+identity/persona
+     ├──  SOUL.md                                     #  active  
+behavioral
+ 
+layer
+     ├──  HEARTBEAT.md      ├──  devices.db      ├──  cron/      ├──  memory/  
+
+--- PAGE 2 ---
+    ├──  sessions/      ├──  state/      └──  skills/                                     #  ZC_SKILLS          ├──  multi-agent-router/          │    ├──  manifest.toml          │    ├──  README.md          │    └──  SKILL.md          ├──  workflow-copilot/          │    ├──  manifest.toml          │    ├──  README.md          │    └──  SKILL.md          ├──  n8n/          │    ├──  manifest.toml          │    ├──  README.md          │    └──  SKILL.md          └──  ...   
+The  active  identity  layer  files  are  /home/ubuntu/.zeroclaw/workspace/AGENTS.md ,  
+/home/ubuntu/.zeroclaw/workspace/IDENTITY.md
+,
+ 
+and
+ 
+/home/ubuntu/.zeroclaw/workspace/SOUL.md
+.
+ 
+ 
+The
+ 
+VPS
+ 
+Bridge
+ 
+project
+ 
+path
+ 
+is
+ 
+/home/ubuntu/AVRY/vps-bridge
+,
+ 
+and
+ 
+the
+ 
+systemd
+ 
+service
+ 
+file
+ 
+is
+ 
+/etc/systemd/system/vps-bridge.service
+.
+ 
+Ports  and  Services  
+The  ZeroClaw  Gateway  listens  on  127.0.0.1:3010 ,  and  MCP  Bridge  listens  on  
+127.0.0.1:3020
+.
+ 
+ 
+Deployment
+ 
+to
+ 
+the
+ 
+user's
+ 
+n8n
+ 
+instance
+ 
+only
+ 
+happens
+ 
+after
+ 
+explicit
+ 
+user
+ 
+approval
+ 
+through
+ 
+the
+ 
+Activate
+ 
+flow,
+ 
+and
+ 
+the
+ 
+user
+ 
+provides
+ 
+the
+ 
+host
+ 
+URL
+ 
+and
+ 
+API
+ 
+key
+ 
+at
+ 
+that
+ 
+stage.
+ 
+ 
+Service  Bind  Purpose  
+ZeroClaw  Gateway  
+127.0.0.1:3010    
+Entry  point  from  Aivory  frontend  into  Aivory  and  Workﬂow  Brain  runtime    
+
+--- PAGE 3 ---
+MCP  Bridge  
+127.0.0.1:3020    
+Orchestrator,  auth  token  layer,  and  pass-through  to  n8n-as-code-service    
+User  n8n  Instance  
+User  host    Final  deploy  target  only  after  Activate  approval    
+Runtime  Flow  
+Workflow  requests  enter  through  the  frontend,  pass  into  ZeroClaw,  load  the  identity  
+layer,
+ 
+route
+ 
+through
+ 
+the
+ 
+workflow-related
+ 
+skills,
+ 
+and
+ 
+then
+ 
+move
+ 
+into
+ 
+MCP
+ 
+Bridge
+ 
+for
+ 
+execution
+ 
+orchestration.
+ 
+ 
+The
+ 
+n8n-as-code-service
+ 
+performs
+ 
+build
+ 
+draft,
+ 
+sandbox
+ 
+validation,
+ 
+setup
+ 
+report
+ 
+generation,
+ 
+and
+ 
+cleanup
+ 
+before
+ 
+any
+ 
+final
+ 
+deployment
+ 
+is
+ 
+allowed.
+ 
+ text  
+╔═══════════════════════════════════════════════════════════════
+═══════════╗
+ ║               AIVORY  WORKFLOW  +  n8n-as-code  RUNTIME  FLOW                  
+║
+ ╚═══════════════════════════════════════════════════════════════
+═══════════╝
+   USER    │    ▼  ┌───────────────────────────────────────────────────────────────
+───────────┐
+ │  AIVORY  FRONTEND  (Next.js)                                                
+│
+ │  mode:  general  |  workflow_builder                                         
+│
+ │  stage:  clarifying  →  generating  →  testing  →  apply                         
+│
+ └──────────────────────────────┬────────────────────────────────
+───────────┘
+ 
+
+--- PAGE 4 ---
+                               │  HTTP  /  WebSocket                                 ▼  ┌───────────────────────────────────────────────────────────────
+───────────┐
+ │  ZEROCLAW  GATEWAY                                                         
+│
+ │  127.0.0.1:3010                                                           
+│
+ │  config:  /home/ubuntu/.zeroclaw/config.toml                               
+│
+ │  workspace:  /home/ubuntu/.zeroclaw/workspace/                             
+│
+ └──────────────────────────────┬────────────────────────────────
+───────────┘
+                                │  loads  identity  layer                                 ▼  ┌───────────────────────────────────────────────────────────────
+───────────┐
+ │  IDENTITY  LAYER                                                           
+│
+ │  /home/ubuntu/.zeroclaw/workspace/IDENTITY.md                             
+│
+ │  /home/ubuntu/.zeroclaw/workspace/SOUL.md                                 
+│
+ │  /home/ubuntu/.zeroclaw/workspace/AGENTS.md                               
+│
+ └──────────────────────────────┬────────────────────────────────
+───────────┘
+                                │  route  by  intent                                 ▼  ┌───────────────────────────────────────────────────────────────
+───────────┐
+ │  SKILLS                                                                   
+│
+ 
+
+--- PAGE 5 ---
+│  /home/ubuntu/.zeroclaw/workspace/skills/multi-agent-router/              
+│
+ │  /home/ubuntu/.zeroclaw/workspace/skills/workflow-copilot/                
+│
+ │  /home/ubuntu/.zeroclaw/workspace/skills/n8n/                             
+│
+ └──────────────────────────────┬────────────────────────────────
+───────────┘
+                                │  workflow  /  n8n  request                                 ▼  ┌───────────────────────────────────────────────────────────────
+───────────┐
+ │  MCP  BRIDGE                                                               
+│
+ │  127.0.0.1:3020                                                           
+│
+ │  transport:  HTTP  |  auth:  token                                            
+│
+ └──────────────────────────────┬────────────────────────────────
+───────────┘
+                                │                                 ▼  ┌───────────────────────────────────────────────────────────────
+───────────┐
+ │  n8n-as-code-service                                                      
+│
+ │  build  draft  →  sandbox  validate  →  setup  report  →  cleanup                  
+│
+ └──────────────────────────────┬────────────────────────────────
+───────────┘
+                                │  only  after  user  clicks  Activate                                 ▼  ┌───────────────────────────────────────────────────────────────
+───────────┐
+ 
+
+--- PAGE 6 ---
+│  USER'S  SELF-HOSTED  n8n  INSTANCE                                          
+│
+ │  host  URL  +  API  key  user                                                  
+│
+ └───────────────────────────────────────────────────────────────
+───────────┘
+  
+Key  Files  
+The  workflow  path  depends  primarily  on  the  multi-agent-router ,  workflow-copilot ,  
+and
+ 
+n8n
+ 
+skills
+ 
+stored
+ 
+in
+ 
+the
+ 
+active
+ 
+workspace
+ 
+skills
+ 
+directory.
+ 
+ 
+The
+ 
+AGENTS,
+ 
+IDENTITY,
+ 
+and
+ 
+SOUL
+ 
+files
+ 
+form
+ 
+the
+ 
+active
+ 
+agent
+ 
+identity
+ 
+and
+ 
+behavior
+ 
+layer
+ 
+injected
+ 
+during
+ 
+runtime
+ 
+startup.
+ 
+ 
+File  Path  Role  
+Active  conﬁg  
+/home/ubuntu/.zeroclaw/config.toml    
+Main  ZeroClaw  runtime  conﬁguration    
+AGENTS  
+/home/ubuntu/.zeroclaw/workspace/AGENTS.md    
+Operating  rules  and  hard  guardrails    
+IDENTITY  
+/home/ubuntu/.zeroclaw/workspace/IDENTITY.md    
+Persona  and  identity  rules    
+SOUL  
+/home/ubuntu/.zeroclaw/workspace/SOUL.md    
+Behavioral  and  workﬂow  architecture  layer    
+
+--- PAGE 7 ---
+Multi-agent  router  skill  
+/home/ubuntu/.zeroclaw/workspace/skills/multi-agent-router/SKILL.md    
+Intent-based  routing  into  specialist  path    
+Workﬂow  Copilot  skill  
+/home/ubuntu/.zeroclaw/workspace/skills/workflow-copilot/SKILL.md    
+Workﬂow  orchestration  and  stage  ﬂow    
+n8n  skill  
+/home/ubuntu/.zeroclaw/workspace/skills/n8n/SKILL.md    
+n8n-oriented  generation  path    
+Bridge  service  ﬁle  
+/etc/systemd/system/vps-bridge.service  
+systemd  unit  for  VPS  Bridge  
+Bridge  project  
+/home/ubuntu/AVRY/vps-bridge  
+Bridge  implementation  directory  
+Operations  
+The  safest  operational  pattern  is  to  verify  aliases,  config,  identity  files,  workflow  skills,  
+listening
+ 
+ports,
+ 
+and
+ 
+bridge
+ 
+status
+ 
+before
+ 
+changing
+ 
+any
+ 
+workflow-related
+ 
+logic.
+ 
+ 
+The
+ 
+commands
+ 
+below
+ 
+are
+ 
+focused
+ 
+on
+ 
+inspection
+ 
+and
+ 
+are
+ 
+suitable
+ 
+for
+ 
+routine
+ 
+runtime
+ 
+checks.
+ 
+ bash  
+#  Aliases   echo  $ZC_ROOT  echo  $ZC_WS  
+
+--- PAGE 8 ---
+echo  $ZC_SKILLS   #  Active  config  ls  -lah  /home/ubuntu/.zeroclaw/  sed  -n  '1,220p'  /home/ubuntu/.zeroclaw/config.toml   #  Identity  layer  ls  -lah  /home/ubuntu/.zeroclaw/workspace/  sed  -n  '1,220p'  /home/ubuntu/.zeroclaw/workspace/AGENTS.md  sed  -n  '1,220p'  /home/ubuntu/.zeroclaw/workspace/IDENTITY.md  sed  -n  '1,220p'  /home/ubuntu/.zeroclaw/workspace/SOUL.md   #  Workflow  skills  find  /home/ubuntu/.zeroclaw/workspace/skills  -maxdepth  2  -type  f  
+|
+ 
+sort
+ sed  -n  '1,220p'  
+/home/ubuntu/.zeroclaw/workspace/skills/workflow-copilot/SKILL.m
+d
+ sed  -n  '1,220p'  
+/home/ubuntu/.zeroclaw/workspace/skills/n8n/SKILL.md
+ sed  -n  '1,220p'  
+/home/ubuntu/.zeroclaw/workspace/skills/multi-agent-router/SKILL
+.md
+  #  Open  ports  ss  -lntp  |  grep  -E  '3010|3020'   #  Bridge  service  systemctl  status  vps-bridge  --no-pager  sed  -n  '1,220p'  /etc/systemd/system/vps-bridge.service  ls  -lah  /home/ubuntu/AVRY/vps-bridge   
+Troubleshooting  
+
+--- PAGE 9 ---
+If  workflow  generation  does  not  behave  correctly,  the  first  checks  should  be  whether  the  
+active
+ 
+config.toml
+ 
+is
+ 
+the
+ 
+correct
+ 
+one,
+ 
+whether
+ 
+AGENTS.md
+,
+ 
+IDENTITY.md
+,
+ 
+and
+ 
+SOUL.md
+ 
+are
+ 
+present
+ 
+in
+ 
+the
+ 
+active
+ 
+workspace,
+ 
+and
+ 
+whether
+ 
+the
+ 
+workflow-related
+ 
+skills
+ 
+exist
+ 
+under
+ 
+the
+ 
+active
+ 
+skills/
+ 
+directory.
+ 
+ 
+If
+ 
+execution
+ 
+breaks
+ 
+after
+ 
+routing,
+ 
+the
+ 
+next
+ 
+checks
+ 
+should
+ 
+be
+ 
+whether
+ 
+ZeroClaw
+ 
+is
+ 
+bound
+ 
+on
+ 
+3010
+,
+ 
+MCP
+ 
+Bridge
+ 
+is
+ 
+bound
+ 
+on
+ 
+3020
+,
+ 
+and
+ 
+whether
+ 
+the
+ 
+bridge
+ 
+service
+ 
+is
+ 
+healthy
+ 
+under
+ 
+systemd.
+ 
+ 
+A  deployment  issue  after  successful  draft  generation  usually  points  to  the  Activate  path  
+or
+ 
+downstream
+ 
+user
+ 
+n8n
+ 
+connectivity,
+ 
+because
+ 
+actual
+ 
+deploy
+ 
+only
+ 
+occurs
+ 
+after
+ 
+explicit
+ 
+Activate
+ 
+approval
+ 
+and
+ 
+uses
+ 
+the
+ 
+user's
+ 
+own
+ 
+host
+ 
+URL
+ 
+and
+ 
+API
+ 
+key.
+ 
+ 
+A
+ 
+generation
+ 
+issue
+ 
+before
+ 
+that
+ 
+point
+ 
+is
+ 
+more
+ 
+likely
+ 
+to
+ 
+be
+ 
+in
+ 
+the
+ 
+skill-routing,
+ 
+identity-layer,
+ 
+or
+ 
+bridge-orchestration
+ 
+path.
+  

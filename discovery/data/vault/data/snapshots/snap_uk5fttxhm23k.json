@@ -1,0 +1,161 @@
+{
+  "snapshot_id": "snap_uk5fttxhm23k",
+  "diagnostic_id": "diag_t3n4myidyorn",
+  "user_id": null,
+  "user_email": "test@aivory.id",
+  "company_name": "Aivory Test Corp",
+  "industry": "Technology",
+  "answers": [
+    {
+      "question_id": "snap_q0",
+      "selected_option": 0
+    },
+    {
+      "question_id": "snap_q1",
+      "selected_option": 1
+    },
+    {
+      "question_id": "snap_q2",
+      "selected_option": 2
+    },
+    {
+      "question_id": "snap_q3",
+      "selected_option": 3
+    },
+    {
+      "question_id": "snap_q4",
+      "selected_option": 4
+    },
+    {
+      "question_id": "snap_q5",
+      "selected_option": 0
+    },
+    {
+      "question_id": "snap_q6",
+      "selected_option": 1
+    },
+    {
+      "question_id": "snap_q7",
+      "selected_option": 2
+    },
+    {
+      "question_id": "snap_q8",
+      "selected_option": 3
+    },
+    {
+      "question_id": "snap_q9",
+      "selected_option": 4
+    },
+    {
+      "question_id": "snap_q10",
+      "selected_option": 0
+    },
+    {
+      "question_id": "snap_q11",
+      "selected_option": 1
+    },
+    {
+      "question_id": "snap_q12",
+      "selected_option": 2
+    },
+    {
+      "question_id": "snap_q13",
+      "selected_option": 3
+    },
+    {
+      "question_id": "snap_q14",
+      "selected_option": 4
+    },
+    {
+      "question_id": "snap_q15",
+      "selected_option": 0
+    },
+    {
+      "question_id": "snap_q16",
+      "selected_option": 1
+    },
+    {
+      "question_id": "snap_q17",
+      "selected_option": 2
+    },
+    {
+      "question_id": "snap_q18",
+      "selected_option": 3
+    },
+    {
+      "question_id": "snap_q19",
+      "selected_option": 4
+    },
+    {
+      "question_id": "snap_q20",
+      "selected_option": 0
+    },
+    {
+      "question_id": "snap_q21",
+      "selected_option": 1
+    },
+    {
+      "question_id": "snap_q22",
+      "selected_option": 2
+    },
+    {
+      "question_id": "snap_q23",
+      "selected_option": 3
+    },
+    {
+      "question_id": "snap_q24",
+      "selected_option": 4
+    },
+    {
+      "question_id": "snap_q25",
+      "selected_option": 0
+    },
+    {
+      "question_id": "snap_q26",
+      "selected_option": 1
+    },
+    {
+      "question_id": "snap_q27",
+      "selected_option": 2
+    },
+    {
+      "question_id": "snap_q28",
+      "selected_option": 3
+    },
+    {
+      "question_id": "snap_q29",
+      "selected_option": 4
+    }
+  ],
+  "readiness_score": 82,
+  "category_scores": {
+    "workflow": 85,
+    "data": 78,
+    "automation": 80,
+    "organization": 85
+  },
+  "primary_objective": "operational_efficiency",
+  "top_recommendations": [
+    "Workflow automation",
+    "Data integration",
+    "Process optimization"
+  ],
+  "pain_points": [
+    "Manual data entry",
+    "Slow approval processes",
+    "Inconsistent workflows"
+  ],
+  "workflows": [
+    "Invoice processing",
+    "Approval workflows",
+    "Report generation"
+  ],
+  "key_processes": [
+    "Financial operations",
+    "Procurement",
+    "Reporting"
+  ],
+  "automation_level": "Partial",
+  "data_quality_score": 75,
+  "created_at": "2026-02-26T15:46:01.057788"
+}

@@ -169,6 +169,9 @@ describe('Agentic Reducer - Property-Based Tests', () => {
           agenticWorkflowStateArbitrary(),
           phaseStartEventArbitrary(),
           (state, event) => {
+            // If the generated event.id is a duplicate, skip assertion as the reducer ignores duplicate phase IDs
+            if (state.phases.some((p) => p.id === event.id)) return true
+
             const newState = agenticReducer(state, event)
 
             // Should return a new state object (different reference)

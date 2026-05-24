@@ -44,8 +44,8 @@ describe('n8n ↔ ReactFlow Mapper', () => {
           },
         ],
         connections: {
-          'trigger-1': {
-            0: [{ node: 'action-1', type: 'main', index: 0 }],
+          'Manual Trigger': {
+            main: [[{ node: 'Set Data', type: 'main', index: 0 }]],
           },
         },
         settings: {},
@@ -183,10 +183,12 @@ describe('n8n ↔ ReactFlow Mapper', () => {
           },
         ],
         connections: {
-          'trigger-1': {
-            0: [
-              { node: 'action-1', type: 'main', index: 0 },
-              { node: 'action-2', type: 'main', index: 0 },
+          'Trigger': {
+            main: [
+              [
+                { node: 'Action 1', type: 'main', index: 0 },
+                { node: 'Action 2', type: 'main', index: 0 },
+              ],
             ],
           },
         },
@@ -403,9 +405,9 @@ describe('n8n ↔ ReactFlow Mapper', () => {
 
       const result = reactFlowToN8n(nodes, edges, baseWorkflow)
 
-      expect(result.connections['node-1']).toBeDefined()
-      expect(result.connections['node-1'][0]).toBeDefined()
-      expect(result.connections['node-1'][0][0].node).toBe('node-2')
+      expect(result.connections['Node 1']).toBeDefined()
+      expect(result.connections['Node 1'].main).toBeDefined()
+      expect(result.connections['Node 1'].main[0][0].node).toBe('Node 2')
     })
 
     it('should handle empty nodes and edges', () => {
@@ -470,7 +472,7 @@ describe('n8n ↔ ReactFlow Mapper', () => {
 
       const result = reactFlowToN8n(nodes, edges, baseWorkflow)
 
-      expect(result.connections['node-1'][0]).toHaveLength(2)
+      expect(result.connections['Node 1'].main[0]).toHaveLength(2)
     })
   })
 
@@ -500,8 +502,8 @@ describe('n8n ↔ ReactFlow Mapper', () => {
           },
         ],
         connections: {
-          'node-1': {
-            0: [{ node: 'node-2', type: 'main', index: 0 }],
+          'Node 1': {
+            main: [[{ node: 'Node 2', type: 'main', index: 0 }]],
           },
         },
         settings: {},
@@ -560,8 +562,8 @@ describe('n8n ↔ ReactFlow Mapper', () => {
           },
         ],
         connections: {
-          'node-1': {
-            0: [{ node: 'node-2', type: 'main', index: 0 }],
+          'Node 1': {
+            main: [[{ node: 'Node 2', type: 'main', index: 0 }]],
           },
         },
         settings: {},
@@ -571,8 +573,8 @@ describe('n8n ↔ ReactFlow Mapper', () => {
       const { nodes, edges } = n8nToReactFlow(originalWorkflow)
       const convertedBack = reactFlowToN8n(nodes, edges, originalWorkflow)
 
-      expect(convertedBack.connections['node-1']).toBeDefined()
-      expect(convertedBack.connections['node-1'][0][0].node).toBe('node-2')
+      expect(convertedBack.connections['Node 1']).toBeDefined()
+      expect(convertedBack.connections['Node 1'].main[0][0].node).toBe('Node 2')
     })
   })
 

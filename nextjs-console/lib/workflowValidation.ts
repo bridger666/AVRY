@@ -145,7 +145,7 @@ export function detectCycles(
   stepIds: string[]
 ): ValidationError | null {
   // Build adjacency list
-  const adjacencyList: Record<string, string[]> = {}
+  const adjacencyList: Record<string, string[]> = Object.create(null)
   for (const stepId of stepIds) {
     adjacencyList[stepId] = []
   }
@@ -157,7 +157,7 @@ export function detectCycles(
   }
   
   // Track node states: 0 = white (unvisited), 1 = gray (visiting), 2 = black (visited)
-  const state: Record<string, number> = {}
+  const state: Record<string, number> = Object.create(null)
   for (const stepId of stepIds) {
     state[stepId] = 0
   }

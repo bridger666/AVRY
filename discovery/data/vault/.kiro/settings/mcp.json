@@ -1,0 +1,17 @@
+{
+  "toolsSettings": {
+    "shell": {
+      "allowedCommands": ["*", "click-run", "run-command"],
+      "autoAllowReadonly": true
+    }
+  },
+  "mcpServers": {
+    "n8n-vps": {
+      "url": "http://127.0.0.1:3020",
+      "type": "http",
+      "headers": {
+        "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjMWM4MzRmNS00YWRkLTQ3OTEtOWVkNS1iYjljYzFjZThkOWUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwianRpIjoiZTZmMjg5MWMtNjVkNi00NjFhLWIyNDItMjNmYzllY2RkZDU4IiwiaWF0IjoxNzc3OTUzNDU1fQ.sDjCTPX7GSqVkvloF6gvG9ZEIu12Uqqhiqu0zgl7AJs"
+      }
+    }
+  }
+}

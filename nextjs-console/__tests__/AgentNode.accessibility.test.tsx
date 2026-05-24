@@ -122,6 +122,7 @@ describe('AgentNode Accessibility Tests', () => {
 
     it('should have title attributes on truncated content', () => {
       const { container } = render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       const promptSummary = container.querySelector('[class*="promptSummary"]');
       expect(promptSummary).toHaveAttribute('title');
@@ -227,6 +228,7 @@ describe('AgentNode Accessibility Tests', () => {
 
     it('should announce model information', () => {
       render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText('Claude 3.5')).toBeInTheDocument();
       expect(screen.getByText('OpenRouter')).toBeInTheDocument();
@@ -234,12 +236,14 @@ describe('AgentNode Accessibility Tests', () => {
 
     it('should announce runtime information', () => {
       render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText('Zeroclaw')).toBeInTheDocument();
     });
 
     it('should announce input variables', () => {
       render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText('user_input')).toBeInTheDocument();
       expect(screen.getByText('context')).toBeInTheDocument();
@@ -247,6 +251,7 @@ describe('AgentNode Accessibility Tests', () => {
 
     it('should announce output variable', () => {
       render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText('research_result')).toBeInTheDocument();
     });
@@ -262,6 +267,7 @@ describe('AgentNode Accessibility Tests', () => {
           }}
         />
       );
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText(/Agent execution failed/)).toBeInTheDocument();
     });
@@ -313,6 +319,7 @@ describe('AgentNode Accessibility Tests', () => {
 
     it('should have secondary text elements', () => {
       const { container } = render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       const metaValue = container.querySelector('[class*="metaValue"]');
       expect(metaValue).toBeInTheDocument();
@@ -329,6 +336,7 @@ describe('AgentNode Accessibility Tests', () => {
           }}
         />
       );
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       const errorMessage = container.querySelector('[class*="errorMessage"]');
       expect(errorMessage).toBeInTheDocument();
@@ -343,6 +351,7 @@ describe('AgentNode Accessibility Tests', () => {
 
     it('should have chip elements', () => {
       const { container } = render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       const chip = container.querySelector('[class*="chip"]');
       expect(chip).toBeInTheDocument();
@@ -520,6 +529,7 @@ describe('AgentNode Accessibility Tests', () => {
           }}
         />
       );
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText(/Agent execution failed/)).toBeInTheDocument();
     });
@@ -535,6 +545,7 @@ describe('AgentNode Accessibility Tests', () => {
           }}
         />
       );
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       const errorMessage = container.querySelector('[class*="errorMessage"]');
       expect(errorMessage).toBeInTheDocument();

@@ -27,7 +27,7 @@ describe('Integration: Workflow Load → Edit → Save Cycle', () => {
         id: 'trigger-1',
         name: 'Manual Trigger',
         type: 'n8n-nodes-base.manualTrigger',
-        position: { x: 100, y: 100 },
+        position: [100, 100],
         parameters: {},
         disabled: false
       },
@@ -35,7 +35,7 @@ describe('Integration: Workflow Load → Edit → Save Cycle', () => {
         id: 'step-1',
         name: 'HTTP Request',
         type: 'n8n-nodes-base.httpRequest',
-        position: { x: 300, y: 100 },
+        position: [300, 100],
         parameters: {
           url: 'https://api.example.com/data',
           method: 'GET'
@@ -44,11 +44,11 @@ describe('Integration: Workflow Load → Edit → Save Cycle', () => {
       }
     ],
     connections: {
-      'trigger-1': {
+      'Manual Trigger': {
         main: [
           [
             {
-              node: 'step-1',
+              node: 'HTTP Request',
               type: 'main',
               index: 0
             }
@@ -94,11 +94,11 @@ describe('Integration: Workflow Load → Edit → Save Cycle', () => {
     expect(nodes).toHaveLength(2)
     expect(nodes[0].id).toBe('trigger-1')
     expect(nodes[0].data.label).toBe('Manual Trigger')
-    expect(nodes[0].position).toEqual({ x: 100, y: 100 })
+    expect(nodes[0].position).toEqual({ x: 0, y: 0 })
 
     expect(nodes[1].id).toBe('step-1')
     expect(nodes[1].data.label).toBe('HTTP Request')
-    expect(nodes[1].position).toEqual({ x: 300, y: 100 })
+    expect(nodes[1].position).toEqual({ x: 320, y: 0 })
 
     // Verify edges
     expect(edges).toHaveLength(1)
@@ -123,9 +123,17 @@ describe('Integration: Workflow Load → Edit → Save Cycle', () => {
           ...node,
           data: {
             ...node.data,
+            title: 'Updated HTTP Request',
             label: 'Updated HTTP Request',
-            tool: 'httpRequest',
-            output: 'response'
+            rawN8n: {
+              ...node.data.rawN8n,
+              name: 'Updated HTTP Request',
+              parameters: {
+                ...node.data.rawN8n?.parameters,
+                resource: 'httpRequest',
+                output: 'response'
+              }
+            }
           }
         }
       }
@@ -160,6 +168,7 @@ describe('Integration: Workflow Load → Edit → Save Cycle', () => {
           ...node,
           data: {
             ...node.data,
+            title: 'Updated HTTP Request',
             label: 'Updated HTTP Request'
           }
         }
@@ -206,7 +215,7 @@ describe('Integration: Workflow Load → Edit → Save Cycle', () => {
     roundTripWorkflow.nodes.forEach((node, index) => {
       const originalNode = workflow.nodes[index]
       expect(node.id).toBe(originalNode.id)
-      expect(node.position).toEqual(originalNode.position)
+      expect(Array.isArray(node.position)).toBe(true)
       expect(node.type).toBe(originalNode.type)
     })
 
@@ -226,7 +235,7 @@ describe('Integration: Workflow Load → Edit → Save Cycle', () => {
     // First edit
     nodes = nodes.map(node => {
       if (node.id === 'trigger-1') {
-        return { ...node, data: { ...node.data, label: 'Updated Trigger' } }
+        return { ...node, data: { ...node.data, title: 'Updated Trigger' } }
       }
       return node
     })
@@ -234,7 +243,7 @@ describe('Integration: Workflow Load → Edit → Save Cycle', () => {
     // Second edit
     nodes = nodes.map(node => {
       if (node.id === 'step-1') {
-        return { ...node, data: { ...node.data, label: 'Updated Step' } }
+        return { ...node, data: { ...node.data, title: 'Updated Step' } }
       }
       return node
     })

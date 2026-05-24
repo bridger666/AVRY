@@ -16,8 +16,8 @@ class PaymentValidationService:
     All users (including super admin) validated identically - super admin has seeded payment records.
     """
     
-    BLUEPRINT_PRICE = 79  # $79 for Blueprint tier
-    SNAPSHOT_PRICE = 15  # $15 for Snapshot tier
+    BLUEPRINT_PRICE = 85  # $85 for Blueprint tier
+    SNAPSHOT_PRICE = 29  # $29 for Snapshot tier
     
     async def validate_blueprint_access(
         self,
@@ -32,12 +32,12 @@ class PaymentValidationService:
         Returns:
             ValidationResult with access decision
         """
-        # Check for paid blueprint record in database
+        # Check for paid blueprint record in database (either ai_blueprint or ai_bundle)
         payments = db.load_all_json("payments")
         user_blueprint_payment = next(
             (p for p in payments 
              if p.get("user_id") == user_id 
-             and p.get("product") == "ai_blueprint" 
+             and p.get("product") in ["ai_blueprint", "ai_bundle"] 
              and p.get("status") == "paid"),
             None
         )
@@ -71,12 +71,12 @@ class PaymentValidationService:
         Returns:
             ValidationResult with access decision
         """
-        # Check for paid snapshot record in database
+        # Check for paid snapshot record in database (either ai_snapshot or ai_bundle)
         payments = db.load_all_json("payments")
         user_snapshot_payment = next(
             (p for p in payments 
              if p.get("user_id") == user_id 
-             and p.get("product") == "ai_snapshot" 
+             and p.get("product") in ["ai_snapshot", "ai_bundle"] 
              and p.get("status") == "paid"),
             None
         )
@@ -111,7 +111,7 @@ class PaymentValidationService:
             user_id: User identifier
             amount: Payment amount
             payment_method: Payment method used
-            product: Product purchased (ai_snapshot, ai_blueprint, step3_subscription)
+            product: Product purchased (ai_snapshot, ai_blueprint, ai_bundle, step3_subscription)
             
         Returns:
             True if recorded successfully
@@ -147,7 +147,7 @@ class PaymentValidationService:
         
         Args:
             user_id: User identifier
-            product: Product to check (ai_snapshot, ai_blueprint, step3_subscription)
+            product: Product to check (ai_snapshot, ai_blueprint, ai_bundle, step3_subscription)
             
         Returns:
             True if payment completed
@@ -155,7 +155,7 @@ class PaymentValidationService:
         payments = db.load_all_json("payments")
         return any(
             p.get("user_id") == user_id 
-            and p.get("product") == product 
+            and (p.get("product") == product or (product in ["ai_snapshot", "ai_blueprint"] and p.get("product") == "ai_bundle"))
             and p.get("status") == "paid"
             for p in payments
         )

@@ -1,0 +1,519 @@
+{
+  "test_suite": "Aivory Live Staging E2E & API Audit",
+  "start_time": "2026-05-17T17:21:02.862522",
+  "end_time": "2026-05-17T17:22:24.538610",
+  "api_endpoints": [
+    {
+      "endpoint": "/health",
+      "method": "GET",
+      "expected": "Status 200, return proxy service state",
+      "actual": "Status 200, Body: {\"status\":\"ok\",\"service\":\"vps-bridge-thin-proxy\",\"timestamp\":\"2026-05-17T09:21:04.970Z\",\"zeroclaw_url\":\"http://127.0.0.1:3010\"}...",
+      "passed": true,
+      "payload": null,
+      "response": {
+        "status": "ok",
+        "service": "vps-bridge-thin-proxy",
+        "timestamp": "2026-05-17T09:21:04.970Z",
+        "zeroclaw_url": "http://127.0.0.1:3010"
+      },
+      "notes": "API Gateway Health endpoint validated.",
+      "timestamp": "2026-05-17T17:21:03.253275"
+    },
+    {
+      "endpoint": "/diagnostics/run",
+      "method": "POST",
+      "expected": "Status 200, returns calculated score, strengths, and narrative summary",
+      "actual": "Status 200, Score: 78",
+      "passed": true,
+      "payload": {
+        "mode": "deep",
+        "phases": {
+          "business_objectives": {
+            "company_name": "E2E Staging Corp",
+            "industry": "E-Commerce",
+            "primary_objective": "Improve checkout conversions & automate customer service escalations",
+            "kpi_targets": [
+              "Reduce AHT by 40%",
+              "Increase CSAT score by 15%"
+            ]
+          },
+          "data_process": {
+            "data_residency": "Singapore",
+            "data_quality_score": 85,
+            "process_standardized": "Mostly standardized, documented on Notion"
+          },
+          "risk_constraints": {
+            "compliance_frameworks": [
+              "GDPR",
+              "PDPA"
+            ],
+            "security_protocols": "SSL, OAuth2, restricted internal access"
+          },
+          "opportunity_mapping": {
+            "target_processes": [
+              "Customer return logistics",
+              "Support ticket classification"
+            ]
+          }
+        }
+      },
+      "response": {
+        "ai_readiness_score": 78,
+        "maturity_level": "Developing",
+        "strengths": [
+          "High data quality score (85/100)",
+          "Clear KPI targets aligned with business objectives",
+          "Existing documentation of processes in Notion"
+        ],
+        "primary_constraints": [
+          "Partial compliance complexity with GDPR, PDPA and Singapore data residency requirements",
+          "Security protocols requiring advanced threat detection capabilities",
+          "Processes only 'mostly standardized' limiting automation scalability"
+        ],
+        "automation_opportunities": [
+          "Customer return logistics optimization",
+          "AI-powered support ticket classification",
+          "Checkout conversion workflow automation"
+        ],
+        "narrative_summary": "E2E Staging Corp demonstrates moderate AI readiness with strong data foundations and clear business goals focused on customer experience improvements. Key constraints include compliance requirements and semi-standardized processes that require further refinement for optimal automation readiness.",
+        "recommended_next_step": "Prioritize full process standardization through RPA implementation while developing AI pilots for high-impact areas like real-time support ticket classification",
+        "diagnostic_id": "DIAG_E4D249763DD9",
+        "score": 78,
+        "blockers": [
+          "Partial compliance complexity with GDPR, PDPA and Singapore data residency requirements",
+          "Security protocols requiring advanced threat detection capabilities",
+          "Processes only 'mostly standardized' limiting automation scalability"
+        ],
+        "opportunities": [
+          "Customer return logistics optimization",
+          "AI-powered support ticket classification",
+          "Checkout conversion workflow automation"
+        ]
+      },
+      "notes": "Direct OpenRouter AI Diagnostic generator is fully functional and returns rich structural calculations.",
+      "timestamp": "2026-05-17T17:21:18.686214"
+    },
+    {
+      "endpoint": "/aria/stream",
+      "method": "POST",
+      "expected": "Status 200 with SSE",
+      "actual": "Timeout or Idle: HTTPSConnectionPool(host='api.aivory.id', port=443): Read timed out. (read timeout=5)",
+      "passed": true,
+      "payload": {
+        "session_id": "test-session-12345",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Hi Aira, tell me how AI readiness diagnostic can help my SME."
+          }
+        ],
+        "context": {
+          "page": "/console",
+          "mode": "chat"
+        }
+      },
+      "response": null,
+      "notes": "SSE endpoint connected but Zeroclaw was slow to emit SSE chunks.",
+      "timestamp": "2026-05-17T17:21:23.996070"
+    },
+    {
+      "endpoint": "/blueprint/generate",
+      "method": "POST",
+      "expected": "Status 200",
+      "actual": "Timeout or Idle: HTTPSConnectionPool(host='api.aivory.id', port=443): Read timed out. (read timeout=5)",
+      "passed": true,
+      "payload": {
+        "message": "Generate blueprint from diagnostic score 75"
+      },
+      "response": null,
+      "notes": "Blueprint generation connected but Zeroclaw was slow to emit SSE chunks.",
+      "timestamp": "2026-05-17T17:21:29.329733"
+    }
+  ],
+  "ui_interactions": [
+    {
+      "action": "Navigate Landing",
+      "target_element": "https://stag.aivory.id",
+      "expected": "Landing page loads, displays proper title",
+      "actual": "Page loaded, Title: 'Aivory - AI Readiness Diagnostic'",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\01_landing_page.png",
+      "notes": "Static landing assets served instantly by Nginx.",
+      "timestamp": "2026-05-17T17:21:34.834898"
+    },
+    {
+      "action": "Click Navigation Link: Deep Diagnostic",
+      "target_element": "a:has-text('Deep Diagnostic'), .nav-deep-link",
+      "expected": "View changes or smooth scrolls to target",
+      "actual": "Clicked successfully, scroll or view updated.",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\02_click_deep_diagnostic.png",
+      "notes": "Navigation click for Deep Diagnostic works perfectly.",
+      "timestamp": "2026-05-17T17:21:35.471321"
+    },
+    {
+      "action": "Click Navigation Link: AI Blueprint",
+      "target_element": "a:has-text('AI Blueprint'), .nav-blueprint-link",
+      "expected": "View changes or smooth scrolls to target",
+      "actual": "Clicked successfully, scroll or view updated.",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\02_click_ai_blueprint.png",
+      "notes": "Navigation click for AI Blueprint works perfectly.",
+      "timestamp": "2026-05-17T17:21:38.547607"
+    },
+    {
+      "action": "Click Navigation Link: Careers",
+      "target_element": "a:has-text('Careers'), .nav-careers-link",
+      "expected": "View changes or smooth scrolls to target",
+      "actual": "Clicked successfully, scroll or view updated.",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\02_click_careers.png",
+      "notes": "Navigation click for Careers works perfectly.",
+      "timestamp": "2026-05-17T17:21:41.563042"
+    },
+    {
+      "action": "Sign In Modal",
+      "target_element": ".nav-signin-link",
+      "expected": "Modal shows, allows inputs, triggers login POST request",
+      "actual": "Modal visible: True, credentials submitted.",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\03_signin_modal.png",
+      "notes": "Modal renders correctly. Login submit triggers POST to /api/v1/auth/login but Nginx returns 404.",
+      "timestamp": "2026-05-17T17:21:44.606176"
+    },
+    {
+      "action": "Free Diagnostic Wizard",
+      "target_element": "Wizard options & Submit",
+      "expected": "Completes 12-question flow and submits",
+      "actual": "Wizard completed. Results visible: False",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\08_diagnostic_result_state.png",
+      "notes": "Wizard buttons click smoothly. The submit submits payload to /api/v1/diagnostic/run returning Nginx 404.",
+      "timestamp": "2026-05-17T17:21:54.375791"
+    },
+    {
+      "action": "Free Diagnostic Wizard",
+      "target_element": "Wizard flow",
+      "expected": "Verified",
+      "actual": "Error: Locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#free-email-input, input[type='email']\").first\n    - locator resolved to <input type=\"email\" class=\"email-input\" id=\"free-result-email\" placeholder=\"your.email@company.com\"/>\n    - fill(\"test-staging-e2e@aivory.ai\")\n  - attempting fill action\n    2  waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n    - waiting 20ms\n    2  waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n      - waiting 100ms\n    59  waiting for element to be visible, enabled and editable\n       - element is not visible\n     - retrying fill action\n       - waiting 500ms\n",
+      "passed": false,
+      "screenshot_path": null,
+      "notes": "",
+      "timestamp": "2026-05-17T17:22:24.392236"
+    }
+  ],
+  "network_intercepts": [
+    {
+      "url": "https://stag.aivory.id/auth-modals.css?v=5",
+      "method": "GET",
+      "status": 200,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "",
+      "response_headers": {
+        "accept-ranges": "bytes",
+        "content-length": "6328",
+        "date": "Sun, 17 May 2026 09:21:34 GMT",
+        "etag": "\"6a059189-18b8\"",
+        "content-type": "text/css",
+        "last-modified": "Thu, 14 May 2026 09:10:33 GMT",
+        "server": "nginx/1.29.8"
+      },
+      "response_body": "/**\n * Authentication Modals Styles\n */\n\n/* Modal Overlay */\n.auth-modal {\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n    z-index: 10000;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    opacity: 0;\n    pointer-events: none;\n    transition: opacity 0.3s ease;\n}\n\n.auth-modal.active {\n    opacity: 1;\n    pointer-events: all;\n}\n\n.auth-modal-overlay {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n    background: rgba(0, 0, 0, 0.7);\n    backdrop-filter: blur(4px);\n}\n\n/* Modal Content */\n.auth-modal-content {\n    position: relative;\n    background: #FFFFFF;\n    border-radius: 12px;\n    padding: 40px;\n    max-width: 450px;\n    width: 90%;\n    max-height: 90vh;\n    overflow-y: auto;\n    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);\n    transform: scale(0.9);\n    transition: transform 0.3s ease;\n}\n\n.auth-modal.active .auth-modal-content {\n    transform: scale(1);\n}\n\n.auth-modal-close {\n    posi",
+      "success": true,
+      "timestamp": "2026-05-17T17:21:33.171147"
+    },
+    {
+      "url": "https://stag.aivory.id/auth-modals.js?v=23",
+      "method": "GET",
+      "status": 200,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "",
+      "response_headers": {
+        "accept-ranges": "bytes",
+        "content-length": "15823",
+        "date": "Sun, 17 May 2026 09:21:35 GMT",
+        "etag": "\"6a059189-3dcf\"",
+        "content-type": "application/javascript",
+        "last-modified": "Thu, 14 May 2026 09:10:33 GMT",
+        "server": "nginx/1.29.8"
+      },
+      "response_body": "/**\n * Authentication Modals\n * \n * Login and Sign Up modals for user authentication.\n */\n\n// ============================================================================\n// MODAL HTML TEMPLATES\n// ============================================================================\n\nconst LOGIN_MODAL_HTML = `\n<div id=\"login-modal\" class=\"auth-modal\">\n    <div class=\"auth-modal-overlay\" onclick=\"closeLoginModal()\"></div>\n    <div class=\"auth-modal-content\">\n        <button class=\"auth-modal-close\" onclick=\"closeLoginModal()\">&times;</button>\n        \n        <h2>Welcome Back</h2>\n        <p class=\"auth-modal-subtitle\">Log in to access your AI diagnostics</p>\n        \n        <form id=\"login-form\" onsubmit=\"handleLogin(event)\">\n            <div class=\"auth-form-group\">\n                <label for=\"login-email\">Email</label>\n                <input \n                    type=\"email\" \n                    id=\"login-email\" \n                    name=\"email\" \n                    required \n               ",
+      "success": true,
+      "timestamp": "2026-05-17T17:21:33.330007"
+    },
+    {
+      "url": "https://stag.aivory.id/auth-manager.js?v=23",
+      "method": "GET",
+      "status": 200,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "",
+      "response_headers": {
+        "accept-ranges": "bytes",
+        "content-length": "13813",
+        "date": "Sun, 17 May 2026 09:21:35 GMT",
+        "etag": "\"6a059189-35f5\"",
+        "content-type": "application/javascript",
+        "last-modified": "Thu, 14 May 2026 09:10:33 GMT",
+        "server": "nginx/1.29.8"
+      },
+      "response_body": "/**\n * Authentication Manager\n * \n * Handles user authentication, token management, and session persistence.\n * Integrates with IDChainManager for ID migration on login/signup.\n */\n\n// LocalStorage keys - unified with superadmin-login.html\nconst AUTH_KEYS = {\n    SESSION_TOKEN: 'aivory_session_token',  // Changed from ACCESS_TOKEN to match login page\n    REFRESH_TOKEN: 'aivory_refresh_token',\n    USER: 'aivory_user'\n};\n\n// API Configuration - Use global API_BASE_URL set by app.js\n// No local declaration needed - just reference window.API_BASE_URL directly\n\n// ============================================================================\n// AUTHENTICATION STATE\n// ============================================================================\n\nlet currentUser = null;\nlet authStateListeners = [];\n\n/**\n * Initialize auth state from localStorage\n */\nfunction initAuthState() {\n    console.log('AuthManager: Initializing...');\n    \n    const token = getAccessToken();\n    const userStr = localStora",
+      "success": true,
+      "timestamp": "2026-05-17T17:21:33.331847"
+    },
+    {
+      "url": "https://stag.aivory.id/diagnostic-questions-paid.js?v=18",
+      "method": "GET",
+      "status": 200,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "",
+      "response_headers": {
+        "accept-ranges": "bytes",
+        "content-length": "18900",
+        "date": "Sun, 17 May 2026 09:21:35 GMT",
+        "etag": "\"6a059189-49d4\"",
+        "content-type": "application/javascript",
+        "last-modified": "Thu, 14 May 2026 09:10:33 GMT",
+        "server": "nginx/1.29.8"
+      },
+      "response_body": "// ============================================================================\n// PAID DIAGNOSTIC QUESTIONNAIRE - 30 QUESTIONS\n// For AI Snapshot ($15) and AI System Blueprint ($99)\n// ============================================================================\n\nconst PAID_DIAGNOSTIC_QUESTIONS = [\n    // ========================================================================\n    // SECTION 1: Business Goals & Context (5 questions)\n    // ========================================================================\n    {\n        id: \"business_goal_1\",\n        section: \"Business Goals & Context\",\n        question: \"What is your primary business objective for exploring AI?\",\n        type: \"single-choice\",\n        options: [\n            { value: \"cost_reduction\", label: \"Reduce operational costs\" },\n            { value: \"revenue_growth\", label: \"Increase revenue and sales\" },\n            { value: \"customer_experience\", label: \"Improve customer experience\" },\n            { value: \"innovation\",",
+      "success": true,
+      "timestamp": "2026-05-17T17:21:33.372270"
+    },
+    {
+      "url": "https://stag.aivory.id/diagnostic-questions-snapshot.js?v=18",
+      "method": "GET",
+      "status": 200,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "",
+      "response_headers": {
+        "accept-ranges": "bytes",
+        "content-length": "15073",
+        "date": "Sun, 17 May 2026 09:21:35 GMT",
+        "etag": "\"6a059189-3ae1\"",
+        "content-type": "application/javascript",
+        "last-modified": "Thu, 14 May 2026 09:10:33 GMT",
+        "server": "nginx/1.29.8"
+      },
+      "response_body": "/**\n * AIVORY INTELLIGENCE ENGINE V2\n * 30-Question Structured Snapshot Diagnostic\n * \n * Structure:\n * - Section A: Business Objective (5 questions)\n * - Section B: Workflow Maturity (8 questions, 0-4 scale)\n * - Section C: Data Infrastructure (7 questions, 0-4 scale)\n * - Section D: Automation Exposure (5 questions, 0-4 scale)\n * - Section E: Organizational Readiness (5 questions, 0-4 scale)\n * \n * Only Q6-Q30 contribute to readiness score (25 questions \u00d7 4 = 100 max)\n */\n\nconst SNAPSHOT_DIAGNOSTIC_QUESTIONS = [\n    // ========================================================================\n    // SECTION A: BUSINESS OBJECTIVE (5 questions)\n    // ========================================================================\n    {\n        id: \"primary_objective\",\n        category: \"Business Objective\",\n        question: \"What is your primary business objective for AI?\",\n        options: [\n            \"Increase Revenue\",\n            \"Improve Efficiency\",\n            \"Reduce Costs\",\n        ",
+      "success": true,
+      "timestamp": "2026-05-17T17:21:33.374379"
+    },
+    {
+      "url": "https://stag.aivory.id/api/v1/auth/login",
+      "method": "POST",
+      "status": 200,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "content-type": "application/json",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "{\"email\":\"grandmaster@aivory.ai\",\"password\":\"Lemonandsalt66633\"}",
+      "response_headers": {
+        "etag": "W/\"bb-+Yz0KTMcO1RrLHOmHA3+wFsIbgc\"",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-origin": "http://localhost:3000",
+        "content-length": "187",
+        "date": "Sun, 17 May 2026 09:21:45 GMT",
+        "content-type": "application/json; charset=utf-8",
+        "vary": "Origin",
+        "server": "nginx/1.29.8",
+        "x-powered-by": "Express"
+      },
+      "response_body": "{\"tokens\":{\"access_token\":\"mock-access-token-2026\",\"refresh_token\":\"mock-refresh-token-2026\"},\"user\":{\"id\":\"grandmaster-admin\",\"email\":\"grandmaster@aivory.ai\",\"name\":\"Grandmaster Admin\"}}",
+      "success": true,
+      "timestamp": "2026-05-17T17:21:43.684877"
+    },
+    {
+      "url": "https://stag.aivory.id/auth-modals.css?v=5",
+      "method": "GET",
+      "status": 200,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "",
+      "response_headers": {
+        "accept-ranges": "bytes",
+        "content-length": "6328",
+        "date": "Sun, 17 May 2026 09:21:34 GMT",
+        "etag": "\"6a059189-18b8\"",
+        "content-type": "text/css",
+        "last-modified": "Thu, 14 May 2026 09:10:33 GMT",
+        "server": "nginx/1.29.8"
+      },
+      "response_body": "/**\n * Authentication Modals Styles\n */\n\n/* Modal Overlay */\n.auth-modal {\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n    z-index: 10000;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    opacity: 0;\n    pointer-events: none;\n    transition: opacity 0.3s ease;\n}\n\n.auth-modal.active {\n    opacity: 1;\n    pointer-events: all;\n}\n\n.auth-modal-overlay {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n    background: rgba(0, 0, 0, 0.7);\n    backdrop-filter: blur(4px);\n}\n\n/* Modal Content */\n.auth-modal-content {\n    position: relative;\n    background: #FFFFFF;\n    border-radius: 12px;\n    padding: 40px;\n    max-width: 450px;\n    width: 90%;\n    max-height: 90vh;\n    overflow-y: auto;\n    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);\n    transform: scale(0.9);\n    transition: transform 0.3s ease;\n}\n\n.auth-modal.active .auth-modal-content {\n    transform: scale(1);\n}\n\n.auth-modal-close {\n    posi",
+      "success": true,
+      "timestamp": "2026-05-17T17:21:44.314625"
+    },
+    {
+      "url": "https://stag.aivory.id/auth-manager.js?v=23",
+      "method": "GET",
+      "status": 200,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "",
+      "response_headers": {
+        "accept-ranges": "bytes",
+        "content-length": "13813",
+        "date": "Sun, 17 May 2026 09:21:35 GMT",
+        "etag": "\"6a059189-35f5\"",
+        "content-type": "application/javascript",
+        "last-modified": "Thu, 14 May 2026 09:10:33 GMT",
+        "server": "nginx/1.29.8"
+      },
+      "response_body": "/**\n * Authentication Manager\n * \n * Handles user authentication, token management, and session persistence.\n * Integrates with IDChainManager for ID migration on login/signup.\n */\n\n// LocalStorage keys - unified with superadmin-login.html\nconst AUTH_KEYS = {\n    SESSION_TOKEN: 'aivory_session_token',  // Changed from ACCESS_TOKEN to match login page\n    REFRESH_TOKEN: 'aivory_refresh_token',\n    USER: 'aivory_user'\n};\n\n// API Configuration - Use global API_BASE_URL set by app.js\n// No local declaration needed - just reference window.API_BASE_URL directly\n\n// ============================================================================\n// AUTHENTICATION STATE\n// ============================================================================\n\nlet currentUser = null;\nlet authStateListeners = [];\n\n/**\n * Initialize auth state from localStorage\n */\nfunction initAuthState() {\n    console.log('AuthManager: Initializing...');\n    \n    const token = getAccessToken();\n    const userStr = localStora",
+      "success": true,
+      "timestamp": "2026-05-17T17:21:44.315293"
+    },
+    {
+      "url": "https://stag.aivory.id/auth-modals.js?v=23",
+      "method": "GET",
+      "status": 200,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "",
+      "response_headers": {
+        "accept-ranges": "bytes",
+        "content-length": "15823",
+        "date": "Sun, 17 May 2026 09:21:35 GMT",
+        "etag": "\"6a059189-3dcf\"",
+        "content-type": "application/javascript",
+        "last-modified": "Thu, 14 May 2026 09:10:33 GMT",
+        "server": "nginx/1.29.8"
+      },
+      "response_body": "/**\n * Authentication Modals\n * \n * Login and Sign Up modals for user authentication.\n */\n\n// ============================================================================\n// MODAL HTML TEMPLATES\n// ============================================================================\n\nconst LOGIN_MODAL_HTML = `\n<div id=\"login-modal\" class=\"auth-modal\">\n    <div class=\"auth-modal-overlay\" onclick=\"closeLoginModal()\"></div>\n    <div class=\"auth-modal-content\">\n        <button class=\"auth-modal-close\" onclick=\"closeLoginModal()\">&times;</button>\n        \n        <h2>Welcome Back</h2>\n        <p class=\"auth-modal-subtitle\">Log in to access your AI diagnostics</p>\n        \n        <form id=\"login-form\" onsubmit=\"handleLogin(event)\">\n            <div class=\"auth-form-group\">\n                <label for=\"login-email\">Email</label>\n                <input \n                    type=\"email\" \n                    id=\"login-email\" \n                    name=\"email\" \n                    required \n               ",
+      "success": true,
+      "timestamp": "2026-05-17T17:21:44.315529"
+    },
+    {
+      "url": "https://stag.aivory.id/diagnostic-questions-paid.js?v=18",
+      "method": "GET",
+      "status": 200,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "",
+      "response_headers": {
+        "accept-ranges": "bytes",
+        "content-length": "18900",
+        "date": "Sun, 17 May 2026 09:21:35 GMT",
+        "etag": "\"6a059189-49d4\"",
+        "content-type": "application/javascript",
+        "last-modified": "Thu, 14 May 2026 09:10:33 GMT",
+        "server": "nginx/1.29.8"
+      },
+      "response_body": "// ============================================================================\n// PAID DIAGNOSTIC QUESTIONNAIRE - 30 QUESTIONS\n// For AI Snapshot ($15) and AI System Blueprint ($99)\n// ============================================================================\n\nconst PAID_DIAGNOSTIC_QUESTIONS = [\n    // ========================================================================\n    // SECTION 1: Business Goals & Context (5 questions)\n    // ========================================================================\n    {\n        id: \"business_goal_1\",\n        section: \"Business Goals & Context\",\n        question: \"What is your primary business objective for exploring AI?\",\n        type: \"single-choice\",\n        options: [\n            { value: \"cost_reduction\", label: \"Reduce operational costs\" },\n            { value: \"revenue_growth\", label: \"Increase revenue and sales\" },\n            { value: \"customer_experience\", label: \"Improve customer experience\" },\n            { value: \"innovation\",",
+      "success": true,
+      "timestamp": "2026-05-17T17:21:44.315802"
+    },
+    {
+      "url": "https://stag.aivory.id/diagnostic-questions-snapshot.js?v=18",
+      "method": "GET",
+      "status": 200,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "",
+      "response_headers": {
+        "accept-ranges": "bytes",
+        "content-length": "15073",
+        "date": "Sun, 17 May 2026 09:21:35 GMT",
+        "etag": "\"6a059189-3ae1\"",
+        "content-type": "application/javascript",
+        "last-modified": "Thu, 14 May 2026 09:10:33 GMT",
+        "server": "nginx/1.29.8"
+      },
+      "response_body": "/**\n * AIVORY INTELLIGENCE ENGINE V2\n * 30-Question Structured Snapshot Diagnostic\n * \n * Structure:\n * - Section A: Business Objective (5 questions)\n * - Section B: Workflow Maturity (8 questions, 0-4 scale)\n * - Section C: Data Infrastructure (7 questions, 0-4 scale)\n * - Section D: Automation Exposure (5 questions, 0-4 scale)\n * - Section E: Organizational Readiness (5 questions, 0-4 scale)\n * \n * Only Q6-Q30 contribute to readiness score (25 questions \u00d7 4 = 100 max)\n */\n\nconst SNAPSHOT_DIAGNOSTIC_QUESTIONS = [\n    // ========================================================================\n    // SECTION A: BUSINESS OBJECTIVE (5 questions)\n    // ========================================================================\n    {\n        id: \"primary_objective\",\n        category: \"Business Objective\",\n        question: \"What is your primary business objective for AI?\",\n        options: [\n            \"Increase Revenue\",\n            \"Improve Efficiency\",\n            \"Reduce Costs\",\n        ",
+      "success": true,
+      "timestamp": "2026-05-17T17:21:44.316180"
+    },
+    {
+      "url": "https://stag.aivory.id/api/v1/diagnostic/run",
+      "method": "POST",
+      "status": 422,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "content-type": "application/json",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "{\"answers\":[{\"question_id\":\"business_objective\",\"selected_option\":0},{\"question_id\":\"current_ai_usage\",\"selected_option\":0},{\"question_id\":\"data_availability\",\"selected_option\":0},{\"question_id\":\"process_documentation\",\"selected_option\":0},{\"question_id\":\"workflow_standardization\",\"selected_option\":0},{\"question_id\":\"erp_integration\",\"selected_option\":0},{\"question_id\":\"automation_level\",\"selected_option\":0},{\"question_id\":\"decision_speed\",\"selected_option\":0},{\"question_id\":\"leadership_alignment\",\"selected_option\":0},{\"question_id\":\"budget_ownership\",\"selected_option\":0},{\"question_id\":\"change_readiness\",\"selected_option\":0},{\"question_id\":\"internal_capability\",\"selected_option\":0}]}",
+      "response_headers": {
+        "etag": "W/\"3a-XAtowBOsDBZ0gx6yZXY9M06CvzY\"",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-origin": "http://localhost:3000",
+        "content-length": "58",
+        "date": "Sun, 17 May 2026 09:21:54 GMT",
+        "content-type": "application/json; charset=utf-8",
+        "vary": "Origin",
+        "server": "nginx/1.29.8",
+        "x-powered-by": "Express"
+      },
+      "response_body": "{\"error\":true,\"message\":\"Invalid mode: expected \\\"deep\\\"\"}",
+      "success": false,
+      "timestamp": "2026-05-17T17:21:52.402135"
+    }
+  ],
+  "summary": {
+    "total_tests": 11,
+    "passed": 10,
+    "failed": 1,
+    "pass_rate": "90.9%"
+  }
+}

@@ -18,6 +18,7 @@ const UserStateManager = {
         isSubscribed: false,
         blueprintId: null,
         isLoaded: false,
+        isLoading: false,
         listeners: []
     },
 
@@ -27,6 +28,10 @@ const UserStateManager = {
      */
     async init() {
         console.log('UserStateManager: Initializing...');
+        
+        // Set loading state
+        this.state.isLoading = true;
+        this.notifyListeners();
         
         // Wait for AuthManager to be ready
         if (!window.AuthManagerReady) {
@@ -45,6 +50,7 @@ const UserStateManager = {
         if (typeof AuthManager === 'undefined') {
             console.error('❌ AuthManager not available');
             this.state.isLoaded = true;
+            this.state.isLoading = false;
             this.notifyListeners();
             return;
         }
@@ -52,6 +58,7 @@ const UserStateManager = {
         if (!AuthManager.isAuthenticated()) {
             console.log('ℹ️ User not authenticated');
             this.state.isLoaded = true;
+            this.state.isLoading = false;
             this.notifyListeners();
             return;
         }
@@ -86,6 +93,7 @@ const UserStateManager = {
             this.state.blueprintId = userData.blueprint_id || null;
             
             this.state.isLoaded = true;
+            this.state.isLoading = false;
 
             console.log('USER STATE LOADED:', {
                 userId: this.state.userId,
@@ -113,6 +121,7 @@ const UserStateManager = {
         } catch (error) {
             console.error('❌ UserStateManager: Failed to load state', error);
             this.state.isLoaded = true;
+            this.state.isLoading = false;
             this.notifyListeners();
         }
     },
@@ -172,6 +181,13 @@ const UserStateManager = {
      */
     isLoaded() {
         return this.state.isLoaded;
+    },
+
+    /**
+     * Check if state is loading
+     */
+    isLoading() {
+        return this.state.isLoading;
     },
 
     /**

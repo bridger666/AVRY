@@ -33,6 +33,25 @@ async function guardDashboardAccess() {
 }
 
 /**
+ * Initialize dashboard auth guard on page load
+ */
+function initDashboardAuth() {
+    // Only run on dashboard page
+    if (typeof window !== 'undefined' && window.location.pathname.includes('dashboard')) {
+        guardDashboardAccess();
+    }
+}
+
+// Auto-initialize on load
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDashboardAuth);
+    } else {
+        initDashboardAuth();
+    }
+}
+
+/**
  * Show login modal
  */
 function showLoginModal() {

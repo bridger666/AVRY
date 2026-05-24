@@ -91,6 +91,7 @@ export function useIntentRouter(): UseIntentRouterReturn {
       aiReplySummary: '',
       targetRoute: pendingRoute.route,
       timestamp: Date.now(),
+      maxAge: 5 * 60 * 1000,  // 5 minutes
     })
     setPendingRoute(null)
     cancelledRef.current = true

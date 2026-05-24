@@ -109,6 +109,8 @@
     font-size: 16px;
     transition: border-color 0.2s ease;
     box-sizing: border-box;
+    color: #333333 !important;
+    background-color: #FFFFFF !important;
 }
 
 .auth-form-group input:focus {

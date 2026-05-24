@@ -527,7 +527,7 @@ function accessDashboard(tier = 'free') {
     sessionStorage.setItem('user_tier', tier.toLowerCase());
     
     // Route to Next.js dashboard with tier parameter
-    window.location.href = `http://localhost:3000/dashboard?tier=${tier.toLowerCase()}`;
+    window.location.href = `https://dashboard.aivory.id/dashboard?tier=${tier.toLowerCase()}`;
 }
 
 /**

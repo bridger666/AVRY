@@ -13,10 +13,12 @@ import ErrorState from "@/components/dashboard/ErrorState"
 import styles from "./dashboard.module.css"
 import { useRouterContext } from '@/contexts/RouterContext'
 import { ContinuedFromConsole } from '@/components/routing/ContinuedFromConsole'
+import { AuthManager } from '@/lib/authManager'
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [authLoading, setAuthLoading] = useState(true)
   const [freeDiagnosticScore, setFreeDiagnosticScore] = useState<number | null>(null)
   const [freeDiagnosticCompleted, setFreeDiagnosticCompleted] = useState(false)
   const [deepDiagnosticCompleted, setDeepDiagnosticCompleted] = useState(false)
@@ -24,10 +26,18 @@ export default function DashboardPage() {
 
   const { pendingContext, clearPendingContext } = useRouterContext()
   const [routingNotice, setRoutingNotice] = useState<string | null>(null)
+  const [showLoginModal, setShowLoginModal] = useState(false)
 
   useEffect(() => {
     if (!pendingContext) return
-    if (Date.now() - pendingContext.timestamp > 300000) { clearPendingContext(); return }
+    
+    // Use maxAge from context or default to 5 minutes
+    const maxAge = pendingContext.maxAge ?? 5 * 60 * 1000
+    if (Date.now() - pendingContext.timestamp > maxAge) {
+      clearPendingContext()
+      return
+    }
+    
     if (pendingContext.targetRoute !== 'dashboard') return
     setRoutingNotice(pendingContext.aiReplySummary || pendingContext.triggerMessage)
     clearPendingContext()
@@ -50,13 +60,66 @@ export default function DashboardPage() {
     }
   }, [])
 
+  // Auth guard - check if user is authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      // Wait for AuthManager to be ready
+      if (!window.AuthManagerReady) {
+        await new Promise(resolve => {
+          const checkInterval = setInterval(() => {
+            if (window.AuthManagerReady) {
+              clearInterval(checkInterval)
+              resolve(true)
+            }
+          }, 50)
+          setTimeout(() => {
+            clearInterval(checkInterval)
+            resolve(true)
+          }, 5000)
+        })
+      }
+
+      if (typeof AuthManager !== 'undefined') {
+        if (!AuthManager.isAuthenticated()) {
+          // Show login modal instead of redirecting
+          setShowLoginModal(true)
+        }
+      }
+      setAuthLoading(false)
+    }
+
+    checkAuth()
+  }, [])
+
   const fetchDashboardData = async () => {
     setData(getPlaceholderData())
     setLoading(false)
   }
 
-  if (loading) {
+  if (loading || authLoading) {
     return <LoadingState />
+  }
+
+  // Show login modal if not authenticated
+  if (showLoginModal) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#353531]">
+        <div className="text-center">
+          <h2 className="text-2xl font-light text-white mb-4">Please Log In</h2>
+          <p className="text-white/60 mb-6">You must be logged in to access the dashboard</p>
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined' && typeof window.showLoginModal === 'function') {
+                window.showLoginModal()
+              }
+            }}
+            className="px-6 py-3 bg-[#0ae8af] text-[#1a1a24] font-medium rounded-lg hover:bg-[#1cffbf] transition-colors"
+          >
+            Log In
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (!data) {

@@ -221,13 +221,14 @@ async def download_blueprint_pdf(blueprint_id: str, user_id: str):
 
 
 @router.post("/payment/record")
-async def record_payment(user_id: str, amount: float, payment_method: str = "stripe"):
+async def record_payment(user_id: str, amount: float, product: str = "ai_blueprint", payment_method: str = "stripe"):
     """
-    Record successful Blueprint payment.
+    Record successful payment.
     
     Args:
         user_id: User identifier
         amount: Payment amount
+        product: Product identifier (ai_snapshot, ai_blueprint, ai_bundle)
         payment_method: Payment method used
         
     Returns:
@@ -235,9 +236,10 @@ async def record_payment(user_id: str, amount: float, payment_method: str = "str
     """
     try:
         success = await payment_service.record_payment(
-            user_id,
-            amount,
-            payment_method
+            user_id=user_id,
+            amount=amount,
+            payment_method=payment_method,
+            product=product
         )
         
         if success:

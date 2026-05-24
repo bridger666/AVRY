@@ -16,7 +16,7 @@
 
 import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { ReactFlowProvider } from '@xyflow/react';
 import AgentNode from '@/components/workflow/AgentNode';
 import styles from '@/components/workflow/AgentNode.module.css';
@@ -68,6 +68,7 @@ describe('AgentNode Visual Tests', () => {
 
     it('should render all sections in default state', () => {
       render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText('Research Agent')).toBeInTheDocument();
       expect(screen.getByText('Claude 3.5')).toBeInTheDocument();
@@ -88,6 +89,7 @@ describe('AgentNode Visual Tests', () => {
 
     it('should have proper structure in default state', () => {
       const { container } = render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       const header = container.querySelector(`.${styles.header}`);
       const metaRow = container.querySelector(`.${styles.metaRow}`);
@@ -125,6 +127,7 @@ describe('AgentNode Visual Tests', () => {
 
     it('should render all content when selected', () => {
       render(<AgentNodeWithProvider {...defaultProps} selected={true} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText('Research Agent')).toBeInTheDocument();
       expect(screen.getByText('Claude 3.5')).toBeInTheDocument();
@@ -182,6 +185,7 @@ describe('AgentNode Visual Tests', () => {
           data={{ ...defaultProps.data, status: 'running' }}
         />
       );
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText('Research Agent')).toBeInTheDocument();
       expect(screen.getByText('Claude 3.5')).toBeInTheDocument();
@@ -242,6 +246,7 @@ describe('AgentNode Visual Tests', () => {
           }}
         />
       );
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText(/Agent execution failed/)).toBeInTheDocument();
     });
@@ -257,6 +262,7 @@ describe('AgentNode Visual Tests', () => {
           }}
         />
       );
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       const errorMessage = container.querySelector(`.${styles.errorMessage}`);
       expect(errorMessage).toBeInTheDocument();
@@ -300,6 +306,7 @@ describe('AgentNode Visual Tests', () => {
           data={{ ...defaultProps.data, status: 'disabled' }}
         />
       );
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText('Research Agent')).toBeInTheDocument();
       expect(screen.getByText('Claude 3.5')).toBeInTheDocument();
@@ -471,6 +478,7 @@ describe('AgentNode Visual Tests', () => {
 
     it('should have correct meta row styling', () => {
       const { container } = render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       const metaRow = container.querySelector(`.${styles.metaRow}`);
       expect(metaRow).toBeInTheDocument();
@@ -478,6 +486,7 @@ describe('AgentNode Visual Tests', () => {
 
     it('should have correct chips container styling', () => {
       const { container } = render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       const chipsContainer = container.querySelector(`.${styles.chipsContainer}`);
       expect(chipsContainer).toBeInTheDocument();
@@ -485,6 +494,7 @@ describe('AgentNode Visual Tests', () => {
 
     it('should have correct chip styling', () => {
       const { container } = render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       const chip = container.querySelector(`.${styles.chip}`);
       expect(chip).toBeInTheDocument();

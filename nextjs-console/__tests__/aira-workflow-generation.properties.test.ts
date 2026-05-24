@@ -322,16 +322,20 @@ describe('Property 6: Cycle Detection', () => {
       fc.property(
         fc.array(fc.string({ minLength: 1, maxLength: 20 }), { minLength: 1, maxLength: 10 }),
         (stepIds) => {
+          // Deduplicate step IDs to guarantee acyclic graph structure
+          const uniqueStepIds = Array.from(new Set(stepIds))
+          if (uniqueStepIds.length === 0) return true
+
           // Create a linear workflow: step_0 -> step_1 -> ... -> step_n
           const edges: AivoryWorkflowEdge[] = []
-          for (let i = 0; i < stepIds.length - 1; i++) {
+          for (let i = 0; i < uniqueStepIds.length - 1; i++) {
             edges.push({
-              from: stepIds[i],
-              to: stepIds[i + 1],
+              from: uniqueStepIds[i],
+              to: uniqueStepIds[i + 1],
             })
           }
 
-          const error = detectCycles(edges, stepIds)
+          const error = detectCycles(edges, uniqueStepIds)
           expect(error).toBeNull()
         }
       ),

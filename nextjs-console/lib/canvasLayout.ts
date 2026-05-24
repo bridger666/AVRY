@@ -113,7 +113,7 @@ export function calculateEdgeLayout(
   // Default to angular (vertical flow). Only use curved for mostly-horizontal connections.
   const dx = Math.abs(toPos.x - fromPos.x)
   const dy = Math.abs(toPos.y - fromPos.y)
-  const type = (dx > dy * 0.6) ? 'curved' as const : 'angular' as const
+  const type = (dy > 250 && dx < 100) ? 'angular' as const : 'curved' as const
 
   return {
     from: fromPos,

@@ -234,7 +234,7 @@ async def upload_file(
         return {
             "file_id": file_id,
             "filename": file.filename,
-            "size":. len(content),
+            "size": len(content),
             "type": file.content_type,
             "preview": parsed_content[:500] if parsed_content else "",
             "parsed": bool(parsed_content),

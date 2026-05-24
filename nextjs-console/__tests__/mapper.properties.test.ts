@@ -23,10 +23,10 @@ const arbN8nNodeType = fc.constantFrom(
   'n8n-nodes-base.switch'
 )
 
-const arbPosition = fc.record({
-  x: fc.integer({ min: 0, max: 1000 }),
-  y: fc.integer({ min: 0, max: 1000 }),
-})
+const arbPosition = fc.tuple(
+  fc.integer({ min: 0, max: 1000 }),
+  fc.integer({ min: 0, max: 1000 })
+)
 
 const arbN8nNode = fc.record({
   id: fc.string({ minLength: 1, maxLength: 50 }),
@@ -113,7 +113,7 @@ describe('Property 2: n8n to ReactFlow Mapping Preserves Data', () => {
 
         workflow.nodes.forEach((n8nNode) => {
           const rfType = typeMap.get(n8nNode.id)
-          expect(['workflowStep']).toContain(rfType)
+          expect(['standardNode']).toContain(rfType)
         })
       }),
       { numRuns: 100 }
@@ -228,8 +228,9 @@ describe('Property 2: n8n to ReactFlow Mapping Preserves Data', () => {
         // All nodes should have valid positions after round-trip
         roundTripWorkflow.nodes.forEach((node) => {
           expect(node.position).toBeDefined()
-          expect(typeof node.position.x).toBe('number')
-          expect(typeof node.position.y).toBe('number')
+          expect(Array.isArray(node.position)).toBe(true)
+          expect(typeof node.position[0]).toBe('number')
+          expect(typeof node.position[1]).toBe('number')
         })
       }),
       { numRuns: 100 }

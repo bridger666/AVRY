@@ -57,12 +57,12 @@ const AgentNode = memo(({ data, selected, isConnecting }: AgentNodeProps) => {
     }
   };
 
-  const truncate = (text: string, max = 120) =>
-    text.length <= max ? text : text.substring(0, max) + '…';
+  const truncate = (text: string, max = 80) =>
+    text.length <= max ? text : text.substring(0, max) + '...';
 
   return (
     <div
-      className={`${styles.agentNode} ${selected ? styles.selected : ''} ${isConnecting ? styles.connecting : ''}`}
+      className={`${styles.agentNode} ${status ? styles[status] || status : ''} ${selected ? styles.selected : ''} ${isConnecting ? styles.connecting : ''}`}
       role="article"
       aria-label={`Agent node: ${agentName}`}
     >
@@ -80,6 +80,7 @@ const AgentNode = memo(({ data, selected, isConnecting }: AgentNodeProps) => {
           )}
         </div>
         <div className={styles.agentName}>{agentName}</div>
+        {status && <span className={styles.badge}>{status === 'default' ? 'Agent' : status}</span>}
         <button
           className={`${styles.expandChevron} ${isExpanded ? styles.expanded : ''}`}
           onClick={(e) => { e.stopPropagation(); setIsExpanded(prev => !prev); }}
@@ -130,7 +131,7 @@ const AgentNode = memo(({ data, selected, isConnecting }: AgentNodeProps) => {
               {inputVariables.length > 0 && (
                 <div className={styles.chipsRow}>
                   {inputVariables.map((v, i) => (
-                    <div key={i} className={styles.chip}>
+                    <div key={i} className={styles.chip} title={`Input: ${v}`}>
                       <span className={styles.chipLabel}>In:</span>
                       <span className={styles.chipValue}>{v}</span>
                     </div>
@@ -139,7 +140,7 @@ const AgentNode = memo(({ data, selected, isConnecting }: AgentNodeProps) => {
               )}
               {outputVariable && (
                 <div className={styles.chipsRow}>
-                  <div className={styles.chip}>
+                  <div className={styles.chip} title={`Output: ${outputVariable}`}>
                     <span className={styles.chipLabel}>Out:</span>
                     <span className={styles.chipValue}>{outputVariable}</span>
                   </div>
@@ -156,12 +157,12 @@ const AgentNode = memo(({ data, selected, isConnecting }: AgentNodeProps) => {
       )}
 
       {/* Hover action buttons */}
-      <button className={styles.infoButton} onClick={onExplainPath} title="Explain path" aria-label="Explain path">
+      <button className={styles.infoButton} onClick={onExplainPath} title="Explain workflow path to this step" aria-label="Explain path">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
       </button>
-      <button className={styles.addButton} onClick={onAddStep} title="Add step" aria-label="Add step">+</button>
+      <button className={styles.addButton} onClick={onAddStep} title="Add follow-up step with Aivory" aria-label="Add step">+</button>
       <button className={styles.deleteButton} onClick={handleDelete} title="Delete node" aria-label="Delete node">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>

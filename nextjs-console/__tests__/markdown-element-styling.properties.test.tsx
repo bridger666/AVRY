@@ -89,7 +89,7 @@ const markdownComponents = {
  */
 
 const listItemTextArbitrary = (): fc.Arbitrary<string> => {
-  return fc.stringMatching(/^[A-Za-z0-9\s\-]{3,50}$/)
+  return fc.stringMatching(/^[A-Za-z0-9][A-Za-z0-9\s\-]{2,49}$/)
 }
 
 const unorderedListMarkdownArbitrary = (): fc.Arbitrary<string> => {
@@ -149,7 +149,7 @@ describe('Markdown Element Styling - Property-Based Tests', () => {
           {markdown}
         </ReactMarkdown>
       )
-      const preElement = container.querySelector('pre')
+      const preElement = container.querySelector('div.rounded-xl pre')
       expect(preElement).not.toBeNull()
       expect(preElement?.className).toContain('p-5')
     })
@@ -331,7 +331,7 @@ describe('Markdown Element Styling - Property-Based Tests', () => {
       expect(classList).toContain('rounded-xl')
       expect(classList).toContain('border')
       expect(classList).toContain('border-[#E5E7EB]/10')
-      const preElement = container.querySelector('pre')
+      const preElement = container.querySelector('div.rounded-xl pre')
       expect(preElement?.className).toContain('p-5')
     })
 
@@ -412,7 +412,7 @@ describe('Markdown Element Styling - Property-Based Tests', () => {
           {markdown}
         </ReactMarkdown>
       )
-      const preElement = container.querySelector('pre')
+      const preElement = container.querySelector('div.rounded-xl pre')
       expect(preElement).not.toBeNull()
       expect(preElement?.className).toContain('p-5')
     })

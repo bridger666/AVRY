@@ -172,6 +172,11 @@ async function initDashboard() {
         injectDemoData();
     }
 
+    // Show soft auth prompt if not authenticated and has diagnostic results
+    if (!AuthManager.isAuthenticated() && hasDiagnostic && typeof showSoftAuthPrompt === 'function') {
+        showSoftAuthPrompt();
+    }
+
     // Initialize tab system - load last active tab or default to overview
     const lastActiveTab = localStorage.getItem('active_tab') || 'overview';
     
@@ -479,7 +484,7 @@ function renderFreeDashboard() {
         <!-- Upgrade Card -->
         <div class="upgrade-card">
             <h3>${t('upgradeToSnapshot')}</h3>
-            <div class="upgrade-price">$15</div>
+            <div class="upgrade-price">$29</div>
             <p>Get AI-powered insights with 30-question assessment, business objective detection, and automation opportunities.</p>
             <button class="cta-button primary" onclick="upgradeToSnapshot()">
                 ${t('runSnapshot')}
@@ -590,7 +595,7 @@ function renderSnapshotDashboard() {
         <!-- Upgrade to Blueprint -->
         <div class="upgrade-card">
             <h3>${t('upgradeToBlueprint')}</h3>
-            <div class="upgrade-price">$99</div>
+            <div class="upgrade-price">$85</div>
             <p>Get complete system architecture with deployment phases, agent structure, and ROI projections.</p>
             <button class="cta-button primary" onclick="upgradeToBlueprint()">
                 ${t('runBlueprint')}
@@ -1205,7 +1210,7 @@ function renderSnapshotTab() {
             <div class="dashboard-card" style="text-align: center; padding: 3rem; background: rgba(139, 92, 246, 0.1); border: 2px solid #8B5CF6;">
                 <h2>🔒 Unlock AI Snapshot</h2>
                 <p style="margin-top: 1rem; color: rgba(255,255,255,0.7);">Get deep insights with 30-question assessment, business objective detection, and automation opportunities.</p>
-                <div style="font-size: 2.5rem; font-weight: 600; color: #8B5CF6; margin: 2rem 0;">$15</div>
+                <div style="font-size: 2.5rem; font-weight: 600; color: #8B5CF6; margin: 2rem 0;">$29</div>
                 <a href="index.html#snapshot" class="cta-button primary" style="display: inline-block; padding: 1rem 2rem; background: #8B5CF6; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">Unlock with AI Snapshot →</a>
             </div>
         `;
@@ -1336,7 +1341,7 @@ function renderBlueprintTab() {
             <div class="dashboard-card" style="text-align: center; padding: 3rem; background: rgba(7, 209, 151, 0.1); border: 2px solid #07d197;">
                 <h2>🔒 Unlock AI Blueprint</h2>
                 <p style="margin-top: 1rem; color: rgba(255,255,255,0.7);">Get complete system architecture with deployment phases, agent structure, and ROI projections.</p>
-                <div style="font-size: 2.5rem; font-weight: 600; color: #07d197; margin: 2rem 0;">$79</div>
+                <div style="font-size: 2.5rem; font-weight: 600; color: #07d197; margin: 2rem 0;">$85</div>
                 <a href="index.html#blueprint" class="cta-button primary" style="display: inline-block; padding: 1rem 2rem; background: #07d197; color: #1a0b2e; text-decoration: none; border-radius: 8px; font-weight: 600;">Unlock with AI Blueprint →</a>
             </div>
         `;

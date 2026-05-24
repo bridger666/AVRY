@@ -28,7 +28,7 @@ describe('Integration: Conflict Resolution', () => {
         id: 'trigger-1',
         name: 'Manual Trigger',
         type: 'n8n-nodes-base.manualTrigger',
-        position: { x: 100, y: 100 },
+        position: [100, 100],
         parameters: {},
         disabled: false
       },
@@ -36,7 +36,7 @@ describe('Integration: Conflict Resolution', () => {
         id: 'step-1',
         name: 'HTTP Request',
         type: 'n8n-nodes-base.httpRequest',
-        position: { x: 300, y: 100 },
+        position: [300, 100],
         parameters: { url: 'https://api.example.com/data' },
         disabled: false
       },
@@ -44,7 +44,7 @@ describe('Integration: Conflict Resolution', () => {
         id: 'step-2',
         name: 'Process Data',
         type: 'n8n-nodes-base.code',
-        position: { x: 500, y: 100 },
+        position: [500, 100],
         parameters: { code: 'return data' },
         disabled: false
       }

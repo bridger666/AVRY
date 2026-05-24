@@ -1,0 +1,157 @@
+[
+    {
+        "name": "AGENTS BACKEND IMPLEMENTATION SUMMARY",
+        "path": "AGENTS_BACKEND_IMPLEMENTATION_SUMMARY.md",
+        "category": "Reports"
+    },
+    {
+        "name": "AGENTS CURL TEST COMMANDS",
+        "path": "AGENTS_CURL_TEST_COMMANDS.md",
+        "category": "Reports"
+    },
+    {
+        "name": "AGENTS IMPLEMENTATION CHANGES",
+        "path": "AGENTS_IMPLEMENTATION_CHANGES.md",
+        "category": "Reports"
+    },
+    {
+        "name": "deploy-intent-classifier",
+        "path": "deploy-intent-classifier.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "deploy-nginx-security",
+        "path": "deploy-nginx-security.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "deploy-vps-bridge-fix",
+        "path": "deploy-vps-bridge-fix.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "deploy-vps-bridge-internal-only",
+        "path": "deploy-vps-bridge-internal-only.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "deploy-vps-bridge-network-fix",
+        "path": "deploy-vps-bridge-network-fix.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "deploy-vps-bridge-port-fix",
+        "path": "deploy-vps-bridge-port-fix.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "deploy-vps-intent-classifier",
+        "path": "deploy-vps-intent-classifier.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "deploy layered system",
+        "path": "deploy_layered_system.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "fix-admin-login-auth",
+        "path": "fix-admin-login-auth.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "fix-zeroclaw-n8n-integration",
+        "path": "fix-zeroclaw-n8n-integration.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "fix zeroclaw config cleanup",
+        "path": "fix_zeroclaw_config_cleanup.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "README",
+        "path": "README.md",
+        "category": "Analysis"
+    },
+    {
+        "name": "remove-aria-stream-headers",
+        "path": "remove-aria-stream-headers.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "requirements.txt",
+        "path": "requirements.txt",
+        "category": "Documentation"
+    },
+    {
+        "name": "restart backend",
+        "path": "restart_backend.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "restore-saturday-work",
+        "path": "restore-saturday-work.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "start-dev",
+        "path": "start-dev.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "start",
+        "path": "start.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "start backend",
+        "path": "start_backend.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "start console",
+        "path": "start_console.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "start server 9000",
+        "path": "start_server_9000.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "vps-config-fix",
+        "path": "vps-config-fix.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "vps-upload-fixed-config",
+        "path": "vps-upload-fixed-config.sh",
+        "category": "Documentation"
+    },
+    {
+        "name": "VPS BRIDGE AGENTS IMPLEMENTATION COMPLETE",
+        "path": "VPS_BRIDGE_AGENTS_IMPLEMENTATION_COMPLETE.md",
+        "category": "VPS"
+    },
+    {
+        "name": "VPS BRIDGE URL CHANGES VISUAL.txt",
+        "path": "VPS_BRIDGE_URL_CHANGES_VISUAL.txt",
+        "category": "VPS"
+    },
+    {
+        "name": "VPS DIAGNOSTIC SCRIPT",
+        "path": "VPS_DIAGNOSTIC_SCRIPT.sh",
+        "category": "VPS"
+    },
+    {
+        "name": "VPS INTENT CLASSIFIER DIAGNOSTIC",
+        "path": "VPS_INTENT_CLASSIFIER_DIAGNOSTIC.sh",
+        "category": "VPS"
+    },
+    {
+        "name": "ZEROCLAW CORS TEST COMMANDS",
+        "path": "ZEROCLAW_CORS_TEST_COMMANDS.sh",
+        "category": "Analysis"
+    }
+]

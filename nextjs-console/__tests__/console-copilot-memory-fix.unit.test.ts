@@ -198,7 +198,7 @@ describe('Corrupted localStorage', () => {
  * Validates: Requirement 4.3
  */
 describe('Prompt Sync', () => {
-  it('should have identical prompt in console_prompt.txt and zeroclawClient.js', () => {
+  it.skip('should have identical prompt in console_prompt.txt and zeroclawClient.js (zeroclawClient.js was stripped in thin proxy refactor)', () => {
     const promptPath = path.resolve(__dirname, '../../zeroclaw-routing-patch/console_prompt.txt')
     const clientPath = path.resolve(__dirname, '../../vps-bridge/zeroclawClient.js')
 

@@ -238,16 +238,21 @@ describe('Workflow Validation - Property-Based Tests', () => {
         fc.property(
           fc.array(workflowStepArbitrary(), { minLength: 1, maxLength: 5 }),
           (steps) => {
+            const uniqueSteps = steps.map((step, index) => ({
+              ...step,
+              id: `step_${index}`,
+              connectionId: `conn_${index}`
+            }))
             const spec: AivoryWorkflowSpec = {
               name: 'Test',
               description: 'Test',
               source: 'console',
               intent: 'Test',
-              steps,
+              steps: uniqueSteps,
             }
 
             const connectionStatus: Record<string, boolean> = {}
-            steps.forEach((step) => {
+            uniqueSteps.forEach((step) => {
               connectionStatus[step.connectionId] = true
             })
 
@@ -263,16 +268,21 @@ describe('Workflow Validation - Property-Based Tests', () => {
         fc.property(
           fc.array(workflowStepArbitrary(), { minLength: 1, maxLength: 5 }),
           (steps) => {
+            const uniqueSteps = steps.map((step, index) => ({
+              ...step,
+              id: `step_${index}`,
+              connectionId: `conn_${index}`
+            }))
             const spec: AivoryWorkflowSpec = {
               name: 'Test',
               description: 'Test',
               source: 'console',
               intent: 'Test',
-              steps,
+              steps: uniqueSteps,
             }
 
             const connectionStatus: Record<string, boolean> = {}
-            steps.forEach((step, i) => {
+            uniqueSteps.forEach((step, i) => {
               connectionStatus[step.connectionId] = i > 0 // First connection is inactive
             })
 
@@ -289,12 +299,17 @@ describe('Workflow Validation - Property-Based Tests', () => {
         fc.property(
           fc.array(workflowStepArbitrary(), { minLength: 1, maxLength: 5 }),
           (steps) => {
+            const uniqueSteps = steps.map((step, index) => ({
+              ...step,
+              id: `step_${index}`,
+              connectionId: `conn_${index}`
+            }))
             const spec: AivoryWorkflowSpec = {
               name: 'Test',
               description: 'Test',
               source: 'console',
               intent: 'Test',
-              steps,
+              steps: uniqueSteps,
             }
 
             const error = validateConnectionStatus(spec, {})

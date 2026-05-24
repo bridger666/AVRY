@@ -51,6 +51,7 @@ describe('AgentNode Component', () => {
   describe('Component Rendering', () => {
     it('should render agent node with all sections', () => {
       render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText('Research Agent')).toBeInTheDocument();
       expect(screen.getByText('Agent')).toBeInTheDocument();
@@ -70,6 +71,7 @@ describe('AgentNode Component', () => {
 
     it('should render meta row with model and provider', () => {
       render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText('Claude 3.5')).toBeInTheDocument();
       expect(screen.getByText('OpenRouter')).toBeInTheDocument();
@@ -77,12 +79,14 @@ describe('AgentNode Component', () => {
 
     it('should render meta row with runtime', () => {
       render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText('Zeroclaw')).toBeInTheDocument();
     });
 
     it('should render prompt summary in description section', () => {
       render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       const promptText = screen.getByText(/Analyze user input and generate research findings/);
       expect(promptText).toBeInTheDocument();
@@ -90,6 +94,7 @@ describe('AgentNode Component', () => {
 
     it('should render input variable chips', () => {
       render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText('user_input')).toBeInTheDocument();
       expect(screen.getByText('context')).toBeInTheDocument();
@@ -97,6 +102,7 @@ describe('AgentNode Component', () => {
 
     it('should render output variable chip', () => {
       render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText('research_result')).toBeInTheDocument();
     });
@@ -204,6 +210,7 @@ describe('AgentNode Component', () => {
           }}
         />
       );
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText(/Agent execution failed/)).toBeInTheDocument();
     });
@@ -227,6 +234,7 @@ describe('AgentNode Component', () => {
           }}
         />
       );
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       const errorElement = screen.getByText(/A+\.\.\./);
       expect(errorElement).toBeInTheDocument();
@@ -322,6 +330,7 @@ describe('AgentNode Component', () => {
           }}
         />
       );
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       const promptElement = screen.getByText(/A+\.\.\./);
       expect(promptElement).toBeInTheDocument();
@@ -338,6 +347,7 @@ describe('AgentNode Component', () => {
           }}
         />
       );
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       // The prompt is wrapped in quotes, so search for the quoted version
       expect(screen.getByText(`"${shortPrompt}"`)).toBeInTheDocument();
@@ -354,6 +364,7 @@ describe('AgentNode Component', () => {
           }}
         />
       );
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       const promptElement = container.querySelector('[class*="promptSummary"]');
       expect(promptElement).toHaveAttribute('title', prompt);
@@ -382,6 +393,7 @@ describe('AgentNode Component', () => {
 
     it('should have title attributes on chips for accessibility', () => {
       const { container } = render(<AgentNodeWithProvider {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       // Find all elements with title attributes that contain "Input:" or "Output:"
       const chipsWithTitle = container.querySelectorAll('[title*="Input:"], [title*="Output:"]');
@@ -428,6 +440,7 @@ describe('AgentNode Component', () => {
       };
 
       render(<AgentNodeWithProvider {...minimalProps} />);
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText('GPT-4')).toBeInTheDocument();
     });
@@ -442,6 +455,7 @@ describe('AgentNode Component', () => {
           }}
         />
       );
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       // Should still render output variable
       expect(screen.getByText('research_result')).toBeInTheDocument();
@@ -457,6 +471,7 @@ describe('AgentNode Component', () => {
           }}
         />
       );
+      fireEvent.click(screen.getByLabelText('Expand node'));
 
       expect(screen.getByText('var1')).toBeInTheDocument();
       expect(screen.getByText('var2')).toBeInTheDocument();

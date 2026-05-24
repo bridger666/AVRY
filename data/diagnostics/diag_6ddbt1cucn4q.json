@@ -1,0 +1,60 @@
+{
+  "diagnostic_id": "diag_6ddbt1cucn4q",
+  "user_id": null,
+  "user_email": null,
+  "company_name": null,
+  "industry": null,
+  "answers": [
+    {
+      "question_id": "business_objective",
+      "selected_option": 0
+    },
+    {
+      "question_id": "current_ai_usage",
+      "selected_option": 0
+    },
+    {
+      "question_id": "data_availability",
+      "selected_option": 0
+    },
+    {
+      "question_id": "process_documentation",
+      "selected_option": 0
+    },
+    {
+      "question_id": "workflow_standardization",
+      "selected_option": 0
+    },
+    {
+      "question_id": "erp_integration",
+      "selected_option": 0
+    },
+    {
+      "question_id": "automation_level",
+      "selected_option": 0
+    },
+    {
+      "question_id": "decision_speed",
+      "selected_option": 0
+    },
+    {
+      "question_id": "leadership_alignment",
+      "selected_option": 0
+    },
+    {
+      "question_id": "budget_ownership",
+      "selected_option": 0
+    },
+    {
+      "question_id": "change_readiness",
+      "selected_option": 0
+    },
+    {
+      "question_id": "internal_capability",
+      "selected_option": 0
+    }
+  ],
+  "score": 0.0,
+  "category": "AI Unready",
+  "created_at": "2026-05-17T08:11:22.248280"
+}

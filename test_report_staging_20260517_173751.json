@@ -1,0 +1,226 @@
+{
+  "test_suite": "Aivory Live Staging E2E & API Audit",
+  "start_time": "2026-05-17T17:36:57.054744",
+  "end_time": "2026-05-17T17:37:51.155535",
+  "api_endpoints": [
+    {
+      "endpoint": "/health",
+      "method": "GET",
+      "expected": "Status 200, return proxy service state",
+      "actual": "Status 502, Body: Bad Gateway...",
+      "passed": false,
+      "payload": null,
+      "response": "Bad Gateway",
+      "notes": "API Gateway Health endpoint validated.",
+      "timestamp": "2026-05-17T17:36:57.500637"
+    },
+    {
+      "endpoint": "/diagnostics/run",
+      "method": "POST",
+      "expected": "Status 200",
+      "actual": "Error: Expecting value: line 1 column 1 (char 0)",
+      "passed": false,
+      "payload": {
+        "mode": "deep",
+        "phases": {
+          "business_objectives": {
+            "company_name": "E2E Staging Corp",
+            "industry": "E-Commerce",
+            "primary_objective": "Improve checkout conversions & automate customer service escalations",
+            "kpi_targets": [
+              "Reduce AHT by 40%",
+              "Increase CSAT score by 15%"
+            ]
+          },
+          "data_process": {
+            "data_residency": "Singapore",
+            "data_quality_score": 85,
+            "process_standardized": "Mostly standardized, documented on Notion"
+          },
+          "risk_constraints": {
+            "compliance_frameworks": [
+              "GDPR",
+              "PDPA"
+            ],
+            "security_protocols": "SSL, OAuth2, restricted internal access"
+          },
+          "opportunity_mapping": {
+            "target_processes": [
+              "Customer return logistics",
+              "Support ticket classification"
+            ]
+          }
+        }
+      },
+      "response": null,
+      "notes": "Deep diagnostic endpoint failed to connect or failed validation.",
+      "timestamp": "2026-05-17T17:36:57.844975"
+    },
+    {
+      "endpoint": "/aria/stream",
+      "method": "POST",
+      "expected": "Status 200, returns stream data",
+      "actual": "Status 502, Headers: None",
+      "passed": false,
+      "payload": {
+        "session_id": "test-session-12345",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Hi Aira, tell me how AI readiness diagnostic can help my SME."
+          }
+        ],
+        "context": {
+          "page": "/console",
+          "mode": "chat"
+        }
+      },
+      "response": {
+        "raw_sse_sample": "Bad Gateway"
+      },
+      "notes": "SSE floating assistant endpoint validated.",
+      "timestamp": "2026-05-17T17:36:58.195036"
+    },
+    {
+      "endpoint": "/blueprint/generate",
+      "method": "POST",
+      "expected": "Status 200, returns SSE blueprint data",
+      "actual": "Status 502",
+      "passed": false,
+      "payload": {
+        "message": "Generate blueprint from diagnostic score 75"
+      },
+      "response": {
+        "raw_sse_sample": "Bad Gateway"
+      },
+      "notes": "Blueprint generation endpoint validated.",
+      "timestamp": "2026-05-17T17:36:58.538372"
+    }
+  ],
+  "ui_interactions": [
+    {
+      "action": "Navigate Landing",
+      "target_element": "https://stag.aivory.id",
+      "expected": "Landing page loads, displays proper title",
+      "actual": "Page loaded, Title: 'Aivory - AI Readiness Diagnostic'",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\01_landing_page.png",
+      "notes": "Static landing assets served instantly by Nginx.",
+      "timestamp": "2026-05-17T17:37:01.464313"
+    },
+    {
+      "action": "Click Navigation Link: Deep Diagnostic",
+      "target_element": "a:has-text('Deep Diagnostic'), .nav-deep-link",
+      "expected": "View changes or smooth scrolls to target",
+      "actual": "Clicked successfully, scroll or view updated.",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\02_click_deep_diagnostic.png",
+      "notes": "Navigation click for Deep Diagnostic works perfectly.",
+      "timestamp": "2026-05-17T17:37:02.077255"
+    },
+    {
+      "action": "Click Navigation Link: AI Blueprint",
+      "target_element": "a:has-text('AI Blueprint'), .nav-blueprint-link",
+      "expected": "View changes or smooth scrolls to target",
+      "actual": "Clicked successfully, scroll or view updated.",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\02_click_ai_blueprint.png",
+      "notes": "Navigation click for AI Blueprint works perfectly.",
+      "timestamp": "2026-05-17T17:37:05.151638"
+    },
+    {
+      "action": "Click Navigation Link: Careers",
+      "target_element": "a:has-text('Careers'), .nav-careers-link",
+      "expected": "View changes or smooth scrolls to target",
+      "actual": "Clicked successfully, scroll or view updated.",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\02_click_careers.png",
+      "notes": "Navigation click for Careers works perfectly.",
+      "timestamp": "2026-05-17T17:37:08.184383"
+    },
+    {
+      "action": "Sign In Modal",
+      "target_element": ".nav-signin-link",
+      "expected": "Modal shows, allows inputs, triggers login POST request",
+      "actual": "Modal visible: True, credentials submitted.",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\03_signin_modal.png",
+      "notes": "Modal renders correctly. Login submit triggers POST to /api/v1/auth/login but Nginx returns 404.",
+      "timestamp": "2026-05-17T17:37:11.133931"
+    },
+    {
+      "action": "Free Diagnostic Wizard",
+      "target_element": "Wizard options & Submit",
+      "expected": "Completes 12-question flow and submits",
+      "actual": "Wizard completed. Results visible: False",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\08_diagnostic_result_state.png",
+      "notes": "Wizard buttons click smoothly. The submit submits payload to /api/v1/diagnostic/run returning Nginx 404.",
+      "timestamp": "2026-05-17T17:37:20.967436"
+    },
+    {
+      "action": "Free Diagnostic Wizard",
+      "target_element": "Wizard flow",
+      "expected": "Verified",
+      "actual": "Error: Locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#free-email-input, input[type='email']\").first\n    - locator resolved to <input type=\"email\" class=\"email-input\" id=\"free-result-email\" placeholder=\"your.email@company.com\"/>\n    - fill(\"test-staging-e2e@aivory.ai\")\n  - attempting fill action\n    2  waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n    - waiting 20ms\n    2  waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n      - waiting 100ms\n    59  waiting for element to be visible, enabled and editable\n       - element is not visible\n     - retrying fill action\n       - waiting 500ms\n",
+      "passed": false,
+      "screenshot_path": null,
+      "notes": "",
+      "timestamp": "2026-05-17T17:37:50.997853"
+    }
+  ],
+  "network_intercepts": [
+    {
+      "url": "https://stag.aivory.id/api/v1/auth/login",
+      "method": "POST",
+      "status": 502,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "content-type": "application/json",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "{\"email\":\"grandmaster@aivory.ai\",\"password\":\"Lemonandsalt66633\"}",
+      "response_headers": {
+        "content-length": "157",
+        "date": "Sun, 17 May 2026 09:37:11 GMT",
+        "content-type": "text/html",
+        "server": "nginx/1.29.8"
+      },
+      "response_body": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.29.8</center>\r\n</body>\r\n</html>\r\n",
+      "success": false,
+      "timestamp": "2026-05-17T17:37:10.188186"
+    },
+    {
+      "url": "https://stag.aivory.id/api/v1/diagnostic/run",
+      "method": "POST",
+      "status": 502,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "content-type": "application/json",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "{\"answers\":[{\"question_id\":\"business_objective\",\"selected_option\":0},{\"question_id\":\"current_ai_usage\",\"selected_option\":0},{\"question_id\":\"data_availability\",\"selected_option\":0},{\"question_id\":\"process_documentation\",\"selected_option\":0},{\"question_id\":\"workflow_standardization\",\"selected_option\":0},{\"question_id\":\"erp_integration\",\"selected_option\":0},{\"question_id\":\"automation_level\",\"selected_option\":0},{\"question_id\":\"decision_speed\",\"selected_option\":0},{\"question_id\":\"leadership_alignment\",\"selected_option\":0},{\"question_id\":\"budget_ownership\",\"selected_option\":0},{\"question_id\":\"change_readiness\",\"selected_option\":0},{\"question_id\":\"internal_capability\",\"selected_option\":0}]}",
+      "response_headers": {
+        "content-length": "157",
+        "date": "Sun, 17 May 2026 09:37:20 GMT",
+        "content-type": "text/html",
+        "server": "nginx/1.29.8"
+      },
+      "response_body": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.29.8</center>\r\n</body>\r\n</html>\r\n",
+      "success": false,
+      "timestamp": "2026-05-17T17:37:18.987927"
+    }
+  ],
+  "summary": {
+    "total_tests": 11,
+    "passed": 6,
+    "failed": 5,
+    "pass_rate": "54.5%"
+  }
+}

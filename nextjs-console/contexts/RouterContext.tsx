@@ -7,6 +7,7 @@ export interface RoutingContext {
   aiReplySummary: string
   targetRoute: string
   timestamp: number
+  maxAge?: number  // Maximum age in milliseconds (default: 5 minutes)
 }
 
 interface RouterContextValue {
@@ -18,14 +19,19 @@ interface RouterContextValue {
 const RouterContext = createContext<RouterContextValue | null>(null)
 
 const SESSION_KEY = 'aivory:routing:ctx'
+const DEFAULT_MAX_AGE = 5 * 60 * 1000  // 5 minutes
 
 export function RouterProvider({ children }: { children: ReactNode }) {
   const [pendingContext, setPendingContextState] = useState<RoutingContext | null>(null)
 
   const setPendingContext = useCallback((ctx: RoutingContext) => {
-    setPendingContextState(ctx)
+    const contextWithMaxAge = {
+      ...ctx,
+      maxAge: ctx.maxAge ?? DEFAULT_MAX_AGE
+    }
+    setPendingContextState(contextWithMaxAge)
     try {
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(ctx))
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(contextWithMaxAge))
     } catch {}
   }, [])
 

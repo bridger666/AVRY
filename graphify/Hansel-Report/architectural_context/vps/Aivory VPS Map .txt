@@ -1,0 +1,255 @@
+--- PAGE 1 ---
+Tab  2
+ 
+
+--- PAGE 2 ---
+Based  on  the  current  VPS  state  and  container  configuration,  here  is  the  complete  port  mapping  for  the  
+Aivory
+ 
+infrastructure.
+ 
+🌐  VPS  Port  Mapping  Table  
+Service  Internal  Port  
+External/Host  Port  
+Access  Type  Description  
+Traefik  80 ,  443  80 ,  443  Public  Main  Entrypoint  (HTTP/HTTPS)  
+Traefik  API  
+8080  8080  Public/Admin  Traefik  Dashboard  &  API  
+VPS  Bridge  
+3001  3001  Internal/Proxy  API  Gateway  ( aivory-bridge )  
+n8n  
+5678  5678  Internal  Automation  Engine  
+n8n-mcp  
+3000  3020  Local/Internal  MCP-n8n  Bridge  (Mapped  to  3020)  
+Admin  Dashboard  
+3300  3300  Internal  NextJS  Console  (avry-admin-dashboard )  
+Stag  Frontend  
+80  N/A  Traefik  $\rightarrow$  80  
+Staging  Site  (Routed  via  Traefik)  
+Redis  
+6379  6379  Localhost  Cache/Session  Store  
+ZeroClaw  Dynamic  N/A  Internal  Backend  Engine  (Accessed  via  Bridge)  
+ 
+
+--- PAGE 3 ---
+🔍  Key  Routing  Details  
+1.  Public  Traffic  Flow :  User  $\rightarrow$  Port  443  $\rightarrow$  Traefik  $\rightarrow$  
+Internal
+ 
+Container
+ 
+Port
+ 2.  The  Bridge  Pattern :  The  VPS  Bridge  ( aivory-bridge )  acts  as  the  central  dispatcher.  Instead  
+of
+ 
+exposing
+ 
+ZeroClaw
+ 
+or
+ 
+n8n
+ 
+directly
+ 
+to
+ 
+the
+ 
+internet,
+ 
+Traefik
+ 
+routes
+ 
+api.aivory.id
+ 
+to
+ 
+the
+ 
+Bridge
+ 
+on
+ 
+port
+ 
+3001
+,
+ 
+which
+ 
+then
+ 
+forwards
+ 
+requests
+ 
+to
+ 
+the
+ 
+appropriate
+ 
+internal
+ 
+service.
+ 3.  MCP-n8n  Special  Case :  The  n8n-mcp  container  runs  internally  on  3000  but  is  mapped  to  the  
+host's
+ 
+3020
+ 
+for
+ 
+specific
+ 
+local
+ 
+tool
+ 
+integrations.
+ 4.  ZeroClaw  Connectivity :  ZeroClaw  typically  operates  within  the  
+avry-admin-dashboard_app-network
+ 
+and
+ 
+is
+ 
+reached
+ 
+by
+ 
+the
+ 
+VPS
+ 
+Bridge
+ 
+using
+ 
+the
+ 
+container
+ 
+name
+ 
+as
+ 
+the
+ 
+hostname,
+ 
+bypassing
+ 
+the
+ 
+need
+ 
+for
+ 
+a
+ 
+public
+ 
+host
+ 
+port.
+ 
+ 
+
+--- PAGE 4 ---
+Tab  1  
+
+--- PAGE 5 ---
+ ---   ##  🛠  Component  Detailed  Mapping   ###  1.  Traefik  (The  Gateway)   -  __Role__:  Reverse  Proxy  &  SSL  Terminator.   -  __Network__:  `avry-admin-dashboard_app-network`.   -  __Configuration__:     -  __Entrypoints__:  `web`  (80),  `websecure`  (443).    -  __CertResolver__:  `letsencrypt`.    -  __Routing  Logic__:  Uses  Docker  Labels  to  automatically  discover  services.   -  __Key  Route__:  `Host(`stag.aivory.id`)`  $\rightarrow$  `stag-frontend`  container.   ###  2.  Stag  Frontend  (`stag-frontend`)   -  __Role__:  Staging  environment  for  the  public-facing  website.   -  __Tech  Stack__:  Nginx  (Static  HTML/JS/CSS).   -  __Docker  Config__:     -  __Volume__:  `./frontend/frontend:/usr/share/nginx/html:ro`     -  __Labels__:       -  `traefik.http.routers.stag.rule=Host(`stag.aivory.id`)`      -  `traefik.http.routers.stag.entrypoints=websecure`      -  `traefik.http.services.stag.loadbalancer.server.port=80`   ###  3.  VPS  Bridge  (`vps-bridge`)   -  __Role__:  Secure  API  Gateway  /  Middleware.  -  __Function__:  Acts  as  a  bridge  between  the  frontend/console  and  the  internal  backend  
+services
+ 
+(ZeroClaw/n8n).
+ 
+It
+ 
+handles
+ 
+authentication,
+ 
+request
+ 
+transformation,
+ 
+and
+ 
+routing
+ 
+to
+ 
+internal
+ 
+ports.
+ -  __Key  Logic__:  `endpoints.js`  and  `server.js`  define  how  external  requests  are  mapped  to  
+internal
+ 
+service
+ 
+calls.
+  
+
+--- PAGE 6 ---
+###  4.  ZeroClaw  (The  Core)   -  __Role__:  The  primary  backend  logic  and  execution  engine.  -  __Integration__:  Communicates  with  the  VPS  Bridge  and  manages  the  state  of  the  Aivory  
+system.
+ -  __Connectivity__:  Accessible  internally  via  the  Docker  network.   ###  5.  n8n  (The  Automation)   -  __Role__:  Workflow  automation  and  integration  engine.  -  __Integration__:  Triggered  by  ZeroClaw  or  the  VPS  Bridge  to  execute  complex  multi-step  
+automations.
+  ---   ##  ⚙  Configuration  &  Routing  Flow   ###  Request  Lifecycle  Example:  `stag.aivory.id`   1.  __User__  $\rightarrow$  Requests  `https://stag.aivory.id`.  2.  __Traefik__  $\rightarrow$  Matches  `Host(`stag.aivory.id`)`,  terminates  SSL,  and  forwards  to  
+`stag-frontend:80`.
+ 3.  __Nginx  (stag-frontend)__  $\rightarrow$  Serves  `index.html`  from  `/usr/share/nginx/html`.  4.  __Browser__  $\rightarrow$  Executes  `app.js`,  which  makes  API  calls  to  `api.aivory.id`.  5.  __Traefik__  $\rightarrow$  Routes  `api.aivory.id`  to  the  __VPS  Bridge__.  6.  __VPS  Bridge__  $\rightarrow$  Validates  request  $\rightarrow$  Forwards  to  __ZeroClaw__  or  
+__n8n__.
+  ###  Network  Summary   -  __External  Network__:  Public  Internet  $\rightarrow$  Traefik  (Ports  80,  443).  -  __Internal  Network__:  `avry-admin-dashboard_app-network`  (All  containers  communicate  here  
+via
+ 
+service
+ 
+names).
+   ##  🛠  Component  Detailed  Mapping   ###  1.  Traefik  (The  Gateway)   -  __Role__:  Reverse  Proxy  &  SSL  Terminator.   -  __Network__:  `avry-admin-dashboard_app-network`.   -  __Configuration__:  
+
+--- PAGE 7 ---
+   -  __Entrypoints__:  `web`  (80),  `websecure`  (443).    -  __CertResolver__:  `letsencrypt`.    -  __Routing  Logic__:  Uses  Docker  Labels  to  automatically  discover  services.   -  __Key  Route__:  `Host(`stag.aivory.id`)`  $\rightarrow$  `stag-frontend`  container.   ###  2.  Stag  Frontend  (`stag-frontend`)   -  __Role__:  Staging  environment  for  the  public-facing  website.   -  __Tech  Stack__:  Nginx  (Static  HTML/JS/CSS).   -  __Docker  Config__:     -  __Volume__:  `./frontend/frontend:/usr/share/nginx/html:ro`     -  __Labels__:       -  `traefik.http.routers.stag.rule=Host(`stag.aivory.id`)`      -  `traefik.http.routers.stag.entrypoints=websecure`      -  `traefik.http.services.stag.loadbalancer.server.port=80`   ###  3.  VPS  Bridge  (`vps-bridge`)   -  __Role__:  Secure  API  Gateway  /  Middleware.  -  __Function__:  Acts  as  a  bridge  between  the  frontend/console  and  the  internal  backend  
+services
+ 
+(ZeroClaw/n8n).
+ 
+It
+ 
+handles
+ 
+authentication,
+ 
+request
+ 
+transformation,
+ 
+and
+ 
+routing
+ 
+to
+ 
+internal
+ 
+ports.
+ -  __Key  Logic__:  `endpoints.js`  and  `server.js`  define  how  external  requests  are  mapped  to  
+internal
+ 
+service
+ 
+calls.
+  ###  4.  ZeroClaw  (The  Core)   -  __Role__:  The  primary  backend  logic  and  execution  engine.  -  __Integration__:  Communicates  with  the  VPS  Bridge  and  manages  the  state  of  the  Aivory  
+system.
+ -  __Connectivity__:  Accessible  internally  via  the  Docker  network.   ###  5.  n8n  (The  Automation)   -  __Role__:  Workflow  automation  and  integration  engine.  -  __Integration__:  Triggered  by  ZeroClaw  or  the  VPS  Bridge  to  execute  complex  multi-step  
+automations.
+ 
+
+--- PAGE 8 ---
+ ---   ##  ⚙  Configuration  &  Routing  Flow   ###  Request  Lifecycle  Example:  `stag.aivory.id`   1.  __User__  $\rightarrow$  Requests  `https://stag.aivory.id`.  2.  __Traefik__  $\rightarrow$  Matches  `Host(`stag.aivory.id`)`,  terminates  SSL,  and  forwards  to  
+`stag-frontend:80`.
+ 3.  __Nginx  (stag-frontend)__  $\rightarrow$  Serves  `index.html`  from  `/usr/share/nginx/html`.  4.  __Browser__  $\rightarrow$  Executes  `app.js`,  which  makes  API  calls  to  `api.aivory.id`.  5.  __Traefik__  $\rightarrow$  Routes  `api.aivory.id`  to  the  __VPS  Bridge__.  6.  __VPS  Bridge__  $\rightarrow$  Validates  request  $\rightarrow$  Forwards  to  __ZeroClaw__  or  
+__n8n__.
+  ###  Network  Summary   -  __External  Network__:  Public  Internet  $\rightarrow$  Traefik  (Ports  80,  443).  -  __Internal  Network__:  `avry-admin-dashboard_app-network`  (All  containers    

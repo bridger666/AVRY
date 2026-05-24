@@ -79,7 +79,7 @@ class AuthService:
                     "payment_id": "superadmin_snapshot_lifetime",
                     "user_id": user_id,
                     "product": "ai_snapshot",
-                    "amount": 15.00,
+                    "amount": 29.00,
                     "status": "paid",
                     "payment_method": "seeded",
                     "created_at": "2024-01-01T00:00:00Z"
@@ -88,7 +88,7 @@ class AuthService:
                     "payment_id": "superadmin_blueprint_lifetime",
                     "user_id": user_id,
                     "product": "ai_blueprint",
-                    "amount": 79.00,
+                    "amount": 85.00,
                     "status": "paid",
                     "payment_method": "seeded",
                     "created_at": "2024-01-01T00:00:00Z"
@@ -382,13 +382,13 @@ class AuthService:
         }
         self.db.save_json("sessions", session_id, session)
         
-        # Return enriched response with completion flags
         # Check for paid products
         payments = self.db.load_all_json("payments")
         user_payments = [p for p in payments if p.get("user_id") == user_id and p.get("status") == "paid"]
         
-        has_snapshot_payment = any(p.get("product") == "ai_snapshot" for p in user_payments)
-        has_blueprint_payment = any(p.get("product") == "ai_blueprint" for p in user_payments)
+        has_bundle_payment = any(p.get("product") == "ai_bundle" for p in user_payments)
+        has_snapshot_payment = any(p.get("product") == "ai_snapshot" for p in user_payments) or has_bundle_payment
+        has_blueprint_payment = any(p.get("product") == "ai_blueprint" for p in user_payments) or has_bundle_payment
         has_subscription_payment = any(p.get("product") == "step3_subscription" for p in user_payments)
         
         # Check for completed diagnostics/snapshots/blueprints
@@ -479,8 +479,9 @@ class AuthService:
         payments = self.db.load_all_json("payments")
         user_payments = [p for p in payments if p.get("user_id") == user_id and p.get("status") == "paid"]
         
-        has_snapshot_payment = any(p.get("product") == "ai_snapshot" for p in user_payments)
-        has_blueprint_payment = any(p.get("product") == "ai_blueprint" for p in user_payments)
+        has_bundle_payment = any(p.get("product") == "ai_bundle" for p in user_payments)
+        has_snapshot_payment = any(p.get("product") == "ai_snapshot" for p in user_payments) or has_bundle_payment
+        has_blueprint_payment = any(p.get("product") == "ai_blueprint" for p in user_payments) or has_bundle_payment
         has_subscription_payment = any(p.get("product") == "step3_subscription" for p in user_payments)
         
         # Check for completed diagnostics/snapshots/blueprints
@@ -614,8 +615,9 @@ class AuthService:
         payments = self.db.load_all_json("payments")
         user_payments = [p for p in payments if p.get("user_id") == user_id and p.get("status") == "paid"]
         
-        has_snapshot_payment = any(p.get("product") == "ai_snapshot" for p in user_payments)
-        has_blueprint_payment = any(p.get("product") == "ai_blueprint" for p in user_payments)
+        has_bundle_payment = any(p.get("product") == "ai_bundle" for p in user_payments)
+        has_snapshot_payment = any(p.get("product") == "ai_snapshot" for p in user_payments) or has_bundle_payment
+        has_blueprint_payment = any(p.get("product") == "ai_blueprint" for p in user_payments) or has_bundle_payment
         has_subscription_payment = any(p.get("product") == "step3_subscription" for p in user_payments)
         
         # Check for completed diagnostics/snapshots/blueprints

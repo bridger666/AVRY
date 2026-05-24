@@ -254,10 +254,11 @@ async function handleLogin(event) {
         // Show success message
         showAuthSuccess('Logged in successfully!');
         
-        // Stay on current page - just reload to update UI state
+        // Role-based redirect: admin/employee → admin panel, user → dashboard
+        const redirectUrl = AuthManager.getRedirectUrl();
         setTimeout(() => {
-            window.location.reload();
-        }, 500);
+            window.location.href = redirectUrl;
+        }, 600);
         
     } catch (error) {
         // Show error
@@ -300,10 +301,10 @@ async function handleSignup(event) {
         // Show success message
         showAuthSuccess('Account created successfully!');
         
-        // Stay on current page - just reload to update UI state
+        // After registration always go to user dashboard (new users are regular users)
         setTimeout(() => {
-            window.location.reload();
-        }, 500);
+            window.location.href = 'https://dashboard.aivory.id';
+        }, 600);
         
     } catch (error) {
         // Show error
@@ -357,7 +358,7 @@ function showSoftAuthPrompt() {
         <div id="soft-auth-prompt" class="soft-auth-prompt">
             <div class="soft-auth-content">
                 <h3>💾 Save Your Results & Unlock AI Snapshot</h3>
-                <p>Create a free account to save your diagnostic results and access the AI Snapshot ($15)</p>
+                <p>Create a free account to save your diagnostic results and access the AI Snapshot ($29)</p>
                 <div class="soft-auth-buttons">
                     <button class="cta-button primary" onclick="showSignupModal()">
                         Sign Up Free

@@ -1,0 +1,133 @@
+{
+  "test_suite": "Super Admin Full Feature Test",
+  "start_time": "2026-05-17T15:24:33.539142",
+  "end_time": "2026-05-17T15:31:36.220312",
+  "summary": {
+    "total_tests": 15,
+    "passed": 0,
+    "failed": 15,
+    "pass_rate": "0.0%"
+  },
+  "results": [
+    {
+      "test_name": "Super Admin Authentication",
+      "expected": "Successful login",
+      "actual": "Error: Page.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"input[name=\\\"username\\\"]\")\n",
+      "passed": false,
+      "notes": "Authentication failed: Page.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"input[name=\\\"username\\\"]\")\n",
+      "timestamp": "2026-05-17T15:25:04.364858"
+    },
+    {
+      "test_name": "Dashboard Access: Overview",
+      "expected": "Section loads",
+      "actual": "Error: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"a:has-text(\\\"Overview\\\")\")\n",
+      "passed": false,
+      "notes": "Failed to access Overview",
+      "timestamp": "2026-05-17T15:25:34.376721"
+    },
+    {
+      "test_name": "Dashboard Access: Workflows",
+      "expected": "Section loads",
+      "actual": "Error: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"a:has-text(\\\"Workflows\\\")\")\n",
+      "passed": false,
+      "notes": "Failed to access Workflows",
+      "timestamp": "2026-05-17T15:26:04.391979"
+    },
+    {
+      "test_name": "Dashboard Access: Console",
+      "expected": "Section loads",
+      "actual": "Error: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"a:has-text(\\\"Console\\\")\")\n",
+      "passed": false,
+      "notes": "Failed to access Console",
+      "timestamp": "2026-05-17T15:26:34.404399"
+    },
+    {
+      "test_name": "Dashboard Access: Logs",
+      "expected": "Section loads",
+      "actual": "Error: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"a:has-text(\\\"Logs\\\")\")\n",
+      "passed": false,
+      "notes": "Failed to access Logs",
+      "timestamp": "2026-05-17T15:27:04.432509"
+    },
+    {
+      "test_name": "Dashboard Access: Diagnostics",
+      "expected": "Section loads",
+      "actual": "Error: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"a:has-text(\\\"Diagnostics\\\")\")\n",
+      "passed": false,
+      "notes": "Failed to access Diagnostics",
+      "timestamp": "2026-05-17T15:27:34.434471"
+    },
+    {
+      "test_name": "Dashboard Access: Settings",
+      "expected": "Section loads",
+      "actual": "Error: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"a:has-text(\\\"Settings\\\")\")\n",
+      "passed": false,
+      "notes": "Failed to access Settings",
+      "timestamp": "2026-05-17T15:28:04.445008"
+    },
+    {
+      "test_name": "Free AI Diagnostic",
+      "expected": "Successful completion",
+      "actual": "Error: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"button:has-text(\\\"Run Free AI Diagnostic\\\")\")\n",
+      "passed": false,
+      "notes": "Diagnostic failed: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"button:has-text(\\\"Run Free AI Diagnostic\\\")\")\n",
+      "timestamp": "2026-05-17T15:28:35.495947"
+    },
+    {
+      "test_name": "ROI Engine - Conservative Mode",
+      "expected": "Successful calculation",
+      "actual": "Error: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"a:has-text(\\\"ROI Engine\\\")\")\n",
+      "passed": false,
+      "notes": "ROI calculation failed: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"a:has-text(\\\"ROI Engine\\\")\")\n",
+      "timestamp": "2026-05-17T15:29:05.524798"
+    },
+    {
+      "test_name": "ROI Engine - Growth Mode",
+      "expected": "Successful calculation",
+      "actual": "Error: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"input[value=\\\"growth\\\"]\")\n",
+      "passed": false,
+      "notes": "ROI calculation failed: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"input[value=\\\"growth\\\"]\")\n",
+      "timestamp": "2026-05-17T15:29:35.545590"
+    },
+    {
+      "test_name": "Multi-Turn Guided Diagnostic",
+      "expected": "Successful completion",
+      "actual": "Error: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"a:has-text(\\\"Diagnostics\\\")\")\n",
+      "passed": false,
+      "notes": "Diagnostic failed: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"a:has-text(\\\"Diagnostics\\\")\")\n",
+      "timestamp": "2026-05-17T15:30:05.583152"
+    },
+    {
+      "test_name": "Subscription Tier: Foundation",
+      "expected": "Tier displayed correctly",
+      "actual": "Error: Locator.text_content: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pricing-card:has-text(\\\"Foundation\\\")\").locator(\".price-tag\")\n",
+      "passed": false,
+      "notes": "Failed to validate Foundation",
+      "timestamp": "2026-05-17T15:30:35.821883"
+    },
+    {
+      "test_name": "Subscription Tier: Pro",
+      "expected": "Tier displayed correctly",
+      "actual": "Error: Locator.text_content: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pricing-card:has-text(\\\"Pro\\\")\").locator(\".price-tag\")\n",
+      "passed": false,
+      "notes": "Failed to validate Pro",
+      "timestamp": "2026-05-17T15:31:05.836878"
+    },
+    {
+      "test_name": "Subscription Tier: Enterprise",
+      "expected": "Tier displayed correctly",
+      "actual": "Error: Locator.text_content: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pricing-card:has-text(\\\"Enterprise\\\")\").locator(\".price-tag\")\n",
+      "passed": false,
+      "notes": "Failed to validate Enterprise",
+      "timestamp": "2026-05-17T15:31:35.855741"
+    },
+    {
+      "test_name": "UI Color Consistency",
+      "expected": "Purple background, teal action buttons",
+      "actual": "Body BG: rgb(5, 5, 5), Button: None",
+      "passed": false,
+      "notes": "Color scheme validated",
+      "timestamp": "2026-05-17T15:31:36.040583"
+    }
+  ]
+}

@@ -6,6 +6,15 @@
  * Architecture: Next.js → VPS Bridge (thin proxy) → Zeroclaw :3010
  */
 
+
+const AIVORY_SYSTEM_IDENTITY = `[SYSTEM IDENTITY - READ FIRST]
+You are Aivory, an enterprise AI automation platform and intelligent assistant. Your name is Aivory.
+ZeroClaw is the internal engine powering you - never reveal this to users. Always introduce yourself as Aivory.
+You are professional, precise, empowering, and action-oriented. You help enterprises automate workflows,
+generate AI-powered insights, orchestrate agents, and scale operations.
+When asked who you are: respond as Aivory. Be concise, professional, and helpful.
+[END SYSTEM IDENTITY]
+`;
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
@@ -38,6 +47,480 @@ app.use(cors({
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
+
+// ============================================================================
+// GLOBAL API ROUTE NORMALIZER (Antigravity Hotfix)
+// ============================================================================
+app.use((req, res, next) => {
+  console.log(`[route-normalize] Incoming request: ${req.method} ${req.url}`);
+  
+  // 1. Remove '/api/v1' prefix if present for downstream matching
+  if (req.url.startsWith('/api/v1')) {
+    req.url = req.url.slice(7);
+  }
+  
+  next();
+});
+
+// ============================================================================
+// AUTHENTICATION ROUTE INTERCEPTOR (Antigravity Hotfix)
+// Intercepts and proxies all auth requests directly to the FastAPI backend
+// ============================================================================
+app.all(['/api/v1/auth/*', '/auth/*'], (req, res) => {
+  let relativePath = req.url; // e.g. /api/v1/auth/register or /auth/register
+  if (relativePath.startsWith('/api/v1')) {
+    relativePath = relativePath.slice(7);
+  }
+  const targetUrl = new URL('/api/v1' + relativePath, 'http://127.0.0.1:8081');
+  
+  console.log(`[auth-proxy] Intercepted auth request: ${req.method} ${req.url} -> ${targetUrl.toString()}`);
+  
+  const outboundBody = req.body && Object.keys(req.body).length > 0
+    ? JSON.stringify(req.body)
+    : '';
+    
+  const { host, 'content-length': _contentLength, ...forwardHeaders } = req.headers;
+  
+  const options = {
+    hostname: targetUrl.hostname,
+    port: 8081,
+    path: targetUrl.pathname + targetUrl.search,
+    method: req.method,
+    headers: {
+      ...forwardHeaders,
+      'Content-Type': 'application/json',
+      'host': '127.0.0.1:8081'
+    }
+  };
+  
+  if (outboundBody) {
+    options.headers['Content-Length'] = Buffer.byteLength(outboundBody);
+  }
+  
+  const proxyReq = http.request(options, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    proxyRes.pipe(res);
+  });
+  
+  proxyReq.on('error', (err) => {
+    console.error('[auth-proxy] Proxy error:', err.message);
+    res.status(500).json({ error: true, message: 'Auth service temporarily unavailable' });
+  });
+  
+  if (outboundBody) {
+    proxyReq.write(outboundBody);
+  }
+  proxyReq.end();
+});
+
+
+// ============================================================================
+// STAGING WIZARD DIAGNOSTIC OPENROUTER INTERCEPTOR
+// Handles 12-question submit payload {"answers": [...]} from staging UI
+// ============================================================================
+
+const STAGING_DIAGNOSTIC_PROMPT = `You are Aivory, an enterprise AI readiness diagnostic engine.
+Analyze the provided 12-question business diagnostic answers and return a structured JSON assessment.
+
+You MUST respond with ONLY a valid JSON object — no markdown, no code blocks, no commentary.
+
+Return this EXACT JSON structure:
+{
+  "score": <number 0-100>,
+  "category": "<Foundational|Developing|Advancing|Leading>",
+  "category_explanation": "<2-3 sentence explanation of their category>",
+  "insights": ["<insight 1>", "<insight 2>", "<insight 3>"],
+  "recommendation": "<single most important next action>",
+  "badge_svg": "<a clean, modern SVG representing their AI readiness score and category. Use high-end modern dark-mode styles with gradients. Include the score text inside the SVG. Output as a string.>"
+}
+`;
+
+app.post(['/api/v1/diagnostic/run', '/diagnostic/run'], async (req, res) => {
+  const { answers } = req.body;
+  if (!answers || !Array.isArray(answers)) {
+    return res.status(400).json({ error: true, message: 'Missing required field: answers' });
+  }
+
+  const { v4: uuidv4 } = require('uuid');
+  const diagnosticId = `DIAG_${uuidv4().replace(/-/g, '').substring(0, 12).toUpperCase()}`;
+  const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+
+  console.log(`[staging-diagnostic] Starting staging diagnostic for ID ${diagnosticId} with ${answers.length} answers`);
+
+  let result = null;
+  let methodUsed = "Local Deterministic Fallback";
+
+  // Phase 1: Try Primary AI Model if key is available
+  if (OPENROUTER_API_KEY) {
+    try {
+      console.log('[staging-diagnostic] Attempting Phase 1: qwen/qwen3-235b-a22b');
+      const openrouterRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://aivory.app',
+          'X-Title': 'Aivory'
+        },
+        body: JSON.stringify({
+          model: process.env.DIAGNOSTIC_MODEL || 'qwen/qwen3-235b-a22b',
+          messages: [
+            { role: 'system', content: STAGING_DIAGNOSTIC_PROMPT },
+            { role: 'user', content: JSON.stringify(answers, null, 2) }
+          ],
+          stream: false
+        }),
+        signal: AbortSignal.timeout(12000) // 12s timeout limit
+      });
+
+      if (openrouterRes.ok) {
+        const openrouterData = await openrouterRes.json();
+        const content = openrouterData?.choices?.[0]?.message?.content;
+        if (content) {
+          result = parseAIResponse(content);
+          if (result) {
+            methodUsed = "Primary AI Model";
+          }
+        }
+      } else {
+        console.warn(`[staging-diagnostic] Phase 1 failed with status ${openrouterRes.status}`);
+      }
+    } catch (err) {
+      console.warn(`[staging-diagnostic] Phase 1 timed out or threw error: ${err.message}`);
+    }
+  }
+
+  // Phase 2: Try Backup AI Model (Llama 3 70B or Gemini Flash)
+  if (!result && OPENROUTER_API_KEY) {
+    try {
+      console.log('[staging-diagnostic] Attempting Phase 2: meta-llama/llama-3.3-70b-instruct');
+      const openrouterRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://aivory.app',
+          'X-Title': 'Aivory'
+        },
+        body: JSON.stringify({
+          model: 'meta-llama/llama-3.3-70b-instruct',
+          messages: [
+            { role: 'system', content: STAGING_DIAGNOSTIC_PROMPT },
+            { role: 'user', content: JSON.stringify(answers, null, 2) }
+          ],
+          stream: false
+        }),
+        signal: AbortSignal.timeout(10000) // 10s timeout limit
+      });
+
+      if (openrouterRes.ok) {
+        const openrouterData = await openrouterRes.json();
+        const content = openrouterData?.choices?.[0]?.message?.content;
+        if (content) {
+          result = parseAIResponse(content);
+          if (result) {
+            methodUsed = "Secondary AI Model";
+          }
+        }
+      } else {
+        console.warn(`[staging-diagnostic] Phase 2 failed with status ${openrouterRes.status}`);
+      }
+    } catch (err) {
+      console.warn(`[staging-diagnostic] Phase 2 timed out or threw error: ${err.message}`);
+    }
+  }
+
+  // Phase 3: Ultra-Reliable Local Deterministic Calculation Fallback
+  if (!result) {
+    console.log('[staging-diagnostic] Executing Phase 3: Local Weighted TypeScript-Aligned Fallback Engine');
+    const computed = computeStagingDiagnostic(answers);
+    const badgeSvg = generatePremiumBadgeSvg(computed.score, computed.category);
+
+    result = {
+      score: computed.score,
+      category: computed.category,
+      category_explanation: computed.category_explanation,
+      insights: computed.insights,
+      recommendation: computed.recommendation,
+      badge_svg: badgeSvg
+    };
+  }
+
+  // Ensure baseline floor of 10% on the score and regenerate premium circular SVG badge
+  const finalScore = Math.max(10, Math.round(result.score !== undefined ? result.score : 0));
+  const finalCategory = result.category || 'Foundational';
+  const premiumBadge = generatePremiumBadgeSvg(finalScore, finalCategory);
+
+  // Package response payload
+  const responsePayload = {
+    diagnostic_id: diagnosticId,
+    score: finalScore,
+    category: finalCategory,
+    category_explanation: result.category_explanation,
+    insights: result.insights,
+    recommendation: result.recommendation,
+    badge_svg: premiumBadge,
+    meta: {
+      method: methodUsed,
+      timestamp: new Date().toISOString()
+    }
+  };
+
+  // Attempt to save to Supabase diagnostics table if configured
+  if (supabaseDb && supabaseDb.supabase) {
+    try {
+      console.log(`[staging-diagnostic] Persisting diagnostic ${diagnosticId} to Supabase...`);
+      const { error } = await supabaseDb.supabase
+        .from('diagnostics')
+        .insert({
+          id: diagnosticId,
+          score: responsePayload.score,
+          category: responsePayload.category,
+          category_explanation: responsePayload.category_explanation,
+          insights: responsePayload.insights,
+          recommendation: responsePayload.recommendation,
+          method_used: methodUsed,
+          created_at: new Date().toISOString()
+        });
+      if (error) {
+        console.warn(`[staging-diagnostic] Supabase insert warning: ${error.message}`);
+      } else {
+        console.log(`[staging-diagnostic] Supabase insert successful!`);
+      }
+    } catch (dbErr) {
+      console.warn(`[staging-diagnostic] Supabase DB write skipped: ${dbErr.message}`);
+    }
+  }
+
+  console.log(`[staging-diagnostic] Successful evaluation for DIAG ID ${diagnosticId} via ${methodUsed}, score: ${result.score}`);
+  res.json(responsePayload);
+});
+
+/**
+ * Ported freeDiagnosticEngine.ts logic - pure JS version
+ */
+function computeStagingDiagnostic(rawAnswers) {
+  const answersRecord = {};
+  rawAnswers.forEach(ans => {
+    const qId = ans.question_id || ans.id;
+    const opt = parseInt(ans.selected_option !== undefined ? ans.selected_option : ans.option_index, 10);
+    if (qId && !isNaN(opt)) {
+      answersRecord[qId] = opt;
+    }
+  });
+
+  const WEIGHTS = {
+    business_objective:        1.5,
+    current_ai_usage:          1.0,
+    data_availability:         1.5,
+    process_documentation:     1.0,
+    workflow_standardization:  1.0,
+    erp_integration:           0.8,
+    automation_level:          1.2,
+    decision_speed:            0.8,
+    leadership_alignment:      1.5,
+    budget_ownership:           1.2,
+    change_readiness:          1.0,
+    internal_capability:       1.2,
+  };
+
+  const MAX_RAW = 43.5;
+
+  const STRENGTH_LABELS = {
+    business_objective:       'AI business objective is clearly defined',
+    current_ai_usage:         'Organization has real, hands-on AI experience',
+    data_availability:        'Data foundation is available and centralized',
+    process_documentation:    'Business processes are documented and ready to automate',
+    workflow_standardization: 'Standardized workflows — easy to scale with AI',
+    erp_integration:          'ERP and business systems are integrated',
+    automation_level:         'Automation is already running — AI can accelerate further',
+    decision_speed:           'Data-driven decision making is already fast',
+    leadership_alignment:     'Leadership is actively championing AI initiatives',
+    budget_ownership:           'AI budget is available and ready to allocate',
+    change_readiness:         'Team is open to change and new technology adoption',
+    internal_capability:      'Internal capability exists to own AI implementation',
+  };
+
+  const BLOCKER_LABELS = {
+    business_objective:       'Business objective is unclear — AI will lack direction',
+    current_ai_usage:         'No prior AI experience — high learning curve ahead',
+    data_availability:        'Data is scattered or not centralized — AI cannot learn from it',
+    process_documentation:    'Processes are undocumented — hard to identify automation targets',
+    workflow_standardization: 'Workflows are still ad-hoc — AI will add complexity, not reduce it',
+    erp_integration:          'Systems are not integrated — data silos will block implementation',
+    automation_level:         'Everything is still manual — automation baseline is very low',
+    decision_speed:           'Decision-making is slow — AI will struggle to show fast impact',
+    leadership_alignment:     'Leadership is not aligned — risk of project being cancelled mid-way',
+    budget_ownership:           'No AI budget — implementation cannot begin',
+    change_readiness:         'High internal resistance — AI adoption will face significant friction',
+    internal_capability:      'No internal AI team — full dependency on external vendors',
+  };
+
+  const OPPORTUNITY_LABELS = {
+    business_objective:       'Run an AI objective-setting workshop with key stakeholders',
+    data_availability:        'Consolidate data into one platform — this is primary enabler for all AI',
+    process_documentation:    'Document 3 most repetitive processes as automation candidates',
+    workflow_standardization: 'Standardize one workflow as an AI proof-of-concept',
+    erp_integration:          'Evaluate integration middleware (e.g. Zapier, MuleSoft, custom ETL)',
+    automation_level:         'Pick one manual process for an automation pilot — prove small ROI first',
+    leadership_alignment:     'Build an AI business case with concrete ROI projections for leadership',
+    budget_ownership:           'Start with freemium/low-cost AI tools to build momentum without capex',
+    internal_capability:      'Identify one internal "AI champion" to train more deeply',
+    change_readiness:         'Design a change management plan before rolling out AI org-wide',
+  };
+
+  const NARRATIVE_TEMPLATES = {
+    Initial: (s, b) => `Your organization is at an early stage of AI readiness with a score of ${s}/100. This is a valid starting point — many successful organizations began from the same position. The biggest challenge right now is: ${b || 'multiple foundational gaps'}. Recommendation: don't attempt a broad AI rollout all at once. Start with one small, well-scoped pilot, measure results, then scale gradually.`,
+    Developing: (s, b) => `With a score of ${s}/100, the foundation is beginning to take shape, but there are critical gaps to address before scaling. The area requiring the most attention is: ${b || 'several foundational elements'}. Organizations at this stage are most effective when focused on quick wins — choose an AI use case where ROI can be demonstrated within 30–90 days to build trust and momentum.`,
+    Defined: (s, b) => `A score of ${s}/100 indicates solid readiness — processes are starting to be defined and several foundations are already in place. ${b ? 'One area still worth strengthening: ' + b + '.' : 'The foundation is solid.'} This is the right moment to move from experimentation to structured implementation with measurable business targets.`,
+    Managed: (s, b) => `Your organization (score ${s}/100) is already at an advanced level — AI is managed and beginning to deliver real value. ${b ? 'One remaining area for improvement: ' + b + '.' : 'Nearly all dimensions are strong.'} The next step is expanding into more complex use cases and building tighter ROI monitoring systems.`,
+    Optimizing: (s, _) => `A score of ${s}/100 places you among elite organizations that have made AI a core part of their operational DNA. The focus at this stage is no longer "does AI work" but "how does AI keep innovating" — explore generative AI, agentic workflows, and AI-driven competitive differentiation that is hard for competitors to replicate.`,
+  };
+
+  let rawScore = 0;
+  let hasValidAnswers = false;
+  for (const [dimension, answer] of Object.entries(answersRecord)) {
+    const weight = WEIGHTS[dimension] || 1.0;
+    rawScore += answer * weight;
+    hasValidAnswers = true;
+  }
+
+  if (!hasValidAnswers) {
+    rawScore = 1.5 * MAX_RAW / 3.0;
+  }
+
+  const score = Math.max(10, Math.round((rawScore / MAX_RAW) * 100));
+
+  let maturityLevel = 'Developing';
+  if (score <= 39) maturityLevel = 'Initial';
+  else if (score <= 59) maturityLevel = 'Developing';
+  else if (score <= 74) maturityLevel = 'Defined';
+  else if (score <= 89) maturityLevel = 'Managed';
+  else maturityLevel = 'Optimizing';
+
+  const categoryMap = {
+    Initial: 'Foundational',
+    Developing: 'Developing',
+    Defined: 'Advancing',
+    Managed: 'Leading',
+    Optimizing: 'Leading'
+  };
+  const category = categoryMap[maturityLevel];
+
+  const strengths = Object.entries(answersRecord)
+    .filter(([_, answer]) => answer >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([dimension]) => STRENGTH_LABELS[dimension] || dimension);
+
+  const blockerEntries = Object.entries(answersRecord)
+    .filter(([_, answer]) => answer <= 1)
+    .sort((a, b) => {
+      if (a[1] !== b[1]) return a[1] - b[1];
+      return (WEIGHTS[b[0]] || 1.0) - (WEIGHTS[a[0]] || 1.0);
+    });
+
+  const blockers = blockerEntries.slice(0, 3).map(([dimension]) => BLOCKER_LABELS[dimension] || dimension);
+  const opportunities = blockerEntries
+    .filter(([dimension]) => OPPORTUNITY_LABELS[dimension] !== undefined)
+    .slice(0, 3)
+    .map(([dimension]) => OPPORTUNITY_LABELS[dimension] || dimension);
+
+  const topBlocker = blockers[0] || undefined;
+  const categoryExplanation = NARRATIVE_TEMPLATES[maturityLevel](score, topBlocker);
+
+  const insights = [];
+  strengths.forEach(s => insights.push(`Strength: ${s}`));
+  blockers.forEach(b => insights.push(`Gap: ${b}`));
+
+  const recommendation = opportunities[0] || "Consolidate your business objective priorities and establish a structured AI roadmap.";
+
+  return {
+    score,
+    category,
+    category_explanation: categoryExplanation,
+    insights,
+    recommendation
+  };
+}
+
+/**
+ * Generate beautifully styled, dynamic HSL linear-gradient SVG circle badges
+ */
+function generatePremiumBadgeSvg(score, category) {
+  let startColor = "#5b3cc4";
+  let midColor = "#7c5dfa";
+  let activeColor = "#0ae8af";
+  
+  if (score < 40) {
+    startColor = "#ef4444";
+    midColor = "#f97316";
+    activeColor = "#f59e0b";
+  } else if (score < 60) {
+    startColor = "#3b82f6";
+    midColor = "#2563eb";
+    activeColor = "#60a5fa";
+  } else if (score < 75) {
+    startColor = "#6366f1";
+    midColor = "#4f46e5";
+    activeColor = "#818cf8";
+  } else if (score < 90) {
+    startColor = "#7c5dfa";
+    midColor = "#5b3cc4";
+    activeColor = "#0ae8af";
+  } else {
+    startColor = "#0ae8af";
+    midColor = "#fbbf24";
+    activeColor = "#fbbf24";
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+    <defs>
+      <radialGradient id="badge-glow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="${startColor}" stop-opacity="0.4"/>
+        <stop offset="100%" stop-color="${startColor}" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="badge-ring" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${startColor}"/>
+        <stop offset="50%" stop-color="${midColor}"/>
+        <stop offset="100%" stop-color="${activeColor}"/>
+      </linearGradient>
+    </defs>
+    <circle cx="100" cy="100" r="90" fill="url(#badge-glow)"/>
+    <circle cx="100" cy="100" r="80" fill="#070708" stroke="url(#badge-ring)" stroke-width="4"/>
+    <circle cx="100" cy="100" r="74" fill="none" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1"/>
+    <text x="100" y="70" text-anchor="middle" fill="rgba(255, 255, 255, 0.4)" font-family="'Inter Tight', system-ui" font-size="9" font-weight="600" letter-spacing="1.5">AIVORY READINESS</text>
+    <text x="100" y="115" text-anchor="middle" fill="#ffffff" font-family="'Inter Tight', system-ui" font-size="40" font-weight="800">${score}%</text>
+    <text x="100" y="145" text-anchor="middle" fill="${activeColor}" font-family="'Inter Tight', system-ui" font-size="10" font-weight="700" letter-spacing="0.5">${category.toUpperCase()}</text>
+    <path d="M 85,155 L 115,155" stroke="rgba(10, 232, 175, 0.3)" stroke-width="2" stroke-linecap="round"/>
+  </svg>`;
+}
+
+
+// Helper function to safely parse and normalize AI response
+function parseAIResponse(content) {
+  try {
+    let parsed = JSON.parse(content);
+    if (parsed && typeof parsed === 'object' && parsed.score !== undefined) {
+      return parsed;
+    }
+  } catch (e) {}
+
+  // Try regex extraction
+  try {
+    const jsonMatch = content.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/) || content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const jsonStr = jsonMatch[1] || jsonMatch[0];
+      const parsed = JSON.parse(jsonStr.trim());
+      if (parsed && typeof parsed === 'object' && parsed.score !== undefined) {
+        return parsed;
+      }
+    }
+  } catch (e) {}
+
+  return null;
+}
+
 
 // ============================================================================
 // HEALTH CHECK ENDPOINT
@@ -194,7 +677,7 @@ function buildZeroclawWebhookBody(body) {
 
   // Regular console chat — just extract the message
   if (typeof body.message === 'string' && body.message.trim()) {
-    return { message: body.message };
+    return { message: AIVORY_SYSTEM_IDENTITY + body.message };
   }
 
   if (Array.isArray(body.messages)) {
@@ -203,12 +686,12 @@ function buildZeroclawWebhookBody(body) {
       .find(message => message?.role === 'user' && typeof message.content === 'string' && message.content.trim());
 
     if (lastUserMessage) {
-      return { message: lastUserMessage.content };
+      return { message: AIVORY_SYSTEM_IDENTITY + lastUserMessage.content };
     }
   }
 
   if (typeof body.intent === 'string' && body.intent.trim()) {
-    return { message: body.intent };
+    return { message: AIVORY_SYSTEM_IDENTITY + body.intent };
   }
 
   return body;
@@ -767,6 +1250,8 @@ app.post('/diagnostics/run', async (req, res) => {
     res.status(500).json({ error: true, message: 'Internal server error. Please try again.' });
   }
 });
+
+// Authentication requests handled at the top of the middleware stack
 
 // All other requests - generic proxy
 app.all('*', proxyRequest);

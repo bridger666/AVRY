@@ -1,0 +1,253 @@
+{
+  "test_suite": "Aivory Live Staging E2E & API Audit",
+  "start_time": "2026-05-17T17:08:35.224223",
+  "end_time": "2026-05-17T17:10:21.437950",
+  "api_endpoints": [
+    {
+      "endpoint": "/health",
+      "method": "GET",
+      "expected": "Status 200, return proxy service state",
+      "actual": "Status 200, Body: {\"status\":\"ok\",\"service\":\"vps-bridge-thin-proxy\",\"timestamp\":\"2026-05-17T09:08:37.294Z\",\"zeroclaw_url\":\"http://127.0.0.1:3010\"}...",
+      "passed": true,
+      "payload": null,
+      "response": {
+        "status": "ok",
+        "service": "vps-bridge-thin-proxy",
+        "timestamp": "2026-05-17T09:08:37.294Z",
+        "zeroclaw_url": "http://127.0.0.1:3010"
+      },
+      "notes": "API Gateway Health endpoint validated.",
+      "timestamp": "2026-05-17T17:08:35.573333"
+    },
+    {
+      "endpoint": "/diagnostics/run",
+      "method": "POST",
+      "expected": "Status 200, returns calculated score, strengths, and narrative summary",
+      "actual": "Status 200, Score: 75",
+      "passed": true,
+      "payload": {
+        "mode": "deep",
+        "phases": {
+          "business_objectives": {
+            "company_name": "E2E Staging Corp",
+            "industry": "E-Commerce",
+            "primary_objective": "Improve checkout conversions & automate customer service escalations",
+            "kpi_targets": [
+              "Reduce AHT by 40%",
+              "Increase CSAT score by 15%"
+            ]
+          },
+          "data_process": {
+            "data_residency": "Singapore",
+            "data_quality_score": 85,
+            "process_standardized": "Mostly standardized, documented on Notion"
+          },
+          "risk_constraints": {
+            "compliance_frameworks": [
+              "GDPR",
+              "PDPA"
+            ],
+            "security_protocols": "SSL, OAuth2, restricted internal access"
+          },
+          "opportunity_mapping": {
+            "target_processes": [
+              "Customer return logistics",
+              "Support ticket classification"
+            ]
+          }
+        }
+      },
+      "response": {
+        "ai_readiness_score": 75,
+        "maturity_level": "Advancing",
+        "strengths": [
+          "High data quality score (85/100) with mostly standardized processes",
+          "Clear business objectives tied to measurable KPIs (AHT reduction, CSAT improvement)",
+          "Robust security protocols (SSL, OAuth2) aligned with compliance frameworks (GDPR, PDPA)"
+        ],
+        "primary_constraints": [
+          "Data residency requirements in Singapore creating deployment complexity",
+          "Partially standardized processes requiring additional documentation",
+          "Compliance frameworks creating regulatory risk barriers for AI adoption"
+        ],
+        "automation_opportunities": [
+          "Support ticket classification for immediate CSAT impact",
+          "Customer return logistics streamlining for checkout conversion improvement",
+          "AI-powered escalation routing for customer service workflows"
+        ],
+        "narrative_summary": "E2E Staging Corp demonstrates advancing AI readiness with strong data foundations and clearly defined business objectives. Process standardization and compliance constraints in Singapore's regulatory environment require careful management during AI deployment. Immediate opportunities exist in customer service automation aligned with KPI targets.",
+        "recommended_next_step": "Initiate pilot project for AI-driven support ticket classification while building cross-departmental governance framework for GDPR/PDPA-compliant AI deployment",
+        "diagnostic_id": "DIAG_E8F00CA4165E",
+        "score": 75,
+        "blockers": [
+          "Data residency requirements in Singapore creating deployment complexity",
+          "Partially standardized processes requiring additional documentation",
+          "Compliance frameworks creating regulatory risk barriers for AI adoption"
+        ],
+        "opportunities": [
+          "Support ticket classification for immediate CSAT impact",
+          "Customer return logistics streamlining for checkout conversion improvement",
+          "AI-powered escalation routing for customer service workflows"
+        ]
+      },
+      "notes": "Direct OpenRouter AI Diagnostic generator is fully functional and returns rich structural calculations.",
+      "timestamp": "2026-05-17T17:08:46.522810"
+    },
+    {
+      "endpoint": "/aria/stream",
+      "method": "POST",
+      "expected": "Status 200 with SSE",
+      "actual": "Error: HTTPSConnectionPool(host='api.aivory.id', port=443): Read timed out. (read timeout=20)",
+      "passed": false,
+      "payload": {
+        "session_id": "test-session-12345",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Hi Aira, tell me how AI readiness diagnostic can help my SME in 2 bullet points."
+          }
+        ],
+        "context": {
+          "page": "/console",
+          "mode": "chat"
+        }
+      },
+      "response": null,
+      "notes": "SSE floating assistant endpoint failed to stream.",
+      "timestamp": "2026-05-17T17:09:06.839562"
+    },
+    {
+      "endpoint": "/blueprint/generate",
+      "method": "POST",
+      "expected": "Status 200 with SSE",
+      "actual": "Error: HTTPSConnectionPool(host='api.aivory.id', port=443): Read timed out. (read timeout=30)",
+      "passed": false,
+      "payload": {
+        "message": "Generate blueprint from diagnostic score 75, industry E-Commerce, strengths workflow and customer care."
+      },
+      "response": null,
+      "notes": "Blueprint generation endpoint failed to stream.",
+      "timestamp": "2026-05-17T17:09:37.162038"
+    }
+  ],
+  "ui_interactions": [
+    {
+      "action": "Navigate",
+      "target_element": "https://stag.aivory.id",
+      "expected": "Landing page loads, displays proper title",
+      "actual": "Page loaded, Title: 'Aivory - AI Readiness Diagnostic'",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\01_landing_page.png",
+      "notes": "Static landing assets served instantly by Nginx.",
+      "timestamp": "2026-05-17T17:09:42.462033"
+    },
+    {
+      "action": "Click Navigation Link: Deep Diagnostic",
+      "target_element": "a:has-text('Deep Diagnostic'), .nav-deep-link",
+      "expected": "View changes or smooth scrolls to target",
+      "actual": "Clicked successfully, scroll or view updated.",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\02_click_deep_diagnostic.png",
+      "notes": "Navigation click for Deep Diagnostic works perfectly.",
+      "timestamp": "2026-05-17T17:09:43.155873"
+    },
+    {
+      "action": "Click Navigation Link: AI Blueprint",
+      "target_element": "a:has-text('AI Blueprint'), .nav-blueprint-link",
+      "expected": "View changes or smooth scrolls to target",
+      "actual": "Clicked successfully, scroll or view updated.",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\02_click_ai_blueprint.png",
+      "notes": "Navigation click for AI Blueprint works perfectly.",
+      "timestamp": "2026-05-17T17:09:46.254081"
+    },
+    {
+      "action": "Click Navigation Link: Pricing",
+      "target_element": "a:has-text('Pricing'), .nav-pricing-link",
+      "expected": "Selector exists",
+      "actual": "Not found",
+      "passed": false,
+      "screenshot_path": null,
+      "notes": "Navigation item 'Pricing' was not found in DOM.",
+      "timestamp": "2026-05-17T17:09:46.264647"
+    },
+    {
+      "action": "Click Navigation Link: Careers",
+      "target_element": "a:has-text('Careers'), .nav-careers-link",
+      "expected": "View changes or smooth scrolls to target",
+      "actual": "Clicked successfully, scroll or view updated.",
+      "passed": true,
+      "screenshot_path": "C:\\Users\\user\\Documents\\Software-Developer\\Freelancer\\aivery\\graphify\\Hansel-Report\\test_screenshots\\02_click_careers.png",
+      "notes": "Navigation click for Careers works perfectly.",
+      "timestamp": "2026-05-17T17:09:49.289826"
+    },
+    {
+      "action": "Browser Walkthrough Error",
+      "target_element": "Browser Context",
+      "expected": "Completes all E2E steps",
+      "actual": "Exception: Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#login-submit-btn, button:has-text('Submit'), button:has-text('Sign In')\").first\n    - locator resolved to <button id=\"free-submit-button\" class=\"nav-button primary\" onclick=\"submitFreeDiagnostic()\">Submit Diagnostic</button>\n  - attempting click action\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    52 \u00d7 waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n",
+      "passed": false,
+      "screenshot_path": null,
+      "notes": "E2E runtime crash: Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#login-submit-btn, button:has-text('Submit'), button:has-text('Sign In')\").first\n    - locator resolved to <button id=\"free-submit-button\" class=\"nav-button primary\" onclick=\"submitFreeDiagnostic()\">Submit Diagnostic</button>\n  - attempting click action\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    52 \u00d7 waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n",
+      "timestamp": "2026-05-17T17:10:21.305006"
+    }
+  ],
+  "network_intercepts": [
+    {
+      "url": "https://stag.aivory.id/diagnostic-questions-paid.js?v=18",
+      "method": "GET",
+      "status": 200,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "",
+      "response_headers": {
+        "accept-ranges": "bytes",
+        "content-length": "18900",
+        "date": "Sun, 17 May 2026 09:09:42 GMT",
+        "etag": "\"6a059189-49d4\"",
+        "content-type": "application/javascript",
+        "last-modified": "Thu, 14 May 2026 09:10:33 GMT",
+        "server": "nginx/1.29.8"
+      },
+      "response_body": "// ============================================================================\n// PAID DIAGNOSTIC QUESTIONNAIRE - 30 QUESTIONS\n// For AI Snapshot ($15) and AI System Blueprint ($99)\n// ============================================================================\n\nconst PAID_DIAGNOSTIC_QUESTIONS = [\n    // ========================================================================\n    // SECTION 1: Business Goals & Context (5 questions)\n    // ========================================================================\n    {\n        id: \"business_goal_1\",\n        section: \"Business Goals & Context\",\n        question: \"What is your primary business objective for exploring AI?\",\n        type: \"single-choice\",\n        options: [\n            { value: \"cost_reduction\", label: \"Reduce operational costs\" },\n            { value: \"revenue_growth\", label: \"Increase revenue and sales\" },\n            { value: \"customer_experience\", label: \"Improve customer experience\" },\n            { value: \"innovation\",",
+      "success": true,
+      "timestamp": "2026-05-17T17:09:41.501542"
+    },
+    {
+      "url": "https://stag.aivory.id/diagnostic-questions-snapshot.js?v=18",
+      "method": "GET",
+      "status": 200,
+      "request_headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://stag.aivory.id/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 E2E-Playwright-Test",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "request_body": "",
+      "response_headers": {
+        "accept-ranges": "bytes",
+        "content-length": "15073",
+        "date": "Sun, 17 May 2026 09:09:42 GMT",
+        "etag": "\"6a059189-3ae1\"",
+        "content-type": "application/javascript",
+        "last-modified": "Thu, 14 May 2026 09:10:33 GMT",
+        "server": "nginx/1.29.8"
+      },
+      "response_body": "/**\n * AIVORY INTELLIGENCE ENGINE V2\n * 30-Question Structured Snapshot Diagnostic\n * \n * Structure:\n * - Section A: Business Objective (5 questions)\n * - Section B: Workflow Maturity (8 questions, 0-4 scale)\n * - Section C: Data Infrastructure (7 questions, 0-4 scale)\n * - Section D: Automation Exposure (5 questions, 0-4 scale)\n * - Section E: Organizational Readiness (5 questions, 0-4 scale)\n * \n * Only Q6-Q30 contribute to readiness score (25 questions \u00d7 4 = 100 max)\n */\n\nconst SNAPSHOT_DIAGNOSTIC_QUESTIONS = [\n    // ========================================================================\n    // SECTION A: BUSINESS OBJECTIVE (5 questions)\n    // ========================================================================\n    {\n        id: \"primary_objective\",\n        category: \"Business Objective\",\n        question: \"What is your primary business objective for AI?\",\n        options: [\n            \"Increase Revenue\",\n            \"Improve Efficiency\",\n            \"Reduce Costs\",\n        ",
+      "success": true,
+      "timestamp": "2026-05-17T17:09:41.503214"
+    }
+  ],
+  "summary": {
+    "total_tests": 10,
+    "passed": 6,
+    "failed": 4,
+    "pass_rate": "60.0%"
+  }
+}

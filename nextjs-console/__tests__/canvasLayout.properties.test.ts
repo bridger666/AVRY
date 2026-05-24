@@ -48,12 +48,17 @@ const workflowSpecArbitrary = () =>
         position: { x: 0, y: 0 },
       }
 
+      const uniqueActionSteps = actionSteps.map((step, index) => ({
+        ...step,
+        id: `step_${index + 1}`
+      }))
+
       return {
         name,
         description: 'Test workflow',
         source: 'test',
         intent: 'test',
-        steps: [triggerStep, ...actionSteps],
+        steps: [triggerStep, ...uniqueActionSteps],
       } as AivoryWorkflowSpec
     })
 
@@ -159,6 +164,10 @@ describe('Canvas Layout - Property-Based Tests', () => {
         fc.property(
           fc.array(workflowStepArbitrary('action'), { minLength: 0, maxLength: 20 }),
           (actionSteps) => {
+            const uniqueActionSteps = actionSteps.map((step, index) => ({
+              ...step,
+              id: `step_${index + 1}`
+            }))
             const spec: AivoryWorkflowSpec = {
               name: 'Large workflow',
               description: 'Test workflow',
@@ -174,7 +183,7 @@ describe('Canvas Layout - Property-Based Tests', () => {
                   inputs: {},
                   position: { x: 0, y: 0 },
                 },
-                ...actionSteps,
+                ...uniqueActionSteps,
               ],
             }
 

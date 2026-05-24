@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tests | AVRY Discovery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        :root { --bg: #0a0b10; --panel: #14161e; --accent: #00f2ff; --text: #e0e0e0; --border: rgba(255, 255, 255, 0.1); }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 260px; background: var(--panel); border-right: 1px solid var(--border); padding: 40px 20px; display: flex; flex-direction: column; flex-shrink: 0; }
+        .main { flex: 1; padding: 40px 60px; overflow-y: auto; }
+        .breadcrumb { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #666; margin-bottom: 20px; }
+        .nav-item { padding: 12px; color: #888; text-decoration: none; display: flex; align-items: center; gap: 12px; font-size: 13px; border-radius: 8px; margin-bottom: 4px; }
+        .nav-item.active { background: rgba(0, 242, 255, 0.1); color: var(--accent); font-weight: 600; }
+        .test-list { margin-top: 30px; }
+        .test-item { background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 25px; border-radius: 12px; margin-bottom: 15px; display: grid; grid-template-columns: 2fr 3fr 1fr 1fr; align-items: center; gap: 20px; cursor: pointer; transition: 0.3s; }
+        .test-item:hover { border-color: var(--accent); background: rgba(0,242,255,0.03); }
+        .test-name { font-weight: 600; color: #fff; font-size: 14px; }
+        .test-desc { font-size: 13px; color: #888; }
+        .test-result { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .test-time { font-size: 11px; color: #444; font-family: monospace; }
+        .status-passed { color: #00ff88; }
+        .status-failed { color: #ff3e3e; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2 style="color: var(--accent); font-weight: 300; letter-spacing: 3px; font-size: 20px; margin-bottom: 40px;">AVRY</h2>
+        <nav>
+            <a href="index.html" class="nav-item"><i data-feather="grid"></i> Dashboard</a>
+            <div style="margin: 20px 0 10px 12px; font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 2px;">Modules</div>
+            <a href="visualization.html" class="nav-item"><i data-feather="map"></i> Visualization</a>
+            <a href="reports.html" class="nav-item"><i data-feather="file-text"></i> Reports</a>
+            <a href="analysis.html" class="nav-item"><i data-feather="zap"></i> Analysis</a>
+            <a href="tests.html" class="nav-item active"><i data-feather="check-circle"></i> Tests</a>
+            <a href="vps.html" class="nav-item"><i data-feather="server"></i> VPS</a>
+            <a href="documentation.html" class="nav-item"><i data-feather="book-open"></i> Documentation</a>
+        </nav>
+    </div>
+    <div class="main">
+        <div class="breadcrumb"><a href="index.html" style="color:inherit; text-decoration:none;">AVRY</a> / TESTS</div>
+        <h1 style="margin:0; font-weight: 300; letter-spacing: 1px;">Automated Tests</h1>
+        <p style="color: #555; font-size: 14px; margin-top: 10px;">Repository-wide functional and architectural test suites.</p>
+        
+        <div class="test-list" id="test-list">
+            <!-- Header -->
+            <div style="display: grid; grid-template-columns: 2fr 3fr 1fr 1fr; padding: 0 25px 15px; font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 2px;">
+                <div>Test Case</div>
+                <div>Description</div>
+                <div>Result</div>
+                <div>Timestamp</div>
+            </div>
+            <div id="test-container"></div>
+        </div>
+    </div>
+    <script>
+        async function loadTests() {
+            const resp = await fetch('data/tests.json');
+            const tests = await resp.json();
+            const container = document.getElementById('test-container');
+            
+            tests.forEach(t => {
+                const item = document.createElement('div');
+                item.className = 'test-item';
+                item.onclick = () => window.open(`data/vault/${t.file.split('/').pop()}`, '_blank');
+                
+                item.innerHTML = `
+                    <div class="test-name" title="${t.name}">${t.name}</div>
+                    <div class="test-desc">${t.description}</div>
+                    <div class="test-result status-${t.result.toLowerCase()}">${t.result}</div>
+                    <div class="test-time">${t.timestamp}</div>
+                `;
+                container.appendChild(item);
+            });
+            feather.replace();
+        }
+        loadTests();
+    </script>
+</body>
+</html>

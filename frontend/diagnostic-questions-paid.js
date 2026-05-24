@@ -1,6 +1,6 @@
 // ============================================================================
 // PAID DIAGNOSTIC QUESTIONNAIRE - 30 QUESTIONS
-// For AI Snapshot ($15) and AI System Blueprint ($99)
+// For AI Snapshot ($29) and AI System Blueprint ($85)
 // ============================================================================
 
 const PAID_DIAGNOSTIC_QUESTIONS = [

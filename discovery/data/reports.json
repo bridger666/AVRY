@@ -1,0 +1,62 @@
+[
+    {
+        "name": "AGENTS_BACKEND_IMPLEMENTATION_SUMMARY.md",
+        "path": "AGENTS_BACKEND_IMPLEMENTATION_SUMMARY.md",
+        "type": "Documentation"
+    },
+    {
+        "name": "AGENTS_CURL_TEST_COMMANDS.md",
+        "path": "AGENTS_CURL_TEST_COMMANDS.md",
+        "type": "Documentation"
+    },
+    {
+        "name": "AGENTS_IMPLEMENTATION_CHANGES.md",
+        "path": "AGENTS_IMPLEMENTATION_CHANGES.md",
+        "type": "Documentation"
+    },
+    {
+        "name": "README.md",
+        "path": "README.md",
+        "type": "Documentation"
+    },
+    {
+        "name": "requirements.txt",
+        "path": "requirements.txt",
+        "type": "Documentation"
+    },
+    {
+        "name": "VPS_BRIDGE_AGENTS_IMPLEMENTATION_COMPLETE.md",
+        "path": "VPS_BRIDGE_AGENTS_IMPLEMENTATION_COMPLETE.md",
+        "type": "VPS"
+    },
+    {
+        "name": "VPS_BRIDGE_URL_CHANGES_VISUAL.txt",
+        "path": "VPS_BRIDGE_URL_CHANGES_VISUAL.txt",
+        "type": "VPS"
+    },
+    {
+        "name": "AIVORY_ARCHITECTURE_DIAGRAM.txt",
+        "path": "docs/AIVORY_ARCHITECTURE_DIAGRAM.txt",
+        "type": "Documentation"
+    },
+    {
+        "name": "FLOW_DIAGRAM.txt",
+        "path": "docs/archive/FLOW_DIAGRAM.txt",
+        "type": "Documentation"
+    },
+    {
+        "name": "requirements.txt",
+        "path": "tests/requirements.txt",
+        "type": "Documentation"
+    },
+    {
+        "name": "LOCAL_DEV.md",
+        "path": "vps-bridge/LOCAL_DEV.md",
+        "type": "VPS"
+    },
+    {
+        "name": "console_prompt.txt",
+        "path": "zeroclaw-routing-patch/console_prompt.txt",
+        "type": "Documentation"
+    }
+]

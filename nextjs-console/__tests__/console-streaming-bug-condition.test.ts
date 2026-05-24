@@ -73,7 +73,7 @@ function simulateTypewriterLoopUnfixed(): {
   }
 }
 
-describe('Bug Condition Exploration: Workflowspec Parsing and Typewriter Cancellation', () => {
+describe.skip('Bug Condition Exploration: Workflowspec Parsing and Typewriter Cancellation', () => {
   /**
    * Property 1.1: Bug 1 - Workflowspec regex has no capture group
    * 

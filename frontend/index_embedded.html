@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aivory - AI Readiness Diagnostic</title>
     <link rel="icon" href="Favicon_Aivory.svg" type="image/svg+xml">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
 /**
  * AIVORY Design System
@@ -1389,16 +1390,30 @@ a:hover {
 }
 
 .nav-button.primary {
-    background: white;
-    color: black;
+    background: linear-gradient(135deg, var(--brand-purple) 0%, #7c5dfa 100%);
+    color: white;
     border: none;
-    border-radius: 0;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    border-radius: var(--radius-button, 9999px);
+    box-shadow: 0 4px 15px rgba(91, 60, 196, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.nav-button.primary:hover {
-    background: #e5e5e5;
-    color: black;
+.nav-button.primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--brand-purple-hover, #6d4dd6) 0%, #8f75ff 100%);
+    box-shadow: 0 6px 20px rgba(91, 60, 196, 0.6), 0 0 15px rgba(10, 232, 175, 0.4);
+    transform: translateY(-2px);
+    color: white;
 }
+
+.nav-button.primary:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 2px 10px rgba(91, 60, 196, 0.4);
+}
+
 
 /* Loading State - Premium Style */
 .loading-container {
@@ -1512,6 +1527,153 @@ a:hover {
     opacity: 0.95;
     max-width: 600px;
     margin: 0 auto;
+}
+
+/* Premium Score & Badge Dashboard Grid */
+.premium-score-card {
+    background: radial-gradient(100% 100% at 0% 0%, rgba(91, 60, 196, 0.12) 0%, rgba(7, 7, 8, 0) 100%), #070708;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px !important;
+    padding: 3rem !important;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    text-align: left !important;
+}
+.score-columns {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 3rem;
+    align-items: center;
+}
+@media (max-width: 768px) {
+    .score-columns {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        text-align: center;
+    }
+    .premium-score-card {
+        text-align: center !important;
+        padding: 2rem 1.5rem !important;
+    }
+}
+.score-badge-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+.badge-download-btn {
+    background: linear-gradient(135deg, #5b3cc4 0%, #7c5dfa 100%);
+    color: white;
+    border: none;
+    border-radius: 9999px;
+    padding: 0.75rem 1.75rem;
+    font-family: 'Inter Tight', system-ui, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 15px rgba(91, 60, 196, 0.3);
+}
+.badge-download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(91, 60, 196, 0.5), 0 0 0 2px rgba(10, 232, 175, 0.4);
+}
+.score-info-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+.premium-score-title {
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Inter Tight', system-ui, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin: 0;
+}
+.score-display-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+@media (max-width: 768px) {
+    .score-display-row {
+        justify-content: center;
+    }
+}
+.score-number-pill {
+    font-size: 4rem;
+    font-family: 'Inter Tight', system-ui, sans-serif;
+    font-weight: 800;
+    line-height: 1;
+    color: #ffffff;
+}
+.score-percent-suffix {
+    font-size: 2rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.4);
+    font-family: 'Inter Tight', system-ui, sans-serif;
+    margin-right: 1.5rem;
+}
+.score-category-badge {
+    background: rgba(10, 232, 175, 0.1);
+    border: 1px solid rgba(10, 232, 175, 0.3);
+    color: #0ae8af;
+    border-radius: 9999px;
+    padding: 0.4rem 1.2rem;
+    font-family: 'Inter Tight', system-ui, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.share-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+@media (max-width: 768px) {
+    .share-section {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}
+.share-label {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    font-family: 'Inter Tight', system-ui, sans-serif;
+    font-weight: 600;
+}
+.share-buttons {
+    display: flex;
+    gap: 0.75rem;
+}
+.share-btn {
+    background: #0f0f11;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+.share-btn:hover {
+    background: #5b3cc4;
+    color: white !important;
+    border-color: #7c5dfa;
+    transform: translateY(-2px);
 }
 
 .section-box {
@@ -4630,6 +4792,8 @@ hr,
     font-size: 16px;
     transition: border-color 0.2s ease;
     box-sizing: border-box;
+    color: #333333 !important;
+    background-color: #FFFFFF !important;
 }
 
 .auth-form-group input:focus {
@@ -5307,7 +5471,10 @@ if (document.readyState === 'loading') {
                 <h1 class="text-[33.6px] md:text-[50.4px] font-light mb-4 tracking-tight text-white/90">
                     Make AI make sense<span class="text-aivory-accent">.</span>
                 </h1>
-                <h2 class="text-[21px] md:text-[33.6px] font-light text-[#05e5ba] text-left w-full mb-12 leading-tight">
+                <div class="hero-title-container h-12 flex items-center justify-center mb-6 w-full">
+                    <span id="hero-title" class="hero-title text-[20px] md:text-[28px] text-white/85 font-light"></span>
+                </div>
+                <h2 class="text-[21px] md:text-[33.6px] font-light text-[#05e5ba] text-center w-full mb-12 leading-tight">
                     Start with clarity.<br>
                     End with a system that runs.
                 </h2>
@@ -5487,7 +5654,7 @@ if (document.readyState === 'loading') {
                             <li class="flex items-center gap-2"><span class="w-1 h-1 bg-black rounded-full"></span> Data
                                 & process readiness</li>
                         </ul>
-                        <button onclick="startFreeDiagnostic()"
+                        <button onclick="startSnapshot()"
                             class="group flex items-center justify-center gap-3 text-black font-bold text-xl hover:text-gray-600 transition-colors mt-8 w-full border-t-2 border-black pt-6">
                             <svg class="w-5 h-5 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -5586,14 +5753,15 @@ if (document.readyState === 'loading') {
                 <div
                     class="border-t-2 border-black pt-6 flex flex-col md:flex-row justify-between items-start md:items-center mb-16">
                     <div>
+                        <div class="discount-badge">Best Value - Save $15</div>
                         <div class="text-lg font-bold mb-2">Full Stack > Deep Diagnostic + Blueprint + Roadmap</div>
                         <div class="text-sm text-gray-600 mb-1">Everything in one. Know, plan, execute in order.</div>
-                        <div class="text-sm text-green-600 font-medium">Save $48 compare to buying separately</div>
+                        <div class="text-sm text-green-600 font-medium">Save $15 compared to buying separately</div>
                     </div>
                     <div class="mt-6 md:mt-0 text-left md:text-right">
                         <div class="text-3xl font-bold mb-1">$99</div>
                         <div class="text-sm text-gray-500 mb-4">One time</div>
-                        <button
+                        <button onclick="startBundleCheckout()"
                             class="group flex items-center justify-start md:justify-end gap-2 text-black font-bold hover:text-gray-600 transition-colors">
                             <svg class="w-4 h-4 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -6052,13 +6220,43 @@ if (document.readyState === 'loading') {
 
             <!-- Results -->
             <div id="free-diagnostic-results" class="results-container" style="display:none;">
-                <div class="score-section">
-                    <h2>Your AI Readiness Score</h2>
-                    <div class="score-display">
-                        <span id="free-score-number" class="score-number">--</span>
-                        <span id="free-score-category" class="score-category">--</span>
+                <!-- Redesigned Premium Score & Dynamic Badge Column Card -->
+                <div class="score-section premium-score-card">
+                    <div class="score-columns">
+                        <div class="score-badge-col">
+                            <div id="free-badge-container" class="badge-container"></div>
+                            <div class="badge-actions">
+                                <button class="badge-download-btn" onclick="downloadFreeBadge()">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                                    Download Badge
+                                </button>
+                            </div>
+                        </div>
+                        <div class="score-info-col">
+                            <h2 class="premium-score-title">Your AI Readiness Score</h2>
+                            <div class="score-display-row">
+                                <span id="free-score-number" class="score-number-pill">--</span>
+                                <span class="score-percent-suffix">%</span>
+                                <span id="free-score-category" class="score-category-badge">--</span>
+                            </div>
+                            <p id="free-category-explanation" class="category-explanation"></p>
+                            
+                            <div class="share-section">
+                                <span class="share-label">Share to Team:</span>
+                                <div class="share-buttons">
+                                    <button class="share-btn linkedin" onclick="shareToLinkedIn()" title="Share on LinkedIn">
+                                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                                    </button>
+                                    <button class="share-btn twitter" onclick="shareToTwitter()" title="Share on X">
+                                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                                    </button>
+                                    <button class="share-btn email" onclick="shareToEmail()" title="Share via Email">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="m22 6-10 7L2 6"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <p id="free-category-explanation" class="category-explanation"></p>
                 </div>
 
                 <div class="section-box">
@@ -6071,12 +6269,14 @@ if (document.readyState === 'loading') {
                     <p id="free-recommendation-text" class="recommendation-text"></p>
                 </div>
 
-                <div class="section-box">
+                <!-- Legacy standalone badge section commented out to avoid redundant rendering
+                <div class="section-box" style="display: none;">
                     <h3>Your AI Readiness Badge</h3>
-                    <div id="free-badge-container" class="badge-container"></div>
-                    <button class="secondary-button" onclick="downloadFreeBadge()">Download Badge</button>
+                    <div class="badge-container"></div>
+                    <button class="secondary-button">Download Badge</button>
                     <p class="hint-text">Share your readiness score with your team</p>
                 </div>
+                -->
 
                 <!-- Email Capture CTA -->
                 <div class="cta-section">
@@ -6325,7 +6525,7 @@ if (document.readyState === 'loading') {
 // ============================================================================
 // 
 // FLOW 1: FREE AI READINESS DIAGNOSTIC ($0) - 12 questions, always available
-// FLOW 2: AI SNAPSHOT (?v=235) - Uses free diagnostic answers, unlocked after free
+// FLOW 2: AI SNAPSHOT ($15) - Uses free diagnostic answers, unlocked after free
 // FLOW 3: AI SYSTEM BLUEPRINT ($99) - Uses free diagnostic answers, unlocked after free
 //
 // ============================================================================
@@ -6687,10 +6887,38 @@ async function submitFreeDiagnostic() {
         displayFreeDiagnosticResults(freeDiagnosticResult);
         
     } catch (error) {
-        console.error('Free diagnostic failed:', error);
-        alert('Failed to run diagnostic. Please ensure the backend is running on port 8081 and try again.');
-        if (loadingEl) loadingEl.style.display = 'none';
-        if (questionsEl) questionsEl.style.display = 'block';
+        console.warn('API call failed, running ultra-reliable frontend deterministic calculation fallback:', error);
+        
+        try {
+            // Execute local weighted evaluation directly on client
+            const computed = localComputeFreeDiagnostic(formattedAnswers);
+            const badgeSvg = localGenerateBadgeSvg(computed.score, computed.category);
+            
+            const localResult = {
+                diagnostic_id: `DIAG_LOCAL_${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+                score: computed.score,
+                category: computed.category,
+                category_explanation: computed.category_explanation,
+                insights: computed.insights,
+                recommendation: computed.recommendation,
+                badge_svg: badgeSvg,
+                meta: {
+                    method: "Client-Side Fallback Engine",
+                    timestamp: new Date().toISOString()
+                }
+            };
+            
+            freeDiagnosticResult = localResult;
+            freeDiagnosticCompleted = true;
+            
+            // Display results
+            displayFreeDiagnosticResults(freeDiagnosticResult);
+        } catch (fallbackErr) {
+            console.error('Local fallback evaluation also failed:', fallbackErr);
+            alert('Failed to run diagnostic. Please ensure the backend is running and try again.');
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (questionsEl) questionsEl.style.display = 'block';
+        }
     }
 }
 
@@ -6745,6 +6973,186 @@ function displayFreeDiagnosticResults(result) {
     // Scroll to results
     resultsEl.scrollIntoView({ behavior: 'smooth' });
 }
+
+/**
+ * Robust frontend fallback diagnostic evaluation logic
+ */
+function localComputeFreeDiagnostic(formattedAnswers) {
+    const answersRecord = {};
+    formattedAnswers.forEach(ans => {
+        answersRecord[ans.question_id] = parseInt(ans.selected_option, 10);
+    });
+    
+    const WEIGHTS = {
+        business_objective:        1.5,
+        current_ai_usage:          1.0,
+        data_availability:         1.5,
+        process_documentation:     1.0,
+        workflow_standardization:  1.0,
+        erp_integration:           0.8,
+        automation_level:          1.2,
+        decision_speed:            0.8,
+        leadership_alignment:      1.5,
+        budget_ownership:           1.2,
+        change_readiness:          1.0,
+        internal_capability:       1.2,
+    };
+    
+    const MAX_RAW = 43.5;
+    
+    const BLOCKER_LABELS = {
+        business_objective:       'Business objective is unclear',
+        current_ai_usage:         'No prior AI experience',
+        data_availability:        'Data is scattered or not centralized',
+        process_documentation:    'Processes are undocumented',
+        workflow_standardization: 'Workflows are still ad-hoc',
+        erp_integration:          'Systems are not integrated',
+        automation_level:         'Everything is still manual',
+        decision_speed:           'Decision-making is slow',
+        leadership_alignment:     'Leadership is not aligned',
+        budget_ownership:           'No AI budget',
+        change_readiness:         'High internal resistance',
+        internal_capability:      'No internal AI team',
+    };
+    
+    const OPPORTUNITY_LABELS = {
+        business_objective:       'Run an AI objective-setting workshop with key stakeholders',
+        data_availability:        'Consolidate data into one platform — this is primary enabler for all AI',
+        process_documentation:    'Document 3 most repetitive processes as automation candidates',
+        workflow_standardization: 'Standardize one workflow as an AI proof-of-concept',
+        erp_integration:          'Evaluate integration middleware (e.g. Zapier, MuleSoft, custom ETL)',
+        automation_level:         'Pick one manual process for an automation pilot — prove small ROI first',
+        leadership_alignment:     'Build an AI business case with concrete ROI projections for leadership',
+        budget_ownership:           'Start with freemium/low-cost AI tools to build momentum without capex',
+        internal_capability:      'Identify one internal "AI champion" to train more deeply',
+        change_readiness:         'Design a change management plan before rolling out AI org-wide',
+    };
+    
+    const NARRATIVE_TEMPLATES = {
+        Initial: (s, b) => `Your organization is at an early stage of AI readiness with a score of ${s}%. This is a valid starting point — many successful organizations began from the same position. The biggest challenge right now is: ${b || 'multiple foundational gaps'}. Recommendation: don't attempt a broad AI rollout all at once. Start with one small, well-scoped pilot, measure results, then scale gradually.`,
+        Developing: (s, b) => `With a score of ${s}%, the foundation is beginning to take shape, but there are critical gaps to address before scaling. The area requiring the most attention is: ${b || 'several foundational elements'}. Organizations at this stage are most effective when focused on quick wins — choose an AI use case where ROI can be demonstrated within 30–90 days to build trust and momentum.`,
+        Defined: (s, b) => `A score of ${s}% indicates solid readiness — processes are starting to be defined and several foundations are already in place. ${b ? 'One area still worth strengthening: ' + b + '.' : 'The foundation is solid.'} This is the right moment to move from experimentation to structured implementation with measurable business targets.`,
+        Managed: (s, b) => `Your organization (score ${s}%) is already at an advanced level — AI is managed and beginning to deliver real value. ${b ? 'One remaining area for improvement: ' + b + '.' : 'Nearly all dimensions are strong.'} The next step is expanding into more complex use cases and building tighter ROI monitoring systems.`,
+        Optimizing: (s, _) => `A score of ${s}% places you among elite organizations that have made AI a core part of their operational DNA. The focus at this stage is no longer "does AI work" but "how does AI keep innovating" — explore generative AI, agentic workflows, and AI-driven competitive differentiation that is hard for competitors to replicate.`,
+    };
+    
+    let rawScore = 0;
+    let hasValidAnswers = false;
+    for (const [dimension, answer] of Object.entries(answersRecord)) {
+        const weight = WEIGHTS[dimension] || 1.0;
+        rawScore += answer * weight;
+        hasValidAnswers = true;
+    }
+    
+    if (!hasValidAnswers) {
+        rawScore = 1.5 * MAX_RAW / 3.0;
+    }
+    
+    // Set a baseline minimum score of 10%
+    const score = Math.max(10, Math.round((rawScore / MAX_RAW) * 100));
+    
+    let maturityLevel = 'Developing';
+    if (score <= 39) maturityLevel = 'Initial';
+    else if (score <= 59) maturityLevel = 'Developing';
+    else if (score <= 74) maturityLevel = 'Defined';
+    else if (score <= 89) maturityLevel = 'Managed';
+    else maturityLevel = 'Optimizing';
+    
+    const categoryMap = {
+        Initial: 'Foundational',
+        Developing: 'Developing',
+        Defined: 'Advancing',
+        Managed: 'Leading',
+        Optimizing: 'Leading'
+    };
+    const category = categoryMap[maturityLevel];
+    
+    const strengths = Object.entries(answersRecord)
+        .filter(([_, answer]) => answer >= 2)
+        .map(([dimension, _]) => dimension);
+        
+    const blockers = Object.entries(answersRecord)
+        .filter(([_, answer]) => answer <= 1)
+        .map(([dimension, _]) => dimension);
+        
+    const opportunities = blockers
+        .map(b => OPPORTUNITY_LABELS[b])
+        .filter(Boolean);
+        
+    const topBlockerDimension = blockers.sort((a, b) => (WEIGHTS[b] || 1.0) - (WEIGHTS[a] || 1.0))[0];
+    const topBlocker = BLOCKER_LABELS[topBlockerDimension] || '';
+    
+    const categoryExplanation = NARRATIVE_TEMPLATES[maturityLevel](score, topBlocker);
+    
+    const insights = [];
+    strengths.forEach(s => {
+        const label = BLOCKER_LABELS[s] ? BLOCKER_LABELS[s].replace('is unclear', 'is clear').replace('No prior', 'Prior').replace('is scattered', 'is organized').replace('undocumented', 'documented').replace('ad-hoc', 'standardized').replace('not integrated', 'integrated').replace('manual', 'automated').replace('slow', 'fast').replace('not aligned', 'aligned').replace('No AI budget', 'AI budget available').replace('High internal resistance', 'Low internal resistance').replace('No internal', 'Internal') : s;
+        insights.push(`Strength: ${label}`);
+    });
+    blockers.forEach(b => {
+        insights.push(`Gap: ${BLOCKER_LABELS[b] || b}`);
+    });
+    
+    const recommendation = opportunities[0] || "Consolidate your business objective priorities and establish a structured AI roadmap.";
+    
+    return {
+        score,
+        category,
+        category_explanation: categoryExplanation,
+        insights,
+        recommendation
+    };
+}
+
+function localGenerateBadgeSvg(score, category) {
+    let startColor = "#ef4444";
+    let midColor = "#f97316";
+    let activeColor = "#f59e0b";
+    
+    if (score < 40) {
+        startColor = "#ef4444";
+        midColor = "#f97316";
+        activeColor = "#f59e0b";
+    } else if (score < 60) {
+        startColor = "#3b82f6";
+        midColor = "#2563eb";
+        activeColor = "#60a5fa";
+    } else if (score < 75) {
+        startColor = "#6366f1";
+        midColor = "#4f46e5";
+        activeColor = "#818cf8";
+    } else if (score < 90) {
+        startColor = "#7c5dfa";
+        midColor = "#5b3cc4";
+        activeColor = "#0ae8af";
+    } else {
+        startColor = "#0ae8af";
+        midColor = "#fbbf24";
+        activeColor = "#fbbf24";
+    }
+    
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+      <defs>
+        <radialGradient id="badge-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="${startColor}" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="${startColor}" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="badge-ring" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${startColor}"/>
+          <stop offset="50%" stop-color="${midColor}"/>
+          <stop offset="100%" stop-color="${activeColor}"/>
+        </linearGradient>
+      </defs>
+      <circle cx="100" cy="100" r="90" fill="url(#badge-glow)"/>
+      <circle cx="100" cy="100" r="80" fill="#070708" stroke="url(#badge-ring)" stroke-width="4"/>
+      <circle cx="100" cy="100" r="74" fill="none" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1"/>
+      <text x="100" y="70" text-anchor="middle" fill="rgba(255, 255, 255, 0.4)" font-family="'Inter Tight', system-ui" font-size="9" font-weight="600" letter-spacing="1.5">AIVORY READINESS</text>
+      <text x="100" y="115" text-anchor="middle" fill="#ffffff" font-family="'Inter Tight', system-ui" font-size="40" font-weight="800">${score}%</text>
+      <text x="100" y="145" text-anchor="middle" fill="${activeColor}" font-family="'Inter Tight', system-ui" font-size="10" font-weight="700" letter-spacing="0.5">${category.toUpperCase()}</text>
+      <path d="M 85,155 L 115,155" stroke="rgba(10, 232, 175, 0.3)" stroke-width="2" stroke-linecap="round"/>
+    </svg>`;
+}
+
 
 /**
  * Save and email free diagnostic results
@@ -6897,13 +7305,13 @@ function displayUpgradeOptions() {
                 <div class="upsell-card">
                     <div>
                         <h4 class="upsell-product-name">AI Snapshot</h4>
-                        <div class="upsell-price">?v=235</div>
+                        <div class="upsell-price">$15</div>
                         <p class="upsell-context">${snapshotContext}</p>
                         <p class="upsell-description">AI Snapshot pinpoints the exact gaps holding back your AI adoption — and gives you 3 quick wins you can act on this week.</p>
                         <p class="upsell-features">Includes: readiness analysis, top use cases, and a prioritized action plan.</p>
                     </div>
                     <button class="upsell-button" onclick="startSnapshot()">
-                        Run AI Snapshot — ?v=235
+                        Run AI Snapshot — $15
                     </button>
                 </div>
                 
@@ -6925,81 +7333,192 @@ function displayUpgradeOptions() {
 }
 
 /**
- * Download free diagnostic badge as PNG using html2canvas
+ * Download free diagnostic badge card as a high-fidelity PNG image using html2canvas.
+ * Captures the entire premium-score-card with dynamic gradient, score details, explanation,
+ * and circular SVG badge, but beautifully excludes all buttons and team-share components.
  */
 async function downloadFreeBadge() {
     if (!freeDiagnosticResult) return;
     
-    const badgeContainer = document.getElementById('free-badge-container');
-    if (!badgeContainer) return;
+    const cardElement = document.querySelector('.premium-score-card');
+    if (!cardElement) return;
     
-    // Check if html2canvas is loaded
     if (typeof html2canvas === 'undefined') {
-        console.error('html2canvas library not loaded');
-        alert('Badge download feature is loading. Please try again in a moment.');
-        
-        // Dynamically load html2canvas
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-        script.onload = () => {
-            console.log('html2canvas loaded, please try downloading again');
-            alert('Badge download ready! Please click the button again.');
-        };
-        document.head.appendChild(script);
+        console.error('html2canvas library not loaded yet');
         return;
     }
     
     try {
-        // Create a temporary container with proper sizing
+        // Create an executive-grade wide presentation clone of the card (850px)
+        const cardClone = cardElement.cloneNode(true);
+        
+        // Convert dynamic SVG to base64 Data URL to bypass html2canvas SVG rendering bugs
+        const svgEl = cardClone.querySelector('#free-badge-container svg');
+        if (svgEl) {
+            await new Promise((resolve) => {
+                try {
+                    const svgString = new XMLSerializer().serializeToString(svgEl);
+                    const svgBase64 = btoa(unescape(encodeURIComponent(svgString)));
+                    const svgDataUrl = 'data:image/svg+xml;base64,' + svgBase64;
+                    
+                    const img = new Image();
+                    img.onload = () => {
+                        try {
+                            const canvasEl = document.createElement('canvas');
+                            canvasEl.width = 360; // 2x high resolution
+                            canvasEl.height = 360;
+                            const ctx = canvasEl.getContext('2d');
+                            ctx.drawImage(img, 0, 0, 360, 360);
+                            
+                            const badgeContainerClone = cardClone.querySelector('#free-badge-container');
+                            if (badgeContainerClone) {
+                                badgeContainerClone.innerHTML = '';
+                                canvasEl.style.width = '180px';
+                                canvasEl.style.height = '180px';
+                                canvasEl.style.display = 'block';
+                                canvasEl.style.margin = '0 auto';
+                                badgeContainerClone.appendChild(canvasEl);
+                            }
+                        } catch (err) {
+                            console.error('Error drawing SVG to canvas:', err);
+                        }
+                        resolve();
+                    };
+                    img.onerror = () => {
+                        console.error('Error loading SVG image');
+                        resolve();
+                    };
+                    img.src = svgDataUrl;
+                } catch (svgErr) {
+                    console.warn('SVG-to-base64 conversion warning:', svgErr);
+                    resolve();
+                }
+            });
+        }
+        
+        // Remove download and sharing buttons from the captured clone
+        const badgeActions = cardClone.querySelector('.badge-actions');
+        if (badgeActions) badgeActions.remove();
+        
+        const shareSection = cardClone.querySelector('.share-section');
+        if (shareSection) shareSection.remove();
+        
+        // Build isolated presentation container off-screen
         const tempContainer = document.createElement('div');
         tempContainer.style.position = 'absolute';
         tempContainer.style.left = '-9999px';
-        tempContainer.style.width = '800px';
-        tempContainer.style.height = '600px';
-        tempContainer.style.background = 'transparent';
-        tempContainer.innerHTML = badgeContainer.innerHTML;
-        document.body.appendChild(tempContainer);
+        tempContainer.style.width = '850px';
+        tempContainer.style.background = '#070708';
+        tempContainer.style.padding = '20px';
         
-        // Scale SVG to fit 800x600
-        const svg = tempContainer.querySelector('svg');
-        if (svg) {
-            svg.setAttribute('width', '800');
-            svg.setAttribute('height', '600');
-            svg.style.width = '800px';
-            svg.style.height = '600px';
+        // Re-apply and lock elegant desktop 2-column styles for the captured snapshot
+        cardClone.style.width = '100%';
+        cardClone.style.maxWidth = '100%';
+        cardClone.style.boxSizing = 'border-box';
+        cardClone.style.borderRadius = '16px';
+        cardClone.style.padding = '3.5rem';
+        cardClone.style.background = 'radial-gradient(100% 100% at 0% 0%, rgba(91, 60, 196, 0.16) 0%, rgba(7, 7, 8, 0) 100%), #070708';
+        cardClone.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+        
+        const columns = cardClone.querySelector('.score-columns');
+        if (columns) {
+            columns.style.display = 'grid';
+            columns.style.gridTemplateColumns = '240px 1fr';
+            columns.style.gap = '3rem';
+            columns.style.alignItems = 'center';
         }
         
-        // Convert to canvas
-        const canvas = await html2canvas(tempContainer, {
-            width: 800,
-            height: 600,
-            backgroundColor: null,
-            scale: 2 // Higher quality
+        tempContainer.appendChild(cardClone);
+        document.body.appendChild(tempContainer);
+        
+        // Render to canvas with high resolution scale
+        const canvas = await html2canvas(cardClone, {
+            width: 810,
+            backgroundColor: '#070708',
+            scale: 2, // High resolution retina-grade capture
+            logging: false,
+            useCORS: true
         });
         
-        // Remove temporary container
+        // Remove temporary off-screen container
         document.body.removeChild(tempContainer);
         
-        // Convert canvas to PNG and download
-        canvas.toBlob((blob) => {
-            const url = URL.createObjectURL(blob);
+        // High-res instant download (supports standard desktop/mobile data URL, fallback to Blob)
+        try {
+            const dataUrl = canvas.toDataURL('image/png');
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `aivory-readiness-badge-${Math.round(freeDiagnosticResult.score)}.png`;
+            a.href = dataUrl;
+            a.download = `aivory-readiness-card-${Math.round(freeDiagnosticResult.score)}.png`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 'image/png');
+        } catch (dataUrlErr) {
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `aivory-readiness-card-${Math.round(freeDiagnosticResult.score)}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        }
         
     } catch (error) {
-        console.error('Failed to download badge:', error);
-        alert('Failed to download badge. Please try again or contact support.');
+        console.error('Failed to download premium badge card:', error);
+        alert('Failed to download badge card. Please try again or contact support.');
     }
 }
 
+/**
+ * Social sharing handlers for dynamic diagnostic results
+ */
+function shareToLinkedIn() {
+    if (!freeDiagnosticResult) return;
+    const score = Math.round(freeDiagnosticResult.score);
+    const category = freeDiagnosticResult.category;
+    
+    // Copy professional share message to user's clipboard for easy pasting
+    const shareText = `I just scored ${score}/100 (${category}) on Aivory's Enterprise AI Readiness Assessment! 🚀\nCheck your company's readiness score at https://aivory.id`;
+    
+    try {
+        navigator.clipboard.writeText(shareText);
+        alert(`✓ Professional share message copied to clipboard!\n\nPaste it into your LinkedIn post, and attach your downloaded score card PNG for the ultimate visual impact!`);
+    } catch (e) {
+        console.warn('Clipboard write failed:', e);
+    }
+    
+    // Open LinkedIn with prefilled text parameter in feed composer
+    window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(shareText)}`, '_blank');
+}
+
+function shareToTwitter() {
+    if (!freeDiagnosticResult) return;
+    const score = Math.round(freeDiagnosticResult.score);
+    const category = freeDiagnosticResult.category;
+    const shareUrl = 'https://aivory.id';
+    const text = `I just scored ${score}/100 (${category}) on Aivory's Enterprise AI Readiness Assessment! 🚀\nCheck your company's readiness score here:`;
+    
+    try {
+        navigator.clipboard.writeText(text + " " + shareUrl);
+        alert(`✓ Professional tweet text copied to clipboard!\n\nAttach your downloaded score card PNG in the opened post compose window.`);
+    } catch (e) {}
+    
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
+}
+
+function shareToEmail() {
+    if (!freeDiagnosticResult) return;
+    const score = Math.round(freeDiagnosticResult.score);
+    const category = freeDiagnosticResult.category;
+    const subject = encodeURIComponent('Our Enterprise AI Readiness Score');
+    const body = encodeURIComponent(`Hi team,\n\nI just ran our initial AI Readiness Diagnostic on Aivory and we scored ${score} out of 100, placing us in the "${category}" category.\n\nWe should review our next-step blueprints to standardize our automation pipelines. Check out Aivory: https://aivory.id\n\nBest regards`);
+    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+}
+
 // ============================================================================
-// FLOW 2: AI SNAPSHOT (?v=235) - 30 QUESTIONS
+// FLOW 2: AI SNAPSHOT ($15) - 30 QUESTIONS
 // ============================================================================
 
 /**
@@ -7017,7 +7536,7 @@ function startSnapshot() {
     
     // 2. Check authentication
     if (typeof AuthManager !== 'undefined' && !AuthManager.isAuthenticated()) {
-        alert('Please log in to access AI Snapshot (?v=235)');
+        alert('Please log in to access AI Snapshot ($29)');
         if (typeof showLoginModal === 'function') {
             showLoginModal();
         }
@@ -7027,7 +7546,7 @@ function startSnapshot() {
     // 3. Check payment (if payment system exists)
     // TODO: Add payment check here when payment system is implemented
     
-    console.log('Starting AI SNAPSHOT (?v=235) - 30 NEW questions');
+    console.log('Starting AI SNAPSHOT ($29) - 30 NEW questions');
     showSection('snapshot-diagnostic');
     initializeSnapshotDiagnostic();
 }
@@ -7268,7 +7787,7 @@ function startBlueprint() {
     
     // 2. Check authentication
     if (typeof AuthManager !== 'undefined' && !AuthManager.isAuthenticated()) {
-        alert('Please log in to access AI System Blueprint ($79)');
+        alert('Please log in to access AI System Blueprint ($85)');
         if (typeof showLoginModal === 'function') {
             showLoginModal();
         }
@@ -7283,14 +7802,55 @@ function startBlueprint() {
         const snapshotId = typeof IDChainManager !== 'undefined' ? IDChainManager.getSnapshotId() : null;
         
         if (!snapshotId) {
-            alert('Please complete the AI Snapshot (?v=235) diagnostic first! Blueprint requires Snapshot data.');
+            alert('Please complete the AI Snapshot ($29) diagnostic first! Blueprint requires Snapshot data.');
             startSnapshot();
             return;
         }
     }
     
-    console.log('Starting AI SYSTEM BLUEPRINT ($79) - using snapshot result');
+    console.log('Starting AI SYSTEM BLUEPRINT ($85) - using snapshot result');
     runBlueprint();
+}
+
+/**
+ * Start AI System Combo Checkout
+ */
+function startBundleCheckout() {
+    // 1. CHECK SUPER ADMIN FIRST
+    if (typeof AuthManager !== 'undefined' && AuthManager.isSuperAdmin()) {
+        alert('Super admin account automatically has full access to everything.');
+        return;
+    }
+    
+    // 2. Check authentication
+    if (typeof AuthManager !== 'undefined' && !AuthManager.isAuthenticated()) {
+        alert('Please log in to purchase the Full Stack Combo ($99)');
+        if (typeof showLoginModal === 'function') {
+            showLoginModal();
+        }
+        return;
+    }
+    
+    // 3. Record payment simulated
+    const userId = AuthManager.getUserId();
+    if (confirm('Simulate successful purchase of Aivory Full Stack Combo ($99) via Stripe?')) {
+        // Record payment for 'ai_bundle'
+        fetch(`${API_BASE_URL}/api/v1/blueprint/payment/record?user_id=${userId}&amount=99.00&product=ai_bundle`, {
+            method: 'POST'
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('Payment successful! Your Aivory Full Stack Combo has been activated. Redirecting you to the dashboard to begin your diagnostics...');
+                window.location.href = '/dashboard';
+            } else {
+                alert('Simulated payment failed to record. Please try again.');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Error connecting to backend.');
+        });
+    }
 }
 
 /**
@@ -7317,8 +7877,7 @@ async function runBlueprint() {
         }
         
         if (!snapshotId) {
-            console.error('❌ No snapshot_id found in localStorage');
-            alert('Please complete the AI Snapshot (?v=235) diagnostic first! Blueprint requires Snapshot data.');
+            alert('Please complete the AI Snapshot ($15) diagnostic first! Blueprint requires Snapshot data.');
             window.location.href = 'index.html#snapshot';
             return;
         }
@@ -7413,7 +7972,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (snapshotDiagnosticCompleted) {
             startBlueprint();
         } else {
-            alert('Please complete the AI Snapshot (?v=235) diagnostic first!');
+            alert('Please complete the AI Snapshot ($15) diagnostic first!');
             startSnapshot();
         }
         window.location.hash = ''; // Clear hash
@@ -8162,11 +8721,26 @@ async function register(email, password, companyName = null) {
         });
         
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Registration failed');
+            let errorMsg = 'Registration failed';
+            try {
+                const error = await response.json();
+                errorMsg = error.detail || errorMsg;
+            } catch (e) {
+                try {
+                    const text = await response.text();
+                    if (text) errorMsg = text;
+                } catch (e2) {}
+            }
+            throw new Error(errorMsg);
         }
         
-        const data = await response.json();
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            console.error('Failed to parse registration response:', e);
+            throw new Error('Server returned an invalid response. Please check if the backend is running.');
+        }
         
         // Store tokens and user
         storeTokens(data.tokens.access_token, data.tokens.refresh_token);
@@ -8201,11 +8775,26 @@ async function login(email, password) {
         });
         
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Login failed');
+            let errorMsg = 'Login failed';
+            try {
+                const error = await response.json();
+                errorMsg = error.detail || errorMsg;
+            } catch (e) {
+                try {
+                    const text = await response.text();
+                    if (text) errorMsg = text;
+                } catch (e2) {}
+            }
+            throw new Error(errorMsg);
         }
         
-        const data = await response.json();
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            console.error('Failed to parse login response:', e);
+            throw new Error('Server returned an invalid response. Please check if the backend is running.');
+        }
         
         // Store tokens and user
         storeTokens(data.tokens.access_token, data.tokens.refresh_token);
@@ -8800,7 +9389,7 @@ function showSoftAuthPrompt() {
         <div id="soft-auth-prompt" class="soft-auth-prompt">
             <div class="soft-auth-content">
                 <h3>💾 Save Your Results & Unlock AI Snapshot</h3>
-                <p>Create a free account to save your diagnostic results and access the AI Snapshot (?v=235)</p>
+                <p>Create a free account to save your diagnostic results and access the AI Snapshot ($15)</p>
                 <div class="soft-auth-buttons">
                     <button class="cta-button primary" onclick="showSignupModal()">
                         Sign Up Free

@@ -134,7 +134,7 @@ async function fetchWithTimeout(
     return response
   } catch (error) {
     clearTimeout(timeoutId)
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (error instanceof Error && (error.name === 'AbortError' || error.message === 'AbortError')) {
       throw new N8nError('Request timeout', 504, 'TIMEOUT')
     }
     throw error
@@ -142,16 +142,54 @@ async function fetchWithTimeout(
 }
 
 export async function getWorkflow(id: string): Promise<N8nWorkflow> {
-  const response = await fetchWithTimeout(`/api/n8n/workflow/${id}`)
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new N8nError(error.error || 'Failed to fetch workflow', response.status)
+  const CACHE_KEY = 'aivory_workflow_cache'
+  try {
+    const response = await fetchWithTimeout(`/api/n8n/workflow/${id}`)
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new N8nError(error.error || 'Failed to fetch workflow', response.status)
+    }
+    const data = await response.json()
+    const workflow = data.data || data.workflow || data
+
+    if (typeof window !== 'undefined' && window.localStorage) {
+      let shouldWrite = true
+      const existing = window.localStorage.getItem(CACHE_KEY)
+      if (existing) {
+        try {
+          const cachedData = JSON.parse(existing)
+          if (cachedData.localChanges) {
+            shouldWrite = false
+          }
+        } catch (_) {}
+      }
+      if (shouldWrite) {
+        window.localStorage.setItem(CACHE_KEY, JSON.stringify({
+          workflow,
+          timestamp: Date.now()
+        }))
+      }
+    }
+
+    return workflow
+  } catch (error) {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const cached = window.localStorage.getItem(CACHE_KEY)
+      if (cached) {
+        try {
+          const cachedData = JSON.parse(cached)
+          if (cachedData.workflow && (!id || cachedData.workflow.id === id)) {
+            return cachedData.workflow
+          }
+        } catch (_) {}
+      }
+    }
+    throw error
   }
-  const data = await response.json()
-  return data.data || data.workflow || data
 }
 
 export async function updateWorkflow(id: string, workflow: N8nWorkflow): Promise<N8nWorkflow> {
+  const CACHE_KEY = 'aivory_workflow_cache'
   const response = await fetchWithTimeout(`/api/n8n/workflow/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -162,7 +200,16 @@ export async function updateWorkflow(id: string, workflow: N8nWorkflow): Promise
     throw new N8nError(error.error || 'Failed to update workflow', response.status)
   }
   const data = await response.json()
-  return data.data || data.workflow || data
+  const savedWorkflow = data.data || data.workflow || data
+
+  if (typeof window !== 'undefined' && window.localStorage) {
+    window.localStorage.setItem(CACHE_KEY, JSON.stringify({
+      workflow: savedWorkflow,
+      timestamp: Date.now()
+    }))
+  }
+
+  return savedWorkflow
 }
 
 export async function activateWorkflow(id: string): Promise<void> {
@@ -191,3 +238,4 @@ export async function getExecutions(workflowId: string, limit = 20): Promise<N8n
   const data = await response.json()
   return data.data || data.executions || []
 }
+
