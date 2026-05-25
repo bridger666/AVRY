@@ -14,6 +14,7 @@
     "@supabase/supabase-js": "2.49.4",
     "@tailwindcss/postcss": "^4.2.2",
     "@xyflow/react": "^12.10.1",
+    "@composio/core": "^0.10.0",
     "composio-core": "0.5.39",
     "docx": "^9.6.0",
     "file-saver": "^2.0.5",
