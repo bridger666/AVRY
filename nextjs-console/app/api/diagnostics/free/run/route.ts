@@ -43,9 +43,9 @@
         type: 'free_diagnostic',
         version: 'v2',
         data: result,
-        timestamp: new Date().toISOString(),
         // Also spread top-level for backward compat with service validation
-        ...result
+        ...result,
+        timestamp: new Date().toISOString()
       })
     } catch (error) {
       console.error('[API] Free diagnostic error:', error)
