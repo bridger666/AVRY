@@ -25,12 +25,12 @@ const API_BASE_URL = window.API_BASE_URL;
 // Dashboard URL Configuration
 if (!window.DASHBOARD_URL) {
     // Development: localhost:3000
-    // Production: admin.aivory.id
+    // Production: app.aivory.id (user dashboard)
     const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     if (isDevelopment) {
         window.DASHBOARD_URL = 'http://localhost:3000';
     } else {
-        window.DASHBOARD_URL = 'https://admin.aivory.id';
+        window.DASHBOARD_URL = 'https://app.aivory.id';
     }
 }
 const DASHBOARD_URL = window.DASHBOARD_URL;
