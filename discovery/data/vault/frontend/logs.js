@@ -422,7 +422,11 @@ function askConsole(query) {
     // Store query in sessionStorage for console to pick up
     sessionStorage.setItem('console_prefill_query', query);
     // Navigate to Next.js console
-    window.location.href = 'http://localhost:3000/console';
+    // Construct console URL dynamically - works on localhost and VPS
+    const logsConsoleHostname = window.location.hostname;
+    const logsIsDev = logsConsoleHostname === 'localhost' || logsConsoleHostname === '127.0.0.1';
+    const logsConsoleUrl = logsIsDev ? 'http://localhost:3000/console' : `${window.location.protocol}//${logsConsoleHostname}:3000/console`;
+    window.location.href = logsConsoleUrl;
 }
 
 // Make functions globally available

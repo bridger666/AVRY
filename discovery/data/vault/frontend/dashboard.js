@@ -399,7 +399,11 @@ function showDashboardSection(section) {
             window.location.href = 'workflows.html';
             break;
         case 'console':
-            window.location.href = `http://localhost:3000/console?tier=${DashboardState.selectedTier || 'operator'}`;
+            // Construct console URL dynamically - works on localhost and VPS
+            const consoleHostname = window.location.hostname;
+            const isDev = consoleHostname === 'localhost' || consoleHostname === '127.0.0.1';
+            const consoleBaseUrl = isDev ? 'http://localhost:3000' : `${window.location.protocol}//${consoleHostname}:3000`;
+            window.location.href = `${consoleBaseUrl}/console?tier=${DashboardState.selectedTier || 'operator'}`;
             break;
         case 'logs':
             window.location.href = 'logs.html';

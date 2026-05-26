@@ -22,15 +22,19 @@ if (!window.API_BASE_URL) {
 }
 const API_BASE_URL = window.API_BASE_URL;
 
-// Dashboard URL Configuration
+// Dashboard URL Configuration - Works on localhost, VPS, and production
 if (!window.DASHBOARD_URL) {
-    // Development: localhost:3000
-    // Production: app.aivory.id (user dashboard)
-    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (isDevelopment) {
+    const hostname = window.location.hostname;
+    const isDevelopmentLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+    
+    if (isDevelopmentLocal) {
+        // Local development: use port 3000
         window.DASHBOARD_URL = 'http://localhost:3000';
     } else {
-        window.DASHBOARD_URL = 'https://app.aivory.id';
+        // VPS or production: construct URL from hostname + port 3000
+        // This works for VPS (43.156.108.96:3000) and production (aivory.id with config)
+        const protocol = window.location.protocol;
+        window.DASHBOARD_URL = `${protocol}//${hostname}:3000`;
     }
 }
 const DASHBOARD_URL = window.DASHBOARD_URL;

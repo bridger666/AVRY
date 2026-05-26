@@ -22,15 +22,19 @@ if (!window.API_BASE_URL) {
 }
 const API_BASE_URL = window.API_BASE_URL;
 
-// Dashboard URL Configuration
+// Dashboard URL Configuration - Works on localhost, VPS, and production
 if (!window.DASHBOARD_URL) {
-    // Development: localhost:3000
-    // Production: app.aivory.id (user dashboard)
-    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (isDevelopment) {
+    const hostname = window.location.hostname;
+    const isDevelopmentLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+    
+    if (isDevelopmentLocal) {
+        // Local development: use port 3000
         window.DASHBOARD_URL = 'http://localhost:3000';
     } else {
-        window.DASHBOARD_URL = 'https://app.aivory.id';
+        // VPS or production: construct URL from hostname + port 3000
+        // This works for VPS (43.156.108.96:3000) and production (aivory.id with config)
+        const protocol = window.location.protocol;
+        window.DASHBOARD_URL = `${protocol}//${hostname}:3000`;
     }
 }
 const DASHBOARD_URL = window.DASHBOARD_URL;
@@ -1209,14 +1213,16 @@ function handleSignInClick() {
 
 /**
  * Handle Dashboard button click
+ * Routes by role: admin/employee → admin.aivory.id, regular user → dashboard.aivory.id
  */
 function handleDashboardClick() {
     // Check if user is authenticated
     if (typeof AuthManager !== 'undefined' && AuthManager.isAuthenticated()) {
-        // Redirect to Next.js dashboard
-        window.location.href = `${DASHBOARD_URL}/dashboard`;
+        // Use role-based redirect URL (admin → admin panel, user → user dashboard)
+        window.location.href = AuthManager.getRedirectUrl();
     } else {
-        // Show login modal
+        // Show login modal — after login, handleLogin() in auth-modals.js
+        // also calls AuthManager.getRedirectUrl() for the correct post-login destination
         if (typeof showLoginModal === 'function') {
             showLoginModal();
         } else {
