@@ -1,6 +1,6 @@
 /**
  * Authentication Modals
- * 
+ *
  * Login and Sign Up modals for user authentication.
  */
 
@@ -127,98 +127,98 @@ const SIGNUP_MODAL_HTML = `
  * Show login modal
  */
 function showLoginModal() {
-    // Remove existing modal if present
-    const existing = document.getElementById('login-modal');
-    if (existing) {
-        existing.remove();
+  // Remove existing modal if present
+  const existing = document.getElementById("login-modal");
+  if (existing) {
+    existing.remove();
+  }
+
+  // Add modal to page
+  document.body.insertAdjacentHTML("beforeend", LOGIN_MODAL_HTML);
+
+  // Show modal with animation
+  setTimeout(() => {
+    const modal = document.getElementById("login-modal");
+    if (modal) {
+      modal.classList.add("active");
     }
-    
-    // Add modal to page
-    document.body.insertAdjacentHTML('beforeend', LOGIN_MODAL_HTML);
-    
-    // Show modal with animation
-    setTimeout(() => {
-        const modal = document.getElementById('login-modal');
-        if (modal) {
-            modal.classList.add('active');
-        }
-    }, 10);
-    
-    // Focus email input
-    setTimeout(() => {
-        const emailInput = document.getElementById('login-email');
-        if (emailInput) {
-            emailInput.focus();
-        }
-    }, 100);
+  }, 10);
+
+  // Focus email input
+  setTimeout(() => {
+    const emailInput = document.getElementById("login-email");
+    if (emailInput) {
+      emailInput.focus();
+    }
+  }, 100);
 }
 
 /**
  * Close login modal
  */
 function closeLoginModal() {
-    const modal = document.getElementById('login-modal');
-    if (modal) {
-        modal.classList.remove('active');
-        setTimeout(() => modal.remove(), 300);
-    }
+  const modal = document.getElementById("login-modal");
+  if (modal) {
+    modal.classList.remove("active");
+    setTimeout(() => modal.remove(), 300);
+  }
 }
 
 /**
  * Show signup modal
  */
 function showSignupModal() {
-    // Remove existing modal if present
-    const existing = document.getElementById('signup-modal');
-    if (existing) {
-        existing.remove();
+  // Remove existing modal if present
+  const existing = document.getElementById("signup-modal");
+  if (existing) {
+    existing.remove();
+  }
+
+  // Add modal to page
+  document.body.insertAdjacentHTML("beforeend", SIGNUP_MODAL_HTML);
+
+  // Show modal with animation
+  setTimeout(() => {
+    const modal = document.getElementById("signup-modal");
+    if (modal) {
+      modal.classList.add("active");
     }
-    
-    // Add modal to page
-    document.body.insertAdjacentHTML('beforeend', SIGNUP_MODAL_HTML);
-    
-    // Show modal with animation
-    setTimeout(() => {
-        const modal = document.getElementById('signup-modal');
-        if (modal) {
-            modal.classList.add('active');
-        }
-    }, 10);
-    
-    // Focus email input
-    setTimeout(() => {
-        const emailInput = document.getElementById('signup-email');
-        if (emailInput) {
-            emailInput.focus();
-        }
-    }, 100);
+  }, 10);
+
+  // Focus email input
+  setTimeout(() => {
+    const emailInput = document.getElementById("signup-email");
+    if (emailInput) {
+      emailInput.focus();
+    }
+  }, 100);
 }
 
 /**
  * Close signup modal
  */
 function closeSignupModal() {
-    const modal = document.getElementById('signup-modal');
-    if (modal) {
-        modal.classList.remove('active');
-        setTimeout(() => modal.remove(), 300);
-    }
+  const modal = document.getElementById("signup-modal");
+  if (modal) {
+    modal.classList.remove("active");
+    setTimeout(() => modal.remove(), 300);
+  }
 }
 
 /**
  * Switch from login to signup
  */
 function switchToSignup() {
-    closeLoginModal();
-    setTimeout(showSignupModal, 100);
+  closeLoginModal();
+  setTimeout(showSignupModal, 100);
 }
 
 /**
  * Switch from signup to login
  */
 function switchToLogin() {
-    closeSignupModal();
-    setTimeout(showLoginModal, 100);
+  closeSignupModal();
+  setTimeout(showLoginModal, 100);
 }
 
 // ============================================================================
@@ -229,111 +229,111 @@ function switchToLogin() {
  * Handle login form submission
  */
 async function handleLogin(event) {
-    event.preventDefault();
-    
-    const form = event.target;
-    const submitBtn = document.getElementById('login-submit-btn');
-    const errorDiv = document.getElementById('login-error');
-    
-    // Get form data
-    const email = form.email.value.trim();
-    const password = form.password.value;
-    
-    // Disable form
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Logging in...';
-    errorDiv.style.display = 'none';
-    
-    try {
-        // Call AuthManager login
-        await AuthManager.login(email, password);
-        
-        // Close modal
-        closeLoginModal();
-        
-        // Show success message
-        showAuthSuccess('Logged in successfully!');
-        
-        // Role-based redirect: admin/employee → admin panel, user → dashboard
-        const redirectUrl = AuthManager.getRedirectUrl();
-        setTimeout(() => {
-            window.location.href = redirectUrl;
-        }, 600);
-        
-    } catch (error) {
-        // Show error
-        errorDiv.textContent = error.message || 'Login failed. Please try again.';
-        errorDiv.style.display = 'block';
-        
-        // Re-enable form
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Log In';
-    }
+  event.preventDefault();
+
+  const form = event.target;
+  const submitBtn = document.getElementById("login-submit-btn");
+  const errorDiv = document.getElementById("login-error");
+
+  // Get form data
+  const email = form.email.value.trim();
+  const password = form.password.value;
+
+  // Disable form
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Logging in...";
+  errorDiv.style.display = "none";
+
+  try {
+    // Call AuthManager login
+    await AuthManager.login(email, password);
+
+    // Close modal
+    closeLoginModal();
+
+    // Show success message
+    showAuthSuccess("Logged in successfully!");
+
+    // Role-based redirect: admin/employee → admin panel, user → dashboard
+    const redirectUrl = AuthManager.getRedirectUrl();
+    setTimeout(() => {
+      window.location.href = redirectUrl;
+    }, 600);
+  } catch (error) {
+    // Show error
+    errorDiv.textContent = error.message || "Login failed. Please try again.";
+    errorDiv.style.display = "block";
+
+    // Re-enable form
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Log In";
+  }
 }
 
 /**
  * Handle signup form submission
  */
 async function handleSignup(event) {
-    event.preventDefault();
-    
-    const form = event.target;
-    const submitBtn = document.getElementById('signup-submit-btn');
-    const errorDiv = document.getElementById('signup-error');
-    
-    // Get form data
-    const email = form.email.value.trim();
-    const password = form.password.value;
-    const company = form.company.value.trim() || null;
-    
-    // Disable form
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Creating account...';
-    errorDiv.style.display = 'none';
-    
-    try {
-        // Call AuthManager register
-        await AuthManager.register(email, password, company);
-        
-        // Close modal
-        closeSignupModal();
-        
-        // Show success message
-        showAuthSuccess('Account created successfully!');
-        
-        // After registration always go to user dashboard (new users are regular users)
-        setTimeout(() => {
-            window.location.href = 'https://dashboard.aivory.id';
-        }, 600);
-        
-    } catch (error) {
-        // Show error
-        errorDiv.textContent = error.message || 'Registration failed. Please try again.';
-        errorDiv.style.display = 'block';
-        
-        // Re-enable form
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Account';
-    }
+  event.preventDefault();
+
+  const form = event.target;
+  const submitBtn = document.getElementById("signup-submit-btn");
+  const errorDiv = document.getElementById("signup-error");
+
+  // Get form data
+  const email = form.email.value.trim();
+  const password = form.password.value;
+  const company = form.company.value.trim() || null;
+
+  // Disable form
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Creating account...";
+  errorDiv.style.display = "none";
+
+  try {
+    // Call AuthManager register
+    await AuthManager.register(email, password, company);
+
+    // Close modal
+    closeSignupModal();
+
+    // Show success message
+    showAuthSuccess("Account created successfully!");
+
+    // After registration always go to user dashboard (new users are regular users)
+    setTimeout(() => {
+      const dashboardBase = window.DASHBOARD_URL || "https://app.aivory.id";
+      window.location.href = `${dashboardBase}/dashboard`;
+    }, 600);
+  } catch (error) {
+    // Show error
+    errorDiv.textContent =
+      error.message || "Registration failed. Please try again.";
+    errorDiv.style.display = "block";
+
+    // Re-enable form
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Create Account";
+  }
 }
 
 /**
  * Show success message
  */
 function showAuthSuccess(message) {
-    const successDiv = document.createElement('div');
-    successDiv.className = 'auth-success-toast';
-    successDiv.textContent = message;
-    document.body.appendChild(successDiv);
-    
-    setTimeout(() => {
-        successDiv.classList.add('active');
-    }, 10);
-    
-    setTimeout(() => {
-        successDiv.classList.remove('active');
-        setTimeout(() => successDiv.remove(), 300);
-    }, 3000);
+  const successDiv = document.createElement("div");
+  successDiv.className = "auth-success-toast";
+  successDiv.textContent = message;
+  document.body.appendChild(successDiv);
+
+  setTimeout(() => {
+    successDiv.classList.add("active");
+  }, 10);
+
+  setTimeout(() => {
+    successDiv.classList.remove("active");
+    setTimeout(() => successDiv.remove(), 300);
+  }, 3000);
 }
 
 // ============================================================================
@@ -344,17 +344,17 @@ function showAuthSuccess(message) {
  * Show soft authentication prompt after diagnostic
  */
 function showSoftAuthPrompt() {
-    // Don't show if already authenticated
-    if (AuthManager.isAuthenticated()) {
-        return;
-    }
-    
-    // Check if prompt already exists
-    if (document.getElementById('soft-auth-prompt')) {
-        return;
-    }
-    
-    const promptHTML = `
+  // Don't show if already authenticated
+  if (AuthManager.isAuthenticated()) {
+    return;
+  }
+
+  // Check if prompt already exists
+  if (document.getElementById("soft-auth-prompt")) {
+    return;
+  }
+
+  const promptHTML = `
         <div id="soft-auth-prompt" class="soft-auth-prompt">
             <div class="soft-auth-content">
                 <h3>💾 Save Your Results & Unlock AI Snapshot</h3>
@@ -371,31 +371,31 @@ function showSoftAuthPrompt() {
             </div>
         </div>
     `;
-    
-    // Find results section and insert prompt
-    const resultsSection = document.getElementById('free-diagnostic-results');
-    if (resultsSection) {
-        resultsSection.insertAdjacentHTML('afterbegin', promptHTML);
-        
-        // Animate in
-        setTimeout(() => {
-            const prompt = document.getElementById('soft-auth-prompt');
-            if (prompt) {
-                prompt.classList.add('active');
-            }
-        }, 500);
-    }
+
+  // Find results section and insert prompt
+  const resultsSection = document.getElementById("free-diagnostic-results");
+  if (resultsSection) {
+    resultsSection.insertAdjacentHTML("afterbegin", promptHTML);
+
+    // Animate in
+    setTimeout(() => {
+      const prompt = document.getElementById("soft-auth-prompt");
+      if (prompt) {
+        prompt.classList.add("active");
+      }
+    }, 500);
+  }
 }
 
 /**
  * Close soft auth prompt
  */
 function closeSoftAuthPrompt() {
-    const prompt = document.getElementById('soft-auth-prompt');
-    if (prompt) {
-        prompt.classList.remove('active');
-        setTimeout(() => prompt.remove(), 300);
-    }
+  const prompt = document.getElementById("soft-auth-prompt");
+  if (prompt) {
+    prompt.classList.remove("active");
+    setTimeout(() => prompt.remove(), 300);
+  }
 }
 
 // ============================================================================
@@ -406,86 +406,86 @@ function closeSoftAuthPrompt() {
  * Update navbar with auth state
  */
 function updateNavbarAuthState() {
-    const user = AuthManager.getUser();
-    
-    // Find navbar elements
-    const signInLink = document.querySelector('.nav-signin-link');
-    const dashboardBtn = document.querySelector('.nav-dashboard-btn');
-    const authContainer = document.querySelector('.nav-auth');
-    
-    if (!authContainer) {
-        return;
+  const user = AuthManager.getUser();
+
+  // Find navbar elements
+  const signInLink = document.querySelector(".nav-signin-link");
+  const dashboardBtn = document.querySelector(".nav-dashboard-btn");
+  const authContainer = document.querySelector(".nav-auth");
+
+  if (!authContainer) {
+    return;
+  }
+
+  if (user) {
+    // User is logged in
+    const isSuperAdmin = AuthManager.isSuperAdmin();
+
+    // Hide Sign In link
+    if (signInLink) {
+      signInLink.style.display = "none";
     }
-    
-    if (user) {
-        // User is logged in
-        const isSuperAdmin = AuthManager.isSuperAdmin();
-        
-        // Hide Sign In link
-        if (signInLink) {
-            signInLink.style.display = 'none';
-        }
-        
-        // Show Dashboard button (always visible when logged in)
-        if (dashboardBtn) {
-            dashboardBtn.style.display = 'inline-block';
-        }
-        
-        // Add super admin badge if needed (only if not already present)
-        let superAdminBadge = authContainer.querySelector('.super-admin-badge');
-        if (isSuperAdmin && !superAdminBadge) {
-            superAdminBadge = document.createElement('span');
-            superAdminBadge.className = 'super-admin-badge';
-            superAdminBadge.textContent = 'SUPER ADMIN';
-            authContainer.insertBefore(superAdminBadge, dashboardBtn);
-        } else if (!isSuperAdmin && superAdminBadge) {
-            superAdminBadge.remove();
-        }
-        
-        // Add logout button if not already present
-        let logoutBtn = authContainer.querySelector('.navbar-logout-btn');
-        if (!logoutBtn) {
-            logoutBtn = document.createElement('button');
-            logoutBtn.className = 'navbar-logout-btn';
-            logoutBtn.textContent = 'Logout';
-            logoutBtn.onclick = handleNavbarLogout;
-            authContainer.appendChild(logoutBtn);
-        }
-    } else {
-        // User is logged out
-        
-        // Show Sign In link
-        if (signInLink) {
-            signInLink.style.display = 'inline-block';
-        }
-        
-        // Show Dashboard button (visible for both logged in and logged out)
-        if (dashboardBtn) {
-            dashboardBtn.style.display = 'inline-block';
-        }
-        
-        // Remove super admin badge if present
-        const superAdminBadge = authContainer.querySelector('.super-admin-badge');
-        if (superAdminBadge) {
-            superAdminBadge.remove();
-        }
-        
-        // Remove logout button if present
-        const logoutBtn = authContainer.querySelector('.navbar-logout-btn');
-        if (logoutBtn) {
-            logoutBtn.remove();
-        }
+
+    // Show Dashboard button (always visible when logged in)
+    if (dashboardBtn) {
+      dashboardBtn.style.display = "inline-block";
     }
+
+    // Add super admin badge if needed (only if not already present)
+    let superAdminBadge = authContainer.querySelector(".super-admin-badge");
+    if (isSuperAdmin && !superAdminBadge) {
+      superAdminBadge = document.createElement("span");
+      superAdminBadge.className = "super-admin-badge";
+      superAdminBadge.textContent = "SUPER ADMIN";
+      authContainer.insertBefore(superAdminBadge, dashboardBtn);
+    } else if (!isSuperAdmin && superAdminBadge) {
+      superAdminBadge.remove();
+    }
+
+    // Add logout button if not already present
+    let logoutBtn = authContainer.querySelector(".navbar-logout-btn");
+    if (!logoutBtn) {
+      logoutBtn = document.createElement("button");
+      logoutBtn.className = "navbar-logout-btn";
+      logoutBtn.textContent = "Logout";
+      logoutBtn.onclick = handleNavbarLogout;
+      authContainer.appendChild(logoutBtn);
+    }
+  } else {
+    // User is logged out
+
+    // Show Sign In link
+    if (signInLink) {
+      signInLink.style.display = "inline-block";
+    }
+
+    // Show Dashboard button (visible for both logged in and logged out)
+    if (dashboardBtn) {
+      dashboardBtn.style.display = "inline-block";
+    }
+
+    // Remove super admin badge if present
+    const superAdminBadge = authContainer.querySelector(".super-admin-badge");
+    if (superAdminBadge) {
+      superAdminBadge.remove();
+    }
+
+    // Remove logout button if present
+    const logoutBtn = authContainer.querySelector(".navbar-logout-btn");
+    if (logoutBtn) {
+      logoutBtn.remove();
+    }
+  }
 }
 
 /**
  * Handle navbar logout
  */
 async function handleNavbarLogout() {
-    if (confirm('Are you sure you want to log out?')) {
-        await AuthManager.logout();
-        window.location.href = 'index.html';
-    }
+  if (confirm("Are you sure you want to log out?")) {
+    await AuthManager.logout();
+    window.location.href = "index.html";
+  }
 }
 
 // ============================================================================
@@ -493,15 +493,15 @@ async function handleNavbarLogout() {
 // ============================================================================
 
 // Update navbar on auth state change
-if (typeof AuthManager !== 'undefined') {
-    AuthManager.onAuthStateChange(updateNavbarAuthState);
+if (typeof AuthManager !== "undefined") {
+  AuthManager.onAuthStateChange(updateNavbarAuthState);
 }
 
 // Initialize navbar on page load
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', updateNavbarAuthState);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", updateNavbarAuthState);
 } else {
-    updateNavbarAuthState();
+  updateNavbarAuthState();
 }
 
 // Make functions globally available

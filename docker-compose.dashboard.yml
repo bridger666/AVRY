@@ -33,6 +33,8 @@ services:
       - "traefik.http.routers.aivory-dashboard.tls.certresolver=letsencrypt"
       # Service
       - "traefik.http.services.aivory-dashboard.loadbalancer.server.port=3000"
+      # Traefik network label - critical for multi-network containers
+      - "traefik.docker.network=traefik-public"
       # Middlewares (HTTPS redirect)
       - "traefik.http.routers.aivory-dashboard-http.rule=Host(`dashboard.aivory.id`) || Host(`app.aivory.id`)"
       - "traefik.http.routers.aivory-dashboard-http.entrypoints=web"

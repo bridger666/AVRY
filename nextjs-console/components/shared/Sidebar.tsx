@@ -188,6 +188,9 @@ export default function Sidebar() {
     { key: "executionLogs", href: "/logs" },
     { key: "integrations",  href: "/integrations" },
     { key: "agents",        href: "/agents" },
+    { key: "payments",      href: "/dashboard/payments" },
+    { key: "subscriptions", href: "/dashboard/subscriptions" },
+    { key: "quota",         href: "/dashboard/quota" },
     { key: "settings",      href: "/settings" },
   ]
 

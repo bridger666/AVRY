@@ -4,7 +4,7 @@ from datetime import datetime
 import httpx
 
 from app.config import settings
-from app.api.routes import diagnostic, contact, tier, auth, console, n8n, blueprint, workflows
+from app.api.routes import diagnostic, contact, tier, auth, console, n8n, blueprint, workflows, payment
 
 app = FastAPI(
     title=settings.app_name,
@@ -28,6 +28,7 @@ app.include_router(console.router)
 app.include_router(n8n.router)
 app.include_router(blueprint.router)
 app.include_router(workflows.router)
+app.include_router(payment.router)
 
 # Import new auth router
 from app.api.routes import auth as auth_v2

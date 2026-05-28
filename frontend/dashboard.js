@@ -404,10 +404,13 @@ function showDashboardSection(section) {
             window.location.href = 'workflows.html';
             break;
         case 'console':
-            // Construct console URL dynamically - works on localhost and VPS
-            const consoleHostname = window.location.hostname;
-            const isDev = consoleHostname === 'localhost' || consoleHostname === '127.0.0.1';
-            const consoleBaseUrl = isDev ? 'http://localhost:3000' : `${window.location.protocol}//${consoleHostname}:3000`;
+            // Use DASHBOARD_URL if available (set in app.js), otherwise use defaults
+            const consoleBaseUrl = window.DASHBOARD_URL || (() => {
+                const hostname = window.location.hostname;
+                const isDev = hostname === 'localhost' || hostname === '127.0.0.1';
+                if (isDev) return 'http://localhost:3000';
+                return `${window.location.protocol}//app.aivory.id`;
+            })();
             window.location.href = `${consoleBaseUrl}/console?tier=${DashboardState.selectedTier || 'operator'}`;
             break;
         case 'logs':
