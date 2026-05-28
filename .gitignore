@@ -70,3 +70,11 @@ full_scan_output.txt
 # Graphify - generated data
 graphify/
 graphify-out/
+
+# VPS deployment scripts and credentials
+copy_to_vps.sh
+pull_vps.ps1
+vps_index.sh
+vps_password.txt
+vps_status.sh
+vps_update.sh
