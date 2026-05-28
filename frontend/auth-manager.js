@@ -437,7 +437,7 @@ function getRedirectUrl() {
   if (isAdmin()) {
     return "https://admin.aivory.id";
   }
-  return "https://app.aivory.id/dashboard";
+  return "https://dashboard.aivory.id";
 }
 
 // ============================================================================

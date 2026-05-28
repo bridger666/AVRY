@@ -46,13 +46,13 @@ if (!window.DASHBOARD_URL) {
     // Local development: localhost:3000
     window.DASHBOARD_URL = "http://localhost:3000";
   } else if (hostname.includes("stag") || hostname.includes("staging")) {
-    // Staging: route to the public app dashboard domain
+    // Staging: route to the public dashboard domain
     const protocol = window.location.protocol;
-    window.DASHBOARD_URL = `${protocol}//app.aivory.id`;
+    window.DASHBOARD_URL = `${protocol}//dashboard.aivory.id`;
   } else {
     // Production: standard dashboard domain
     const protocol = window.location.protocol;
-    window.DASHBOARD_URL = `${protocol}//app.aivory.id`;
+    window.DASHBOARD_URL = `${protocol}//dashboard.aivory.id`;
   }
 }
 const DASHBOARD_URL = window.DASHBOARD_URL;
