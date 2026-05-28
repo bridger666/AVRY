@@ -28,8 +28,8 @@ const API_BASE_URL = window.API_BASE_URL;
 // Can be set via: data-dashboard-url attribute, localStorage, window.DASHBOARD_CONFIG, or defaults
 if (!window.DASHBOARD_URL) {
   const hostname = window.location.hostname;
-  const isDevelopmentLocal =
-    hostname === "localhost" || hostname === "127.0.0.1";
+  const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
+  const isProduction = hostname === "aivory.id" || hostname === "app.aivory.id" || hostname === "dashboard.aivory.id" || hostname === "admin.aivory.id";
 
   // Check for explicit configuration
   const htmlElement = document.documentElement;
@@ -42,17 +42,13 @@ if (!window.DASHBOARD_URL) {
   } else if (storedUrl) {
     // Stored configuration (set by admin or deployment script)
     window.DASHBOARD_URL = storedUrl;
-  } else if (isDevelopmentLocal) {
-    // Local development: localhost:3000
-    window.DASHBOARD_URL = "http://localhost:3000";
-  } else if (hostname.includes("stag") || hostname.includes("staging")) {
-    // Staging: route to the public dashboard domain
-    const protocol = window.location.protocol;
-    window.DASHBOARD_URL = `${protocol}//dashboard.aivory.id`;
+  } else if (isLocalhost) {
+    // For landing page development (localhost:9000), use dashboard.aivory.id
+    // Only use localhost:3000 if explicitly developing the dashboard locally
+    window.DASHBOARD_URL = "https://dashboard.aivory.id";
   } else {
-    // Production: standard dashboard domain
-    const protocol = window.location.protocol;
-    window.DASHBOARD_URL = `${protocol}//dashboard.aivory.id`;
+    // Production: use dashboard.aivory.id
+    window.DASHBOARD_URL = "https://dashboard.aivory.id";
   }
 }
 const DASHBOARD_URL = window.DASHBOARD_URL;
