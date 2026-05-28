@@ -66,3 +66,7 @@ fix_zeroclaw_auth.py
 fix_zeroclaw_auth_v2.sh
 *.n8n
 full_scan_output.txt
+
+# Graphify - generated data
+graphify/
+graphify-out/
