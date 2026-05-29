@@ -9190,6 +9190,7 @@
 
       /**
        * Handle Dashboard button click
+       * Passes auth token to dashboard for unified auth
        */
       function handleDashboardClick() {
         // Check if user is authenticated
@@ -9197,8 +9198,12 @@
           typeof AuthManager !== "undefined" &&
           AuthManager.isAuthenticated()
         ) {
-          // Redirect to Next.js dashboard
-          window.location.href = `${DASHBOARD_URL}/dashboard`;
+          // Get auth token and redirect URL
+          const token = AuthManager.getAccessToken();
+          const redirectUrl = AuthManager.getRedirectUrl();
+          
+          // Pass auth token to dashboard via URL parameter
+          window.location.href = `${redirectUrl}/dashboard?auth_token=${encodeURIComponent(token)}`;
         } else {
           // Show login modal
           if (typeof showLoginModal === "function") {

@@ -3,11 +3,39 @@
  *
  * Handles user authentication, token management, and session persistence.
  * Integrates with IDChainManager for ID migration on login/signup.
+ * Uses cookies for cross-domain auth state sharing.
  */
+
+// Cookie utilities for cross-domain auth state sharing
+const aivoryCookie = {
+  set: function(name, value, days = 7) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = name + '=' + encodeURIComponent(JSON.stringify(value)) + ';expires=' + expires.toUTCString() + ';path=/;domain=.aivory.id;SameSite=None;Secure';
+  },
+  get: function(name) {
+    const nameEQ = name + '=';
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i].trim();
+      if (c.indexOf(nameEQ) === 0) {
+        try {
+          return JSON.parse(decodeURIComponent(c.substring(nameEQ.length)));
+        } catch (e) {
+          return null;
+        }
+      }
+    }
+    return null;
+  },
+  remove: function(name) {
+    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.aivory.id;';
+  }
+};
 
 // LocalStorage keys - unified with superadmin-login.html
 const AUTH_KEYS = {
-  SESSION_TOKEN: "aivory_session_token", // Changed from ACCESS_TOKEN to match login page
+  SESSION_TOKEN: "aivory_session_token",
   REFRESH_TOKEN: "aivory_refresh_token",
   USER: "aivory_user",
 };
@@ -23,18 +51,18 @@ let currentUser = null;
 let authStateListeners = [];
 
 /**
- * Initialize auth state from localStorage
+ * Initialize auth state from cookies
  */
 function initAuthState() {
   console.log("AuthManager: Initializing...");
 
   const token = getAccessToken();
-  const userStr = localStorage.getItem(AUTH_KEYS.USER);
+  const user = aivoryCookie.get(AUTH_KEYS.USER);
 
-  if (token && userStr) {
+  if (token && user) {
     try {
-      currentUser = JSON.parse(userStr);
-      console.log("✓ Auth state restored:", currentUser.email);
+      currentUser = user;
+      console.log("✓ Auth state restored from cookie:", currentUser.email);
       notifyAuthStateChange();
     } catch (e) {
       console.error("❌ Failed to parse user data:", e);
@@ -54,9 +82,9 @@ function initAuthState() {
  */
 function clearAuthState() {
   currentUser = null;
-  localStorage.removeItem(AUTH_KEYS.SESSION_TOKEN);
-  localStorage.removeItem(AUTH_KEYS.REFRESH_TOKEN);
-  localStorage.removeItem(AUTH_KEYS.USER);
+  aivoryCookie.remove(AUTH_KEYS.SESSION_TOKEN);
+  aivoryCookie.remove(AUTH_KEYS.REFRESH_TOKEN);
+  aivoryCookie.remove(AUTH_KEYS.USER);
   console.log("✓ Auth data cleared");
   notifyAuthStateChange();
 }
@@ -82,25 +110,25 @@ function notifyAuthStateChange() {
 // ============================================================================
 
 /**
- * Get access token from localStorage
+ * Get access token from cookie
  */
 function getAccessToken() {
-  const token = localStorage.getItem(AUTH_KEYS.SESSION_TOKEN);
+  const token = aivoryCookie.get(AUTH_KEYS.SESSION_TOKEN);
   if (!token) {
-    console.warn("⚠️ No session token found in localStorage");
+    console.warn("⚠️ No session token found in cookie");
   }
   return token;
 }
 
 /**
- * Get refresh token from localStorage
+ * Get refresh token from cookie
  */
 function getRefreshToken() {
-  return localStorage.getItem(AUTH_KEYS.REFRESH_TOKEN);
+  return aivoryCookie.get(AUTH_KEYS.REFRESH_TOKEN);
 }
 
 /**
- * Store tokens in localStorage
+ * Store tokens in cookies
  */
 function storeTokens(accessToken, refreshToken) {
   if (
@@ -111,11 +139,11 @@ function storeTokens(accessToken, refreshToken) {
     console.error("❌ Invalid access token provided to storeTokens");
     return false;
   }
-  localStorage.setItem(AUTH_KEYS.SESSION_TOKEN, accessToken);
+  aivoryCookie.set(AUTH_KEYS.SESSION_TOKEN, accessToken);
   if (refreshToken) {
-    localStorage.setItem(AUTH_KEYS.REFRESH_TOKEN, refreshToken);
+    aivoryCookie.set(AUTH_KEYS.REFRESH_TOKEN, refreshToken);
   }
-  console.log("✓ Session token stored");
+  console.log("✓ Session token stored in cookie");
   return true;
 }
 
@@ -127,12 +155,12 @@ function setTokens(accessToken, refreshToken) {
 }
 
 /**
- * Store user data in localStorage
+ * Store user data in cookie
  */
 function storeUser(user) {
   currentUser = user;
-  localStorage.setItem(AUTH_KEYS.USER, JSON.stringify(user));
-  console.log("✓ User data stored:", user.email);
+  aivoryCookie.set(AUTH_KEYS.USER, user);
+  console.log("✓ User data stored in cookie:", user.email);
   notifyAuthStateChange();
 }
 
