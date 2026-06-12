@@ -89,6 +89,10 @@ async function inspectStepWithMcp(step) {
   const candidates = normalizeSearchResults(rawSearch).map(sanitizeCandidate);
   const selectedNode = selectBestCandidate(candidates, step);
   const selectedNodeType = selectedNode?.nodeType || selectedNode?.workflowNodeType || null;
+  // n8n expects the full package form (n8n-nodes-base.*); MCP returns a short
+  // form (nodes-base.*) in nodeType. Prefer workflowNodeType for the draft so
+  // n8n-as-code does not reject it as an unrecognized node type.
+  const selectedWorkflowNodeType = selectedNode?.workflowNodeType || selectedNode?.nodeType || null;
   const schema = selectedNodeType ? await getNodeSchema(selectedNodeType) : null;
   const validation = selectedNodeType
     ? await validateNodeConfig(selectedNodeType, step.config || {}, 'minimal')
@@ -100,6 +104,7 @@ async function inspectStepWithMcp(step) {
     candidates: candidates.slice(0, 5),
     selectedNode: selectedNode ? sanitizeCandidate(selectedNode) : null,
     selectedNodeType,
+    selectedWorkflowNodeType,
     schema: summarizeSchema(schema),
     validation,
   };
@@ -132,10 +137,16 @@ async function enrichStepsWithMcp(steps) {
       });
       // Extract selectedNodeType from inspection as top-level nodeType
       // This allows n8n-as-code-service to use the exact n8n node type
-      const selectedNodeType = inspection.selectedNodeType || null;
+      const selectedNodeType = inspection.selectedWorkflowNodeType || inspection.selectedNodeType || null;
+      // n8n-as-code reads node parameters from step.parameters when a direct
+      // nodeType is provided. UI/copilot steps carry their config under
+      // step.config, so map it through to avoid building parameter-less nodes
+      // that fail n8n pre-execution validation.
+      const mappedParameters = step.parameters || step.config || {};
       enrichedSteps.push({
         ...step,
         nodeType: selectedNodeType,
+        parameters: mappedParameters,
         n8nInspection: inspection,
       });
     } catch (error) {
