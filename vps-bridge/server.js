@@ -15,6 +15,23 @@ generate AI-powered insights, orchestrate agents, and scale operations.
 When asked who you are: respond as Aivory. Be concise, professional, and helpful.
 [END SYSTEM IDENTITY]
 `;
+const WORKFLOW_SYSTEM_PROMPT = `You are a workflow automation architect for n8n. Help users design automation workflows.
+
+BEHAVIOR:
+- If the user's request is vague, ask 1-2 clarifying questions (end with ?)
+- Once clear, respond with ONLY a valid JSON object — no prose, no markdown fences
+
+JSON SCHEMA:
+{"workflowName": string, "steps": [{"id": "step_1", "type": "trigger"|"action"|"condition"|"channel", "title": string, "description": string, "config": {}}], "estimate_hours": number, "automation_score": number, "summary": string}
+
+RULES:
+- First step MUST be type "trigger"
+- 3-8 steps total
+- Use real app names (Gmail, Slack, MySQL, HTTP Request, etc.)
+- Do NOT wrap in markdown code blocks`;
+
+const { getToolsForUseCase } = require('./tools-registry');
+
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
@@ -672,6 +689,17 @@ function buildZeroclawWebhookBody(body) {
     if (body.history) outbound.history = body.history;
     if (body.session_id) outbound.session_id = body.session_id;
     if (body.organization_id) outbound.organization_id = body.organization_id;
+
+    // Tool filtering per useCase (workflow_* entrypoints get the n8n toolset)
+    const useCase = body.entrypoint ? body.entrypoint.replace('workflow_', 'workflow') : 'default';
+    outbound.tools = getToolsForUseCase(useCase);
+
+    // Inject the workflow system prompt for workflow_* entrypoints
+    if (body.entrypoint && body.entrypoint.startsWith('workflow_') && !outbound.system_prompt) {
+      outbound.system_prompt = WORKFLOW_SYSTEM_PROMPT;
+      outbound.hint = outbound.hint || 'workflow_copilot_premium';
+    }
+
     return outbound;
   }
 
@@ -1005,6 +1033,29 @@ function handleWorkflowRequest(req, res, fallbackName) {
 app.post('/workflows/generate', (req, res) => handleWorkflowRequest(req, res, 'Generated Workflow'));
 app.post('/workflows/repair',   (req, res) => handleWorkflowRequest(req, res, 'Repaired Workflow'));
 app.post('/workflows/edit',     (req, res) => handleWorkflowRequest(req, res, 'Edited Workflow'));
+
+// ── Sandbox draft-test (copilot state machine) ──────────────────────────────
+// Orchestrates build → test → report against n8n-as-code (localhost-only on the
+// VPS, unreachable from the dockerized console) WITH n8n-MCP node enrichment.
+// Returns the BridgeDraftTestResponse shape consumed by copilotStateMachine.
+const { prepareWorkflowDraft } = require('./workflowDraftService');
+app.post('/workflows/draft-test', async (req, res) => {
+  try {
+    const { workflowId, workflowId: wfId, description, steps } = req.body || {};
+    if (!Array.isArray(steps) || steps.length === 0) {
+      return res.status(400).json({ message: 'steps must be a non-empty array' });
+    }
+    const result = await prepareWorkflowDraft({
+      workflowId: workflowId || wfId,
+      description: description || 'Aivory Workflow',
+      steps,
+    });
+    res.status(200).json(result);
+  } catch (err) {
+    console.error('[workflows/draft-test] error:', err.message);
+    res.status(502).json({ message: `draft-test failed: ${err.message}` });
+  }
+});
 
 // ============================================================================
 // ENTITLEMENT & BILLING ENDPOINTS
