@@ -23,7 +23,7 @@ services:
       # n8n editor URL (internal)
       NEXT_PUBLIC_N8N_EDITOR_BASE_URL: http://n8n:5678
       # VPS Bridge (internal-only)
-      VPS_BRIDGE_URL: http://vps-bridge:3003
+      VPS_BRIDGE_URL: http://172.19.0.1:3003
     networks:
       - aivory-net
       - traefik-public
